@@ -1,26 +1,135 @@
 @import "tailwindcss";
 
+/*
+ * Accel Business — "the shop counter" system.
+ * Ledger-ink indigo on cool ledger paper, marigold for the one thing to press,
+ * stamp colours for verdicts. Mukta carries Latin + Devanagari in one voice;
+ * the bill uses a receipt-printer mono and nothing else does.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --ink: #1b1f3b;
+  --ink-soft: #4a4f6e;
+  --paper: #f3f5f0;
+  --sheet: #ffffff;
+  --rule: #d9ddd2;
+  --marigold: #f2a900;
+  --marigold-deep: #c98a00;
+  --stamp-green: #1f7a4d;
+  --stamp-red: #c2362f;
+  --stamp-amber: #a86a12;
+  --wa: #0f6e57;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  :root:not([data-theme="light"]) {
+    --ink: #e9ebf5;
+    --ink-soft: #a9adc6;
+    --paper: #12142a;
+    --sheet: #1b1e38;
+    --rule: #2f3354;
+    --marigold: #f5b928;
+    --marigold-deep: #f5b928;
+    --stamp-green: #4cc38a;
+    --stamp-red: #ff7a70;
+    --stamp-amber: #f0b45a;
+    --wa: #3fbf9b;
   }
 }
 
+@theme inline {
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-paper: var(--paper);
+  --color-sheet: var(--sheet);
+  --color-rule: var(--rule);
+  --color-marigold: var(--marigold);
+  --color-marigold-deep: var(--marigold-deep);
+  --color-ok: var(--stamp-green);
+  --color-bad: var(--stamp-red);
+  --color-warn: var(--stamp-amber);
+  --color-wa: var(--wa);
+  --font-sans: var(--font-mukta), system-ui, sans-serif;
+  --font-mono: var(--font-receipt), ui-monospace, monospace;
+}
+
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+body {
+  font-family: var(--font-mukta), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 3px solid var(--marigold);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* The bill: a printed receipt with a torn bottom edge. */
+.receipt {
+  background: var(--sheet);
+  font-family: var(--font-receipt), ui-monospace, monospace;
+  position: relative;
+  --tear: 10px;
+  mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / calc(var(--tear) * 2) var(--tear) repeat-x,
+    linear-gradient(#000 0 0) top / 100% calc(100% - var(--tear)) no-repeat;
+  padding-bottom: calc(var(--tear) + 20px);
+}
+
+.dotted-fill {
+  flex: 1;
+  border-bottom: 2px dotted var(--rule);
+  margin: 0 6px 5px;
+}
+
+/* Rubber stamp for KYC verdicts — the one theatrical moment. */
+.stamp {
+  display: inline-block;
+  border: 3px solid currentColor;
+  border-radius: 10px;
+  padding: 4px 14px;
+  font-weight: 800;
+  font-size: 1.35rem;
+  letter-spacing: 0.04em;
+  transform: rotate(-6deg);
+  mix-blend-mode: multiply;
+}
+@media (prefers-color-scheme: dark) {
+  .stamp {
+    mix-blend-mode: normal;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .stamp-in {
+    animation: stamp-in 420ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
+  }
+  @keyframes stamp-in {
+    from {
+      transform: rotate(-14deg) scale(1.9);
+      opacity: 0;
+    }
+    to {
+      transform: rotate(-6deg) scale(1);
+      opacity: 1;
+    }
+  }
+  .mic-live {
+    animation: pulse 1.4s ease-out infinite;
+  }
+  @keyframes pulse {
+    0% {
+      box-shadow: 0 0 0 0 color-mix(in srgb, var(--marigold) 70%, transparent);
+    }
+    100% {
+      box-shadow: 0 0 0 22px transparent;
+    }
+  }
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }

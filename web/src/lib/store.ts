@@ -36,6 +36,10 @@ export interface AdvisorSession {
   status: "open" | "quoted" | "ordered" | "handoff";
   handoff?: { reason: string; at: string; summary: string; partner?: string };
   orderId?: string;
+  /** SHA-256 of the WhatsApp sender, to continue a chat without storing the number. */
+  contactHash?: string;
+  /** Last single-choice options offered, so "2" works on WhatsApp and voice. */
+  lastChips?: { label: string; value: string }[];
 }
 
 export interface ConsentRecord {

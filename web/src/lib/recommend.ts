@@ -161,7 +161,9 @@ function pickPrimary(pr: Profile, seg: SegmentKey): string {
   if (pr.fibreAvailable === false) return "P04";
   const emp = pr.employees ?? 1;
   const ok = (id: string) => checkEligibility(product(id), pr, PRIMARY_LINKS).ok;
-  if (seg === "mfg" && emp >= 10 && ok("P05")) return "P05";
+  // A leased line is only worth its price and 21-day install for larger plants;
+  // smaller units get fibre (+ failover as an add-on) and are live in 5 days.
+  if (seg === "mfg" && emp >= 20 && ok("P05")) return "P05";
   if (seg === "multi" || (seg === "prof" && emp >= 5) || seg === "mfg") return "P02";
   return "P01";
 }

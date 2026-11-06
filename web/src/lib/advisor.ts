@@ -291,14 +291,26 @@ export async function advisorTurn(opts: { sessionId?: string; message: string; c
   emit({ type: "session", sessionId: s.id, mode: useAi ? "ai" : "guided" });
   if (opts.message) s.transcript.push({ role: "user", text: opts.message, at: now() });
 
+  // "Hi" opens the conversation; "2" picks the second option on text-only channels.
+  let message = opts.message.trim();
+  if (s.transcript.length <= 1 && /^(hi+|hello|hey|namaste|नमस्ते|start|hii)\W*$/i.test(message)) message = "";
+  const pick = message.match(/^(\d{1,2})$/);
+  if (pick && s.lastChips?.[Number(pick[1]) - 1]) message = s.lastChips[Number(pick[1]) - 1].value;
+  s.lastChips = undefined;
+  const outer = emit;
+  emit = (e) => {
+    if (e.type === "chips" && e.mode === "single") s!.lastChips = e.options;
+    outer(e);
+  };
+
   try {
-    if (useAi) await runAiTurn(s, opts.message, emit);
-    else runGuidedTurn(s, opts.message, emit);
+    if (useAi) await runAiTurn(s, message, emit);
+    else runGuidedTurn(s, message, emit);
   } catch (err) {
     console.error("[advisor] AI turn failed, switching to guided mode", err);
     s.messages = [];
     emit({ type: "status", label: "Switching to quick mode…" });
-    runGuidedTurn(s, opts.message, emit);
+    runGuidedTurn(s, message, emit);
   }
   if (s.status === "handoff" && s.handoff) s.handoff.summary = summarize(s);
   store.saveSession(s);
