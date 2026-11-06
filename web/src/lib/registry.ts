@@ -12,11 +12,30 @@ export interface GstinLookup {
   record?: GstinRow;
 }
 
-export function lookupGstin(raw: string): GstinLookup {
+// Letters OCR commonly confuses with each other (digit confusions are handled positionally).
+const LOOKALIKE: Record<string, string[]> = {
+  I: ["J", "L", "T"], J: ["I"], L: ["I"], T: ["I"], O: ["Q", "D"], Q: ["O"], D: ["O"],
+  U: ["V"], V: ["U"], M: ["N"], N: ["M"], E: ["F"], F: ["E"], C: ["G"], G: ["C"],
+};
+
+export function lookupGstin(raw: string): GstinLookup & { ocrCorrected?: boolean } {
   const repaired = repairGstinOcr(raw);
   const check = validateGstin(repaired);
   const record = check.formatOk ? datasets().gstin.get(check.normalized) : undefined;
-  return { found: !!record, gstin: check.normalized, check, record };
+  if (record || !check.formatOk || check.checksumOk) return { found: !!record, gstin: check.normalized, check, record };
+
+  // One look-alike letter misread: accept only if the swap passes the checksum
+  // AND exists in the registry. A deliberately altered digit stays invalid.
+  const s = check.normalized;
+  for (let i = 2; i < 15; i++) {
+    for (const alt of LOOKALIKE[s[i]] ?? []) {
+      const candidate = s.slice(0, i) + alt + s.slice(i + 1);
+      const c = validateGstin(candidate);
+      const r = c.checksumOk ? datasets().gstin.get(candidate) : undefined;
+      if (r) return { found: true, gstin: candidate, check: c, record: r, ocrCorrected: true };
+    }
+  }
+  return { found: false, gstin: s, check, record };
 }
 
 export interface UdyamLookup {

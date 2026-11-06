@@ -1,0 +1,296 @@
+{
+ "trained_on": 5000,
+ "auc": 0.745,
+ "top_decile_activation": 0.176,
+ "base_activation": 0.074,
+ "lift_top_decile": 2.39,
+ "intercept": -0.398023118042292,
+ "features": [
+  {
+   "name": "lead_source=Channel partner",
+   "mean": 0.20186666666666667,
+   "std": 0.4014467479254674,
+   "coef": 0.12766661418427053
+  },
+  {
+   "name": "lead_source=Field sales",
+   "mean": 0.3408,
+   "std": 0.4740414370872694,
+   "coef": -2.191248994758068e-05
+  },
+  {
+   "name": "lead_source=Inbound call",
+   "mean": 0.0992,
+   "std": 0.29897022513755495,
+   "coef": 0.12272597903275219
+  },
+  {
+   "name": "lead_source=Referral",
+   "mean": 0.0824,
+   "std": 0.27500983274936003,
+   "coef": 0.2460965997838825
+  },
+  {
+   "name": "lead_source=Website form",
+   "mean": 0.20506666666666667,
+   "std": 0.4038041740396164,
+   "coef": -0.2144208497262768
+  },
+  {
+   "name": "lead_source=WhatsApp campaign",
+   "mean": 0.07066666666666667,
+   "std": 0.2563013974417124,
+   "coef": -0.2693209032471749
+  },
+  {
+   "name": "segment=Micro retail & services",
+   "mean": 0.544,
+   "std": 0.4981266586369512,
+   "coef": -0.33148055220316736
+  },
+  {
+   "name": "segment=Professional offices",
+   "mean": 0.248,
+   "std": 0.43190941820264855,
+   "coef": 0.14126305313160145
+  },
+  {
+   "name": "segment=Small manufacturers",
+   "mean": 0.06026666666666667,
+   "std": 0.23801197899011334,
+   "coef": 0.1771559116328488
+  },
+  {
+   "name": "segment=Small multi-site businesses",
+   "mean": 0.14773333333333333,
+   "std": 0.3548827694186268,
+   "coef": 0.17453996925360377
+  },
+  {
+   "name": "city_tier=1",
+   "mean": 0.5157333333333334,
+   "std": 0.4998190479000524,
+   "coef": 0.13219341299134652
+  },
+  {
+   "name": "city_tier=2",
+   "mean": 0.4842666666666667,
+   "std": 0.4998190479000524,
+   "coef": -0.1321934129913463
+  },
+  {
+   "name": "preferred_language=Bengali",
+   "mean": 0.022933333333333333,
+   "std": 0.1497109630417176,
+   "coef": 0.000994116247042414
+  },
+  {
+   "name": "preferred_language=English",
+   "mean": 0.22933333333333333,
+   "std": 0.42046010354753677,
+   "coef": 0.019554231293849412
+  },
+  {
+   "name": "preferred_language=Gujarati",
+   "mean": 0.04533333333333334,
+   "std": 0.2080619286651483,
+   "coef": -0.007113487497023308
+  },
+  {
+   "name": "preferred_language=Hindi",
+   "mean": 0.42773333333333335,
+   "std": 0.494815945890617,
+   "coef": 0.06849170457090849
+  },
+  {
+   "name": "preferred_language=Kannada",
+   "mean": 0.0504,
+   "std": 0.21879809420621546,
+   "coef": -0.07665015402901192
+  },
+  {
+   "name": "preferred_language=Malayalam",
+   "mean": 0.017866666666666666,
+   "std": 0.13248444986769195,
+   "coef": 0.02721337361691107
+  },
+  {
+   "name": "preferred_language=Marathi",
+   "mean": 0.1024,
+   "std": 0.3032140448624759,
+   "coef": 0.01843500786270053
+  },
+  {
+   "name": "preferred_language=Punjabi",
+   "mean": 0.019733333333333332,
+   "std": 0.13910100159906463,
+   "coef": -0.07047393377320868
+  },
+  {
+   "name": "preferred_language=Tamil",
+   "mean": 0.04133333333333333,
+   "std": 0.19908655992920937,
+   "coef": -0.12114109283904817
+  },
+  {
+   "name": "preferred_language=Telugu",
+   "mean": 0.04293333333333333,
+   "std": 0.2027338711091187,
+   "coef": 0.003526878997780521
+  },
+  {
+   "name": "annual_turnover_band=1.5 - 5 cr",
+   "mean": 0.1992,
+   "std": 0.39945201193962787,
+   "coef": -0.010928768219277853
+  },
+  {
+   "name": "annual_turnover_band=25 - 100 cr",
+   "mean": 0.044,
+   "std": 0.20512245137644738,
+   "coef": 0.035229690548102106
+  },
+  {
+   "name": "annual_turnover_band=40 lakh - 1.5 cr",
+   "mean": 0.31066666666666665,
+   "std": 0.4628282743725032,
+   "coef": -0.007767213651772217
+  },
+  {
+   "name": "annual_turnover_band=5 - 25 cr",
+   "mean": 0.148,
+   "std": 0.35514734205569465,
+   "coef": 0.09389027866333771
+  },
+  {
+   "name": "annual_turnover_band=< 40 lakh",
+   "mean": 0.2981333333333333,
+   "std": 0.45749935927008906,
+   "coef": -0.0712807093463321
+  },
+  {
+   "name": "has_gstin=N",
+   "mean": 0.2936,
+   "std": 0.4554715810706327,
+   "coef": -0.26676624786501935
+  },
+  {
+   "name": "has_gstin=Y",
+   "mean": 0.7064,
+   "std": 0.4554715810706327,
+   "coef": 0.2667662478650186
+  },
+  {
+   "name": "has_udyam=N",
+   "mean": 0.4512,
+   "std": 0.49767922322429065,
+   "coef": -0.07376074235802531
+  },
+  {
+   "name": "has_udyam=Y",
+   "mean": 0.5488,
+   "std": 0.49767922322429065,
+   "coef": 0.07376074235802506
+  },
+  {
+   "name": "current_internet=Business broadband",
+   "mean": 0.28186666666666665,
+   "std": 0.44996871155662815,
+   "coef": -0.04641727628276313
+  },
+  {
+   "name": "current_internet=Home broadband",
+   "mean": 0.2504,
+   "std": 0.43330117313685024,
+   "coef": 0.024163082850342146
+  },
+  {
+   "name": "current_internet=Leased line",
+   "mean": 0.036533333333333334,
+   "std": 0.18763804970991924,
+   "coef": 0.03539817185141377
+  },
+  {
+   "name": "current_internet=Mixed per site",
+   "mean": 0.04346666666666667,
+   "std": 0.20393235593476802,
+   "coef": 0.07511516265322965
+  },
+  {
+   "name": "current_internet=Mobile hotspot",
+   "mean": 0.3632,
+   "std": 0.4809859173136435,
+   "coef": -0.02008952046311601
+  },
+  {
+   "name": "current_internet=nan",
+   "mean": 0.024533333333333334,
+   "std": 0.15471855839180879,
+   "coef": -0.012159173080046562
+  },
+  {
+   "name": "current_provider=Accel",
+   "mean": 0.07466666666666667,
+   "std": 0.2628877800219322,
+   "coef": -0.004913674475816181
+  },
+  {
+   "name": "current_provider=Accel (mobile only)",
+   "mean": 0.3042666666666667,
+   "std": 0.4601575029663503,
+   "coef": 0.12337664798911442
+  },
+  {
+   "name": "current_provider=Competitor A",
+   "mean": 0.24026666666666666,
+   "std": 0.42730233500222925,
+   "coef": -0.08899178911475866
+  },
+  {
+   "name": "current_provider=Competitor B",
+   "mean": 0.148,
+   "std": 0.35514734205569476,
+   "coef": 0.043723275086125085
+  },
+  {
+   "name": "current_provider=Local ISP",
+   "mean": 0.20826666666666666,
+   "std": 0.4061226970521396,
+   "coef": -0.07658153910615921
+  },
+  {
+   "name": "current_provider=nan",
+   "mean": 0.024533333333333334,
+   "std": 0.15471855839180879,
+   "coef": -0.012159173080046562
+  },
+  {
+   "name": "log_employee_count",
+   "mean": 2.2840932406254764,
+   "std": 1.1788416801324477,
+   "coef": -0.08874184907410387
+  },
+  {
+   "name": "log_num_sites",
+   "mean": 0.921227295774735,
+   "std": 0.5178339664302978,
+   "coef": -0.04329169457208782
+  },
+  {
+   "name": "log_monthly_telecom_spend_inr",
+   "mean": 7.4909037707875665,
+   "std": 1.0636264533608395,
+   "coef": -0.19786226583700922
+  },
+  {
+   "name": "log_n_products_of_interest",
+   "mean": 1.0573880898898245,
+   "std": 0.2829661477174538,
+   "coef": -0.02041321637203893
+  }
+ ],
+ "calibration": {
+  "a": 0.9283988026612472,
+  "b": -2.5311169092954415
+ }
+}

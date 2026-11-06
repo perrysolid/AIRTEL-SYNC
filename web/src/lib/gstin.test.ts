@@ -33,6 +33,13 @@ describe("GSTIN", () => {
     expect(validateGstin("99XUIXG0767D1ZP").checksumOk).toBe(false);
   });
 
+  it("recovers a single look-alike letter only via checksum + registry", () => {
+    const r = lookupGstin("27QHIXK0658U1ZL"); // OCR read J as I (K10 specimen)
+    expect(r.gstin).toBe("27QHJXK0658U1ZL");
+    expect(r.ocrCorrected).toBe(true);
+    expect(lookupGstin("08YKZXS8189L1Z0").found).toBe(false); // altered digit stays invalid
+  });
+
   it("looks up status from the registry", () => {
     expect(lookupGstin("37IHKXV5167L1ZS").record?.status).toBe("Cancelled");
   });

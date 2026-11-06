@@ -109,7 +109,7 @@ export function validateKyc(docs: KycDocs, today: Date = CASE_TODAY): KycResult 
       } else if (!look.check.checksumOk) {
         add({ id: "gstin_checksum", doc: "gst_certificate", status: "fail", title: "GSTIN check digit fails", detail: `${look.gstin} fails the GSTIN checksum — one character is wrong or the number has been altered.`, fix: "Our team will verify this manually; please keep the original certificate handy" });
       } else {
-        add({ id: "gstin_checksum", doc: "gst_certificate", status: "pass", title: "GSTIN format and checksum valid", detail: `${look.gstin} · state ${look.check.state}` });
+        add({ id: "gstin_checksum", doc: "gst_certificate", status: "pass", title: "GSTIN format and checksum valid", detail: `${look.gstin} · state ${look.check.state}${look.ocrCorrected ? " · 1 misread character auto-corrected via checksum + registry" : ""}` });
         if (!look.record) {
           add({ id: "gstin_registry", doc: "gst_certificate", status: "fail", title: "GSTIN not found in GST registry", detail: "The number is well-formed but isn't registered.", fix: "Our team will verify this manually" });
         } else {
