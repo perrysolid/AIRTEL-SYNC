@@ -1,0 +1,5 @@
+.DS_Store
+web/.data/
+*.traineddata
+.env
+.env.local
