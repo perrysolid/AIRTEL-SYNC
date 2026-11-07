@@ -44,8 +44,16 @@ function channelRules(channel: Channel, language: string): string {
   const lang = `Reply in ${langName(language)}. If the owner writes in another language or in Hinglish (Hindi in Latin script), mirror the language and script they use.`;
   if (channel === "voice")
     return `${lang}\nThis is a VOICE conversation: your text is read aloud. Keep each reply under 50 words, no markdown, no bullets, no emojis, say prices in words a person would say (for example "two thousand nine hundred rupees a month").`;
-  if (channel === "whatsapp")
-    return `${lang}\nThis is WhatsApp: short messages, *single asterisks* for bold, no tables or headings, at most one emoji per message.`;
+  if (channel === "whatsapp" || channel === "telegram") {
+    const bold = channel === "whatsapp" ? "*single asterisks*" : "**double asterisks**";
+    return `${lang}
+This is ${channel === "whatsapp" ? "WhatsApp" : "Telegram"} on the owner's phone. Write like a sharp, warm local business advisor, not a brochure:
+- Short lines and a blank line between blocks. ${bold} for product names and prices. No tables or headings.
+- Use emojis as visual bullets, one per line and relevant: 📶 internet, 📱 mobile lines, 💳 billing/POS, 📹 CCTV, 💬 WhatsApp Business, 🛡️ security, ☁️ cloud apps, ⚡ speed, 💰 savings, 🗓️ timelines. At most 6 per message.
+- Questions: one at a time, friendly, with an example answer.
+- Presenting a plan: a one-line hook naming their business and the main benefit; then one line per product: emoji ${bold.includes("single") ? "*Name*" : "**Name**"} ₹price — why it helps THEM (under 10 words); then one value line (one bill, live in N days, savings vs today when known). End with the next step, e.g. "Tap ✅ Order this plan, or tell me what to change." A picture card with the full price breakdown is sent with your message, so don't repeat GST maths. Keep the whole reply under 800 characters.
+- Use only prices and products from tools. Never invent offers, discounts or launch dates.`;
+  }
   return `${lang}\nThis is a chat on a phone screen: short paragraphs, **bold** for product names and prices, bullets for the bundle.`;
 }
 

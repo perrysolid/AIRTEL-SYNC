@@ -98,16 +98,38 @@ export const TIER1_CITIES = new Set([
   "Mumbai", "Delhi", "Bengaluru", "Chennai", "Hyderabad", "Kolkata", "Pune", "Ahmedabad",
 ]);
 
+// The case data's 14 tier-2 cities plus the rest of India's "Y-class" cities
+// (Government of India city classification), so a judge's own city works.
 export const TIER2_CITIES = new Set([
   "Bhopal", "Coimbatore", "Indore", "Jaipur", "Kochi", "Lucknow", "Ludhiana", "Mysuru",
   "Nagpur", "Nashik", "Patna", "Surat", "Vadodara", "Visakhapatnam",
+  "Agra", "Ajmer", "Aligarh", "Amravati", "Amritsar", "Asansol", "Aurangabad", "Bareilly", "Belagavi",
+  "Bhavnagar", "Bhiwandi", "Bhilai", "Bhubaneswar", "Bikaner", "Bilaspur", "Bokaro", "Chandigarh",
+  "Cuttack", "Dehradun", "Dhanbad", "Durgapur", "Erode", "Faridabad", "Firozabad", "Ghaziabad",
+  "Gorakhpur", "Gurugram", "Guntur", "Guwahati", "Gwalior", "Hubballi", "Jabalpur", "Jalandhar",
+  "Jammu", "Jamnagar", "Jamshedpur", "Jhansi", "Jodhpur", "Kakinada", "Kalaburagi", "Kannur", "Kanpur",
+  "Kolhapur", "Kollam", "Kota", "Kozhikode", "Kurnool", "Madurai", "Malappuram", "Mangaluru", "Mathura",
+  "Meerut", "Moradabad", "Nanded", "Navi Mumbai", "Nellore", "Noida", "Prayagraj", "Puducherry",
+  "Raipur", "Rajahmundry", "Rajkot", "Ranchi", "Rourkela", "Salem", "Sangli", "Shimla", "Siliguri",
+  "Solapur", "Srinagar", "Thane", "Thanjavur", "Thiruvananthapuram", "Thrissur", "Tiruchirappalli",
+  "Tirunelveli", "Tiruppur", "Udaipur", "Ujjain", "Varanasi", "Vasai-Virar", "Vellore", "Vijayawada",
+  "Warangal",
 ]);
+
+export const CITY_ALIASES: Record<string, string> = {
+  bangalore: "Bengaluru", bombay: "Mumbai", calcutta: "Kolkata", madras: "Chennai", "new delhi": "Delhi",
+  gurgaon: "Gurugram", mysore: "Mysuru", vizag: "Visakhapatnam", baroda: "Vadodara", cochin: "Kochi",
+  trivandrum: "Thiruvananthapuram", allahabad: "Prayagraj", mangalore: "Mangaluru", hubli: "Hubballi",
+  belgaum: "Belagavi", gulbarga: "Kalaburagi", trichy: "Tiruchirappalli", calicut: "Kozhikode",
+  pondicherry: "Puducherry", banaras: "Varanasi", benares: "Varanasi", "greater noida": "Noida",
+};
 
 /** Accel sells in tier 1-2 cities only; anything else is unserviceable today. */
 export function tierForCity(city?: string): 1 | 2 | undefined {
   if (!city) return undefined;
-  const c = city.trim().toLowerCase();
-  const match = (s: Set<string>) => [...s].some((x) => x.toLowerCase() === c);
+  const c = city.trim().toLowerCase().replace(/\s+/g, " ");
+  const name = CITY_ALIASES[c] ?? c;
+  const match = (s: Set<string>) => [...s].some((x) => x.toLowerCase() === name.toLowerCase());
   if (match(TIER1_CITIES)) return 1;
   if (match(TIER2_CITIES)) return 2;
   return undefined;

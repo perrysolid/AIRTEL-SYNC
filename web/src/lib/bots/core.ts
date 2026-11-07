@@ -49,17 +49,17 @@ export function statusMessage(order: Order): BotMessage {
   const link = { label: "Open tracker", url: publicUrl(`/order/${order.id}`) };
   if (t.clockDay < 0) {
     const next = !order.kyc || order.kyc.result.verdict !== "verified" ? "verify your business (2 minutes, secure page)" : !order.esign ? "e-sign the agreement" : "complete the first payment";
-    return { text: `**Order ${order.id}**\nWaiting for you to ${next}.`, image: orderCardUrl(order), buttons: [{ ...link, label: "Continue my order" }] };
+    return { text: `📦 **Order ${order.id}**\n\n👉 Waiting for you to ${next}.`, image: orderCardUrl(order), buttons: [{ ...link, label: "Continue my order" }] };
   }
   const lines = t.tracks.map((tr) => {
     const nextStep = tr.steps.find((s) => stepStatus(s, t.clockDay) !== "done");
     return `${nextStep ? "⏳" : "✅"} ${tr.title}: ${nextStep ? `${nextStep.label} (day ${nextStep.dueDay})` : "live"}`;
   });
-  return { text: `**Order ${order.id}** — day ${t.clockDay} of ${liveDay(t)}\n${lines.join("\n")}`, image: orderCardUrl(order), buttons: [link] };
+  return { text: `📦 **Order ${order.id}** · day ${t.clockDay} of ${liveDay(t)}\n\n${lines.join("\n")}`, image: orderCardUrl(order), buttons: [{ ...link, label: "Open live tracker" }] };
 }
 
 const HELP: BotMessage = {
-  text: "I'm Udyam, Accel Business's advisor. Tell me about your business in any language — or send a voice note — and I'll suggest the right internet, phone and digital tools with one monthly price.\n\n**STATUS** — track your order\n**NEW** — start over\n**HUMAN** — talk to a person",
+  text: "🙏 Namaste! I'm **Udyam**, your Accel Business advisor.\n\nTell me about your business — type or send a 🎤 voice note, in any language — and in about a minute you'll get the right internet, phone and digital tools on **one monthly bill**.\n\n📦 **STATUS** — track your order\n🔄 **NEW** — start over\n📞 **HUMAN** — talk to a person",
 };
 
 function placeOrder(s: AdvisorSession, input: BotInput): BotMessage[] {
@@ -68,12 +68,12 @@ function placeOrder(s: AdvisorSession, input: BotInput): BotMessage[] {
   if (!phone) {
     s.pendingOrder = true;
     store.saveSession(s);
-    return [{ text: "Great! Please share your mobile number so we can send activation updates and set up your account.", askContact: true }];
+    return [{ text: "🎉 Great choice! One last thing: share your mobile number so we can set up your account and send live activation updates here.", askContact: true }];
   }
   const o = createOrder(s, { contactName: input.firstName ?? "Owner", phone, botChat: input.chat });
   return [
     {
-      text: `✅ **Order ${o.id} created** — ${o.lines.length} services for **${inr(o.quote.monthlyWithGst)}/month** incl. GST.\n\nNext: verify your business on our secure page (about 2 minutes — DigiLocker or photos). I'll send every update right here, so there's no need to call us.`,
+      text: `🎉 **You're in! Order ${o.id} is placed.**\n\n📦 ${o.lines.length} ${o.lines.length === 1 ? "service" : "services"} · **${inr(o.quote.monthlyWithGst)}/month** incl. GST · one bill\n\n👉 **Next:** verify your business on our secure page — about 2 minutes with DigiLocker or phone photos.\n\n🔔 Every update arrives right here. No calls, no chasing.`,
       image: orderCardUrl(o),
       buttons: [{ label: "Verify my business", url: publicUrl(`/order/${o.id}`) }],
     },
@@ -89,12 +89,16 @@ export async function botTurn(input: BotInput): Promise<BotMessage[]> {
   if (["help", "menu"].includes(cmd)) return [HELP];
   if (["status", "track", "स्टेटस"].includes(cmd)) {
     const o = latestOrder(input.chat, input.phone ?? (input.chat.channel === "whatsapp" ? input.chat.chatId : undefined));
-    return [o ? statusMessage(o) : { text: "You don't have an order yet. Tell me about your business and I'll find the right plan." }];
+    return [o ? statusMessage(o) : { text: "📭 No order yet. Tell me about your business and I'll find the right plan in a minute." }];
   }
   if (cmd === "new" || cmd === "restart") s = undefined;
+  if (raw === "a:adjust") {
+    if (!s?.quote) return [{ text: "⌛ That quote has expired. Tell me about your business again and I'll rebuild it in seconds." }];
+    return [{ text: "✏️ Switch add-ons on or off, change quantities and pick a 12, 24 or 36-month term. The price updates as you tap.", buttons: [{ label: "Open my quote", url: publicUrl(`/quote/${s.id}`) }] }];
+  }
   if (raw === "a:order" || (s?.pendingOrder && input.phone)) {
     if (s) return placeOrder(s, input);
-    return [{ text: "That quote has expired — tell me about your business again and I'll rebuild it." }];
+    return [{ text: "⌛ That quote has expired. Tell me about your business again and I'll rebuild it in seconds." }];
   }
 
   let message = raw;
@@ -118,13 +122,15 @@ export async function botTurn(input: BotInput): Promise<BotMessage[]> {
   store.saveSession(session);
 
   const body = text.trim() || (chips ? "Please choose:" : "Sorry, could you say that again?");
-  if (quoted && session.quote) {
+  if (quoted && session.quote?.lines.some((l) => l.active && !l.blockedReason)) {
     out.push({
       text: body,
       image: quoteCardUrl(session),
+      // WhatsApp reply buttons can't open links, so "Adjust" there replies with a link button.
       buttons: [
-        { label: "See & adjust my quote", url: publicUrl(`/quote/${session.id}`) },
         { label: "✅ Order this plan", action: "a:order" },
+        input.chat.channel === "whatsapp" ? { label: "✏️ Adjust plan", action: "a:adjust" } : { label: "✏️ Adjust plan", url: publicUrl(`/quote/${session.id}`) },
+        { label: "📞 Talk to expert", action: "human" },
       ],
     });
   } else {

@@ -12,8 +12,8 @@ import { publicUrl } from "./bots/types";
  */
 
 const C = { paper: "#f5f6fa", sheet: "#ffffff", ink: "#161a33", soft: "#565b78", rule: "#e3e5ee", marigold: "#f2a900", signal: "#12a39a", mist: "#eef0f6" };
-// Portrait 4:5 — chat apps show it uncropped, with room for 4 services or 6 products.
-const SIZE = { width: 1080, height: 1350 };
+// 1080 wide; height follows the content (chat apps show portrait images uncropped).
+const SIZE = { width: 1080 };
 
 let fonts: { name: string; data: Buffer; weight: 400 | 600 | 800; style: "normal" }[] | undefined;
 function loadFonts() {
@@ -174,7 +174,7 @@ export function orderCard(o: Order) {
         </div>
       </Frame>
     ),
-    { ...SIZE, fonts: loadFonts() },
+    { width: SIZE.width, height: 770 + Math.min(t.tracks.length, 4) * 108, fonts: loadFonts() },
   );
 }
 
@@ -182,51 +182,82 @@ export function orderCard(o: Order) {
 // Quote card
 // ---------------------------------------------------------------------------
 
+// Simple line icons per catalogue category (no emoji font needed).
+const ICON: Record<string, string> = {
+  Connectivity: "M2 9a15 15 0 0 1 20 0M5.5 12.5a10 10 0 0 1 13 0M9 16a5 5 0 0 1 6 0M12 19.5h.01",
+  Communication: "M7 3h10a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM11 18h2",
+  "Cloud & Productivity": "M7 18h10a4 4 0 0 0 .5-7.97A6 6 0 0 0 6 9.5 4.25 4.25 0 0 0 7 18z",
+  Security: "M12 3l8 3v6c0 4.5-3.4 8.1-8 9-4.6-.9-8-4.5-8-9V6l8-3z",
+  "IoT & Physical": "M4 8h11l5-3v12l-5-3H4zM8 14v4",
+};
+const TINT: Record<string, string> = { Connectivity: "#12a39a", Communication: "#3b6fd8", "Cloud & Productivity": "#7b5cd6", Security: "#d2552f", "IoT & Physical": "#c98a00" };
+
+function CategoryIcon({ category }: { category: string }) {
+  return (
+    <div style={{ display: "flex", width: 60, height: 60, borderRadius: 16, background: TINT[category] ?? C.signal, alignItems: "center", justifyContent: "center" }}>
+      <svg width={32} height={32} viewBox="0 0 24 24">
+        <path d={ICON[category] ?? "M5 12.5l4.2 4.2L19 7"} stroke={C.sheet} strokeWidth={2.2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </div>
+  );
+}
+
+const firstSentence = (t: string, n = 58) => {
+  const s = t.split(/(?<=[.;])\s|\s—\s/)[0].replace(/[.;]$/, "");
+  return s.length > n ? s.slice(0, n - 1).trimEnd() + "…" : s;
+};
+
 export function quoteCard(s: AdvisorSession) {
   const q = s.quote!;
   const lines = q.lines.filter((l) => l.active && !l.blockedReason);
   const shown = lines.slice(0, 6);
   const who = [s.profile.businessType, s.profile.city].filter(Boolean).join(" · ");
+  const pills: [string, string][] = [
+    ...(q.firstLiveInDays === q.allLiveInDays
+      ? ([[`All live ${days(q.allLiveInDays)}`, "#d6f2ef"]] as [string, string][])
+      : ([[`First service live ${days(q.firstLiveInDays)}`, "#d6f2ef"], [`All live ${days(q.allLiveInDays)}`, "#d6f2ef"]] as [string, string][])),
+    [q.setupTotal > 0 ? `Setup ${inr(q.setupTotal)} one-time` : "No setup fee", "#fdefc4"],
+  ];
+  if (q.savingsVsToday && q.savingsVsToday > 0) pills.unshift([`Save ${inr(q.savingsVsToday)}/month vs today`, "#d6f2ef"]);
+  // Height follows the content, so a one-line plan isn't a mostly blank card.
+  const height = 700 + shown.length * 122 + (lines.length > shown.length ? 44 : 0) + (pills.length > 3 ? 70 : 0);
 
   return new ImageResponse(
     (
       <Frame>
         <Header right={`${q.term}-month plan`} />
-        <div style={{ display: "flex", flexDirection: "column", marginTop: 40 }}>
+        <div style={{ display: "flex", flexDirection: "column", marginTop: 36 }}>
           <div style={{ display: "flex", fontSize: 30, color: C.soft }}>{who ? `Your plan for ${who}` : "Your plan"}</div>
           <div style={{ display: "flex", alignItems: "baseline", marginTop: 4 }}>
             <div style={{ display: "flex", fontSize: 104, fontWeight: 800, color: C.ink, lineHeight: 1 }}>{inr(q.monthly)}</div>
             <div style={{ display: "flex", fontSize: 36, color: C.soft, marginLeft: 14 }}>/month + GST</div>
           </div>
           <div style={{ display: "flex", fontSize: 28, color: C.soft, marginTop: 6 }}>
-            {inr(q.monthlyWithGst)} incl. GST · {lines.length} services · one bill{q.oneBillDiscount > 0 ? ` · ${inr(q.oneBillDiscount)} One Bill discount` : ""}
+            {inr(q.monthlyWithGst)} incl. GST · {lines.length} {lines.length === 1 ? "service" : "services"} · one bill{q.oneBillDiscount > 0 ? ` · ${inr(q.oneBillDiscount)} One Bill discount` : ""}
           </div>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", marginTop: 34, gap: 4, flex: 1 }}>
+        <div style={{ display: "flex", flexDirection: "column", marginTop: 28 }}>
           {shown.map((l) => (
-            <div key={l.productId} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 4px", borderBottom: `2px solid ${C.rule}` }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-                <div style={{ display: "flex", width: 44, height: 44, borderRadius: 12, background: C.signal, alignItems: "center", justifyContent: "center" }}>
-                  <Check size={26} />
-                </div>
-                <div style={{ display: "flex", fontSize: 32, fontWeight: 600, color: C.ink }}>
-                  {l.name}
-                  {l.qty > 1 ? <span style={{ color: C.soft, marginLeft: 10 }}>× {l.qty}</span> : null}
+            <div key={l.productId} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 4px", borderBottom: `2px solid ${C.rule}` }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+                <CategoryIcon category={l.category} />
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  <div style={{ display: "flex", fontSize: 32, fontWeight: 800, color: C.ink }}>
+                    {l.name}
+                    {l.qty > 1 ? <span style={{ color: C.soft, fontWeight: 600, marginLeft: 10 }}>× {l.qty}</span> : null}
+                  </div>
+                  <div style={{ display: "flex", fontSize: 24, color: C.soft }}>{firstSentence(l.reason)}</div>
                 </div>
               </div>
               <div style={{ display: "flex", fontSize: 32, fontWeight: 800, color: C.ink }}>{inr(l.monthly)}</div>
             </div>
           ))}
-          {lines.length > shown.length && <div style={{ display: "flex", fontSize: 26, color: C.soft, marginTop: 8 }}>+ {lines.length - shown.length} more on the full quote</div>}
+          {lines.length > shown.length && <div style={{ display: "flex", fontSize: 26, color: C.soft, marginTop: 10 }}>+ {lines.length - shown.length} more on the full quote</div>}
         </div>
 
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 14, marginTop: 20 }}>
-          {[
-            [`First service live ${days(q.firstLiveInDays)}`, "#d6f2ef"],
-            [`All live ${days(q.allLiveInDays)}`, "#d6f2ef"],
-            [q.setupTotal > 0 ? `Setup ${inr(q.setupTotal)} one-time` : "No setup fee", "#fdefc4"],
-          ].map(([text, bg]) => (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 14, marginTop: "auto", paddingTop: 24 }}>
+          {pills.map(([text, bg]) => (
             <div key={text} style={{ display: "flex", fontSize: 26, fontWeight: 600, color: C.ink, background: bg, padding: "10px 22px", borderRadius: 999 }}>
               {text}
             </div>
@@ -234,6 +265,6 @@ export function quoteCard(s: AdvisorSession) {
         </div>
       </Frame>
     ),
-    { ...SIZE, fonts: loadFonts() },
+    { width: SIZE.width, height, fonts: loadFonts() },
   );
 }

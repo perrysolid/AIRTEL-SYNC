@@ -46,8 +46,13 @@ describe("guided advisor (no LLM)", () => {
     expect(events.some((e) => e.type === "handoff")).toBe(true);
   });
 
+  it("serves tier-2 cities beyond the case data, including old names", async () => {
+    const { tierForCity } = await import("./profile");
+    expect([tierForCity("Kanpur"), tierForCity("bangalore"), tierForCity("Vizag"), tierForCity("Manali")]).toEqual([2, 1, 2, undefined]);
+  });
+
   it("explains when a city is not served", async () => {
-    const { text } = await talk(["", "I have a salon in Shimla"]);
-    expect(text).toMatch(/don't offer business connections in Shimla/);
+    const { text } = await talk(["", "I have a salon in Manali"]);
+    expect(text).toMatch(/don't offer business connections in Manali/);
   });
 });

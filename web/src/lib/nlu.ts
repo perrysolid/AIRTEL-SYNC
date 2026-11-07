@@ -1,5 +1,5 @@
 import type { Need, Profile } from "./profile";
-import { TIER1_CITIES, TIER2_CITIES } from "./profile";
+import { CITY_ALIASES, TIER1_CITIES, TIER2_CITIES } from "./profile";
 
 /**
  * Lightweight bilingual (English / Hindi / Hinglish) slot extraction used by
@@ -107,9 +107,10 @@ export function parseUtterance(raw: string): Parsed {
   // "wifi for customers" is guest Wi-Fi, not just internet
   if (/(customer|guest|patient|client|visitor|student|ग्राहक).{0,15}wi-?fi|wi-?fi.{0,15}(customer|guest|patient|client|visitor|student)/i.test(text) && !out.needs.includes("guest_wifi")) out.needs.push("guest_wifi");
 
-  const allCities = [...TIER1_CITIES, ...TIER2_CITIES, "Bangalore", "Bombay", "Gurgaon", "Noida", "Shimla", "Dehradun", "Ranchi", "Guwahati"];
+  // Served cities, their old/short names, and a few towns we don't serve yet (so we can say so).
+  const allCities = [...TIER1_CITIES, ...TIER2_CITIES, ...Object.keys(CITY_ALIASES), "Manali", "Ooty", "Rishikesh", "Munnar", "Darjeeling", "Haridwar"];
   const city = allCities.find((c) => new RegExp(`\\b${c}\\b`, "i").test(text));
-  if (city) out.city = city === "Bangalore" ? "Bengaluru" : city === "Bombay" ? "Mumbai" : city;
+  if (city) out.city = CITY_ALIASES[city.toLowerCase()] ?? city;
 
   const num = (re: RegExp) => {
     const m = text.match(re);

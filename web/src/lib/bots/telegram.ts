@@ -1,3 +1,4 @@
+import { stageImage } from "../media";
 import { chatText, linkButtonsAllowed, type BotMessage } from "./types";
 
 /** Telegram Bot API client: rich messages with inline keyboards. */
@@ -64,7 +65,8 @@ export function telegramHtml(msg: BotMessage) {
   return text.slice(0, 4000);
 }
 
-export async function sendTelegram(chatId: string | number, msg: BotMessage) {
+export async function sendTelegram(chatId: string | number, message: BotMessage) {
+  const msg = await stageImage(message);
   const html = telegramHtml(msg);
   if (msg.image && linkButtonsAllowed()) {
     // Telegram fetches the card by URL; captions are capped at 1024 chars.
