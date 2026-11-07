@@ -58,6 +58,22 @@ describe("chat bot core", () => {
     expect(m.text).toMatch(/Order ACC-/);
   });
 
+  it("a win-back link resumes the lead from the CRM; a referral link records who referred", async () => {
+    const c = chat("wb");
+    const [welcome, next] = await botTurn({ chat: c, text: "/start L00001" });
+    expect(welcome.text).toContain("Welcome back, Balaji Dental Care LLP");
+    expect(next.text).toBeTruthy();
+    const s = store.listSessions().find((x) => x.botChat?.chatId === id("wb"))!;
+    expect(s.leadId).toBe("L00001");
+    expect(s.language).toBe("ml");
+    expect(s.profile).toMatchObject({ city: "Kochi", employees: 20, hasGstin: true });
+
+    const r = chat("ref");
+    const [invited] = await botTurn({ chat: r, text: "Hi Udyam, I was referred REF-ACC-0123456789" });
+    expect(invited.text).toContain("invited you");
+    expect(store.listSessions().find((x) => x.botChat?.chatId === id("ref"))?.referredBy).toBe("ACC-0123456789");
+  });
+
   it("accepts '1,3' for multi-select on text channels", async () => {
     const c: BotChat = { channel: "whatsapp", chatId: `9187654${String(Date.now()).slice(-5)}` };
     const [needs] = await walk(c, ["c:type:Kirana store", "c:city:Jaipur", "c:emp:2", "c:gst:no", "c:cur:Mobile hotspot"]);

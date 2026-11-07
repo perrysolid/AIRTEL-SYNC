@@ -23,6 +23,18 @@ services:
         value: /var/data
       - key: PUBLIC_BASE_URL       # the Vercel URL — links in bot messages open the frontend
         sync: false
+      - key: DATABASE_URL          # Neon pooled connection string
+        sync: false
+      - key: AWS_ACCESS_KEY_ID     # Neon object storage (chat cards)
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_ENDPOINT_URL_S3
+        sync: false
+      - key: AWS_REGION
+        sync: false
+      - key: CRON_SECRET
+        generateValue: true
       - key: GEMINI_API_KEY
         sync: false
       - key: GROQ_API_KEY

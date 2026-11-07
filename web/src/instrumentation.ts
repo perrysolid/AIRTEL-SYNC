@@ -18,6 +18,12 @@ export async function register() {
     }
   }
 
+  // Stall reminders every 5 minutes on the always-on backend (NUDGES=off to disable).
+  if (process.env.NUDGES !== "off" && (process.env.RENDER_EXTERNAL_URL || process.env.NUDGES === "on")) {
+    const { runNudges } = await import("./lib/nudges");
+    setInterval(() => void runNudges().catch((e) => console.warn(`[nudges] ${(e as Error).message}`)), 5 * 60_000).unref();
+  }
+
   const base = process.env.BOT_WEBHOOK_BASE_URL ?? process.env.RENDER_EXTERNAL_URL;
   if (!base?.startsWith("https://") || !process.env.TELEGRAM_BOT_TOKEN) return;
   const { tg } = await import("./lib/bots/telegram");

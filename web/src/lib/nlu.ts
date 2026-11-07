@@ -85,6 +85,10 @@ export interface Parsed {
   sites?: number;
   hasGstin?: boolean;
   fibreAvailable?: boolean;
+  /** "under ₹3,000 a month" → most they want to pay. */
+  budget?: number;
+  /** "I pay 1,200 a month", "Jio 399 pm" → what they spend today. */
+  monthlySpend?: number;
   needs: Need[];
   number?: number;
   yes?: boolean;
@@ -120,6 +124,16 @@ export function parseUtterance(raw: string): Parsed {
   const numWord = "(\\d+|[०-९]+|" + Object.keys(WORD_NUMS).join("|") + ")";
   out.employees = num(new RegExp(`${numWord}\\s*(people|staff|employees|log|लोग|कर्मचारी|workers|members|person)`, "i"));
   out.sites = num(new RegExp(`${numWord}\\s*(sites|branches|stores|outlets|locations|shops|clinics|centres|centers|ब्रांच|दुकानें|जगह)`, "i"));
+  const money = (re: RegExp) => {
+    const m = text.match(re);
+    return m ? toNumber(m[1].replace(/,/g, "")) : undefined;
+  };
+  const amount = "(?:₹|rs\\.?|inr|rupees)?\\s*(\\d[\\d,]*)\\s*(?:k\\b)?";
+  out.budget = money(new RegExp(`(?:budget(?: is| of)?|under|below|within|upto|up to|max(?:imum)?|not more than|less than)\\s*${amount}`, "i"));
+  if (out.budget && /\d\s*k\b/i.test(text)) out.budget *= 1000;
+  out.monthlySpend = money(new RegExp(`(?:pay(?:ing)?|spend(?:ing)?|bill(?: is)?|plan of|costs?)\\D{0,20}?${amount}\\s*(?:pm|p\\.m\\.|per month|a month|\\/month|\\/mo|monthly|month)`, "i"))
+    ?? money(new RegExp(`${amount}\\s*(?:pm|p\\.m\\.|per month|a month|\\/month|\\/mo)\\b`, "i"));
+  if (out.budget !== undefined && out.budget === out.monthlySpend) out.monthlySpend = undefined;
   const bare = text.match(/^\s*(\d+|[०-९]+)\s*$/);
   if (bare) out.number = toNumber(bare[1]);
   else if (WORD_NUMS[text.toLowerCase()]) out.number = WORD_NUMS[text.toLowerCase()];
@@ -144,6 +158,8 @@ export function mergeParsed(p: Profile, parsed: Parsed): Profile {
     sites: parsed.sites ?? p.sites,
     hasGstin: parsed.hasGstin ?? p.hasGstin,
     fibreAvailable: parsed.fibreAvailable ?? p.fibreAvailable,
+    budget: parsed.budget ?? p.budget,
+    monthlySpend: parsed.monthlySpend ?? p.monthlySpend,
     needs: [...new Set([...p.needs, ...parsed.needs])],
   };
 }

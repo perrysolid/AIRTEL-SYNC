@@ -68,7 +68,9 @@ flowchart LR
 | `bots/core.ts`, `bots/telegram.ts`, `bots/whatsapp-cloud.ts`, `notify.ts`, `orders.ts` | Channel-agnostic bot, Telegram/WhatsApp adapters (buttons, lists, images, voice, signatures), order creation and update delivery |
 | `cards.tsx`, `api/card/*` | Quote and order-status card PNGs for the chats (Mukta font, rendered per request) |
 | `components/shop/*` | three.js shop scene: products as props, live/setting-up states |
-| `tracker.ts`, `store.ts` | Activation timelines, sessions/orders/consent/audit store |
+| `tracker.ts`, `store.ts`, `db.ts` | Activation timelines; sessions/orders/consent/audit store (in-memory, written through to Neon Postgres, loaded at boot; JSON file without a database) |
+| `media.ts` | Chat cards rendered once per update, uploaded to Neon Object Storage (private, 7-day signed links) and to WhatsApp media, so cards arrive with their message |
+| `winback.ts`, `budget.ts`, `nudges.ts` | Growth loops: personal win-back links that pre-fill the chat from the CRM, budget fitting, one reminder per stall inside the 24-hour window, referral links |
 | `analytics.ts` | Propensity scoring (trained by `scripts/train_propensity.py`) and funnel stats |
 | `privacy.ts` | Purposes, masking, redaction, hashing |
 
@@ -87,4 +89,4 @@ One codebase, two deployments. The frontend holds no secrets; see [deploy.md](de
 
 ## Production path
 
-JSON file store → Postgres (Supabase); in-process demo clock → event-driven workflow (provisioning webhooks); mock DigiLocker/e-sign/UPI → real APIs; WhatsApp test number → verified business number with approved `order_update` templates for updates outside the 24-hour window.
+in-process demo clock → event-driven workflow (provisioning webhooks); mock DigiLocker/e-sign/UPI → real APIs; WhatsApp test number → verified business number with approved `order_update` templates for updates outside the 24-hour window.
