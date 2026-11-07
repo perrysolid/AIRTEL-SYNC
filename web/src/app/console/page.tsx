@@ -31,7 +31,7 @@ export default function ConsolePage() {
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
           <div className="flex items-center gap-3">
             <Logo small />
-            <span className="rounded bg-ink px-2 py-0.5 text-xs font-semibold text-paper">Partner & sales console</span>
+            <span className="rounded bg-ink px-2 py-0.5 text-xs font-semibold text-white">Partner & sales console</span>
           </div>
           <button onClick={load} className="inline-flex items-center gap-1.5 text-sm text-ink-soft"><RefreshCw size={14} /> Refresh</button>
         </div>
@@ -75,7 +75,7 @@ export default function ConsolePage() {
                     {u.lastOwnerMessage && <p className="mt-1 text-sm text-ink-soft">Last said: “{u.lastOwnerMessage}”</p>}
                     <div className="mt-3 flex gap-2">
                       {u.quoteMonthly && <Link href={`/quote/${u.id}`} className="rounded-lg border border-rule px-3 py-1.5 text-sm font-semibold">Open quote ({inr(u.quoteMonthly)}/mo)</Link>}
-                      <button className="inline-flex items-center gap-1.5 rounded-lg bg-ink px-3 py-1.5 text-sm font-semibold text-paper"><PhoneCall size={14} /> Claim & call</button>
+                      <button className="inline-flex items-center gap-1.5 rounded-lg bg-ink px-3 py-1.5 text-sm font-semibold text-white"><PhoneCall size={14} /> Claim & call</button>
                     </div>
                   </article>
                 ))}

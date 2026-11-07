@@ -57,7 +57,7 @@ export default function PrivacyPage() {
               </label>
             )}
           </div>
-          <button className="mt-4 w-full rounded-xl bg-ink px-4 py-3 font-bold text-paper">Continue</button>
+          <button className="mt-4 w-full rounded-xl bg-ink px-4 py-3 font-bold text-white">Continue</button>
           {out && <pre className="mt-4 max-h-80 overflow-auto rounded-lg bg-paper p-3 text-xs whitespace-pre-wrap">{out}</pre>}
         </form>
       </main>

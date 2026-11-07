@@ -9,11 +9,13 @@
     "lint": "eslint",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "telegram": "node --env-file-if-exists=.env.local scripts/telegram-poll.mjs",
-    "telegram:webhook": "node --env-file-if-exists=.env.local scripts/telegram-webhook.mjs"
+    "telegram": "node --dns-result-order=ipv4first --env-file-if-exists=.env.local scripts/telegram-poll.mjs",
+    "telegram:webhook": "node --dns-result-order=ipv4first --env-file-if-exists=.env.local scripts/telegram-webhook.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.6.0",
+    "@react-three/drei": "^10.7.9",
+    "@react-three/fiber": "^9.8.2",
     "lucide-react": "^1.70.0",
     "motion": "^14.10.1",
     "next": "15.5.29",
@@ -21,6 +23,7 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "tesseract.js": "^7.0.0",
+    "three": "^0.180.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {
@@ -30,6 +33,7 @@
     "@types/papaparse": "^5.5.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/three": "^0.180.0",
     "eslint": "^9",
     "eslint-config-next": "15.5.29",
     "tailwindcss": "^4",

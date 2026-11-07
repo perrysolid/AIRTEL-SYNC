@@ -6,6 +6,8 @@ import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Check, Headphones, Keyboard, Loader2, Mic, Send, Square, UserRound } from "lucide-react";
 import { TopBar } from "@/components/Brand";
 import { Bill } from "@/components/Bill";
+import { Shop3D, VISUAL_LABEL } from "@/components/shop/Shop3D";
+import { useMedia } from "@/components/useMedia";
 import { Rich } from "@/components/Rich";
 import { useVoice } from "@/components/useVoice";
 import { LANGUAGES, type AdvisorEvent, type Chip } from "@/lib/advisor-types";
@@ -169,10 +171,13 @@ function Advisor() {
   const chips = !busy ? lastBot?.chips : undefined;
   const facts = profileFacts(profile);
   const hasBundle = msgs.some((m) => m.kind === "bundle");
+  const lastBundle = [...msgs].reverse().find((m) => m.kind === "bundle") as Extract<Msg, { kind: "bundle" }> | undefined;
+  const planIds = lastBundle ? lastBundle.quote.lines.filter((l) => l.active && !l.blockedReason).map((l) => l.productId) : [];
+  const desktop = useMedia("(min-width: 1024px)");
 
   return (
     <div className="flex h-dvh flex-col">
-      <TopBar>
+      <TopBar wide>
         <select
           aria-label="Language"
           value={lang}
@@ -189,7 +194,7 @@ function Advisor() {
             voice.stopSpeaking();
           }}
           aria-pressed={voiceMode}
-          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm ${voiceMode ? "border-ink bg-ink text-paper" : "border-rule bg-sheet"}`}
+          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm ${voiceMode ? "border-ink bg-ink text-white" : "border-rule bg-sheet"}`}
         >
           {voiceMode ? <Headphones size={15} /> : <Keyboard size={15} />} {voiceMode ? "Voice" : "Text"}
         </button>
@@ -206,17 +211,24 @@ function Advisor() {
         </div>
       )}
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto">
+      <div className="flex min-h-0 flex-1">
+      <div ref={scrollRef} className="min-w-0 flex-1 overflow-y-auto">
         <div className="mx-auto max-w-xl space-y-3 px-4 py-4" aria-live="polite">
           {msgs.map((m, i) =>
             m.kind === "user" ? (
-              <div key={i} className="ml-auto w-fit max-w-[85%] rounded-2xl rounded-br-md bg-ink px-4 py-2.5 text-paper">{m.text}</div>
+              <div key={i} className="chip-in ml-auto w-fit max-w-[85%] rounded-2xl rounded-br-md bg-ink px-4 py-2.5 text-white shadow-[var(--shadow-card)]">{m.text}</div>
             ) : m.kind === "bot" ? (
-              <div key={i} lang={lang} className="max-w-[92%] rounded-2xl rounded-bl-md bg-sheet px-4 py-3 leading-relaxed shadow-[0_1px_0_var(--rule)]">
+              <div key={i} lang={lang} className="chip-in max-w-[92%] rounded-2xl rounded-bl-md border border-rule bg-sheet px-4 py-3 leading-relaxed shadow-[var(--shadow-card)]">
                 <Rich text={m.text} />
               </div>
             ) : m.kind === "bundle" ? (
-              <div key={i} className="max-w-[92%]">
+              <div key={i} className="chip-in max-w-[92%]">
+                {!desktop && m === lastBundle && (
+                  <div className="card mb-3 overflow-hidden">
+                    <Shop3D items={planIds} className="h-60 w-full" />
+                    <div className="border-t border-rule px-4 py-2 text-sm text-ink-soft">Your shop, connected — {planIds.length} services</div>
+                  </div>
+                )}
                 <Bill quote={m.quote} businessName={profile?.businessName} compact />
                 <Link href={`/quote/${sessionRef.current}`} className="mt-2 flex items-center justify-center rounded-xl bg-marigold px-4 py-3 text-center font-bold text-ink">
                   Review and adjust my plan
@@ -246,7 +258,7 @@ function Advisor() {
                     key={c.value}
                     onClick={() => (chips.mode === "multi" ? setMulti((s) => (on ? s.filter((x) => x !== c.value) : [...s, c.value])) : void send(c.value, c.label))}
                     aria-pressed={chips.mode === "multi" ? on : undefined}
-                    className={`inline-flex items-center gap-1 rounded-full border px-3.5 py-2 text-[15px] transition-colors ${on ? "border-ink bg-ink text-paper" : "border-rule bg-sheet hover:border-ink-soft"}`}
+                    className={`chip-in inline-flex items-center gap-1 rounded-full border px-3.5 py-2 text-[15px] shadow-[var(--shadow-card)] transition-all ${on ? "border-ink bg-ink text-white" : "border-rule bg-sheet hover:-translate-y-0.5 hover:border-ink-soft"}`}
                   >
                     {on && <Check size={14} />} {c.label}
                   </button>
@@ -265,7 +277,27 @@ function Advisor() {
         </div>
       </div>
 
-      <div className="border-t border-rule bg-paper pb-[env(safe-area-inset-bottom)]">
+      {desktop && (
+        <aside className="relative hidden w-[46%] max-w-[720px] border-l border-rule bg-gradient-to-b from-sheet/60 to-transparent lg:block" aria-label="Your connected shop">
+          <Shop3D items={planIds} className="absolute inset-0" />
+          <div className="absolute inset-x-6 top-6">
+            <h2 className="text-xl font-extrabold tracking-tight">{planIds.length ? "Your shop, connected" : "Your shop"}</h2>
+            <p className="text-sm text-ink-soft">{planIds.length ? "Everything in your plan, in one place and one bill." : "Tell me about your business — I'll connect it piece by piece."}</p>
+          </div>
+          {planIds.length > 0 && (
+            <ul className="absolute inset-x-6 bottom-6 flex flex-wrap gap-2">
+              {planIds.map((id) => (
+                <li key={id} className="chip-in inline-flex items-center gap-1.5 rounded-full border border-rule bg-sheet/90 px-3 py-1 text-sm font-semibold shadow-[var(--shadow-card)] backdrop-blur">
+                  <span className="h-2 w-2 rounded-full bg-signal" /> {VISUAL_LABEL[id] ?? id}
+                </li>
+              ))}
+            </ul>
+          )}
+        </aside>
+      )}
+      </div>
+
+      <div className="border-t border-rule bg-sheet/80 pb-[env(safe-area-inset-bottom)] backdrop-blur">
         <div className="mx-auto max-w-xl px-4 py-3">
           {voiceMode ? (
             <div className="flex flex-col items-center gap-2">
@@ -304,7 +336,7 @@ function Advisor() {
                   <Mic size={20} />
                 </button>
               )}
-              <button disabled={busy || !input.trim()} className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-ink text-paper disabled:opacity-40" aria-label="Send">
+              <button disabled={busy || !input.trim()} className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-ink text-white disabled:opacity-40" aria-label="Send">
                 <Send size={18} />
               </button>
             </form>

@@ -10,7 +10,10 @@ beforeAll(() => {
 });
 afterEach(() => vi.unstubAllGlobals());
 
-const chat = (id: string): BotChat => ({ channel: "telegram", chatId: id });
+// The store persists between runs, so every run talks from fresh chats.
+const RUN = Date.now().toString(36);
+const id = (k: string) => `${k}-${RUN}`;
+const chat = (k: string): BotChat => ({ channel: "telegram", chatId: id(k) });
 
 async function walk(c: BotChat, steps: string[]) {
   let last = await botTurn({ chat: c, text: "/start", firstName: "Sunita" });
@@ -35,7 +38,7 @@ describe("chat bot core", () => {
 
     const [done] = await botTurn({ chat: c, text: "", firstName: "Sunita", phone: "+91 98123 45678" });
     expect(done.text).toMatch(/Order ACC-/);
-    const order = store.listOrders().find((o) => o.botChat?.chatId === "t2")!;
+    const order = store.listOrders().find((o) => o.botChat?.chatId === id("t2"))!;
     expect(order.phone).toBe("9812345678");
     expect(order.contactName).toBe("Sunita");
 
@@ -44,14 +47,14 @@ describe("chat bot core", () => {
   });
 
   it("WhatsApp uses the sender's number, so Order needs no extra step", async () => {
-    const c: BotChat = { channel: "whatsapp", chatId: "919876500001" };
+    const c: BotChat = { channel: "whatsapp", chatId: `9198765${String(Date.now()).slice(-5)}` };
     await walk(c, ["I have a dental clinic in Pune with 8 staff, we have GST", "needs:email"]);
-    const [m] = await botTurn({ chat: c, text: "a:order", phone: "919876500001", firstName: "Asha" });
+    const [m] = await botTurn({ chat: c, text: "a:order", phone: c.chatId, firstName: "Asha" });
     expect(m.text).toMatch(/Order ACC-/);
   });
 
   it("accepts '1,3' for multi-select on text channels", async () => {
-    const c: BotChat = { channel: "whatsapp", chatId: "919876500002" };
+    const c: BotChat = { channel: "whatsapp", chatId: `9187654${String(Date.now()).slice(-5)}` };
     const [needs] = await walk(c, ["c:type:Kirana store", "c:city:Jaipur", "c:emp:2", "c:gst:no"]);
     expect(needs.multi).toBe(true);
     const [bundle] = await botTurn({ chat: c, text: "1,2", phone: c.chatId });
@@ -65,11 +68,11 @@ describe("chat bot core", () => {
       calls.push({ url, body: JSON.parse(init.body as string) });
       return Response.json({ ok: true, result: { message_id: 1 } });
     }));
-    const order = store.listOrders().find((o) => o.botChat?.chatId === "t2")!;
+    const order = store.listOrders().find((o) => o.botChat?.chatId === id("t2"))!;
     notifyOrder(order, "✅ Business verified");
     await vi.waitFor(() => expect(calls).toHaveLength(1));
     expect(calls[0].url).toContain("/bot123:abc/sendMessage");
-    expect(calls[0].body).toMatchObject({ chat_id: "t2" });
+    expect(calls[0].body).toMatchObject({ chat_id: id("t2") });
     delete process.env.TELEGRAM_BOT_TOKEN;
   });
 });

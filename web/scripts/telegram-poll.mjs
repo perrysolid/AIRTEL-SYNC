@@ -8,14 +8,22 @@ if (!TOKEN) {
   console.error("Set TELEGRAM_BOT_TOKEN in web/.env.local (get one from @BotFather).");
   process.exit(1);
 }
-const api = async (method, body = {}) => {
-  const r = await fetch(`https://api.telegram.org/bot${TOKEN}/${method}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-  const j = await r.json();
-  if (!j.ok) throw new Error(`${method}: ${j.description}`);
-  return j.result;
+// Retries network failures (flaky links, IPv6 timeouts); API errors fail fast.
+const api = async (method, body = {}, tries = 4) => {
+  for (let i = 1; ; i++) {
+    try {
+      const r = await fetch(`https://api.telegram.org/bot${TOKEN}/${method}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal: AbortSignal.timeout(45_000) });
+      const j = await r.json();
+      if (!j.ok) throw Object.assign(new Error(`${method}: ${j.description}`), { api: true });
+      return j.result;
+    } catch (err) {
+      if (err.api || i >= tries) throw err;
+      await new Promise((r) => setTimeout(r, 1000 * i));
+    }
+  }
 };
 
-await import("./telegram-profile.mjs").then((m) => m.setupProfile(api));
+await import("./telegram-profile.mjs").then((m) => m.setupProfile(api)).catch((err) => console.warn("profile setup skipped:", err.message));
 await api("deleteWebhook", { drop_pending_updates: false });
 const me = await api("getMe");
 console.log(`🤖 @${me.username} is live — open https://t.me/${me.username} and say hi. Forwarding to ${BASE}/api/telegram`);

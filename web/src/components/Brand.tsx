@@ -14,10 +14,10 @@ export function Logo({ small = false }: { small?: boolean }) {
   );
 }
 
-export function TopBar({ children }: { children?: React.ReactNode }) {
+export function TopBar({ children, wide = false }: { children?: React.ReactNode; wide?: boolean }) {
   return (
-    <header className="sticky top-0 z-20 border-b border-rule bg-paper/90 backdrop-blur">
-      <div className="mx-auto flex h-14 max-w-xl items-center justify-between gap-3 px-4">
+    <header className="sticky top-0 z-20 border-b border-rule bg-sheet/75 backdrop-blur-md">
+      <div className={`mx-auto flex h-14 items-center justify-between gap-3 px-4 ${wide ? "max-w-6xl" : "max-w-xl"}`}>
         <Logo small />
         <div className="flex items-center gap-2">{children}</div>
       </div>

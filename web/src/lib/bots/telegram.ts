@@ -9,12 +9,21 @@ export function telegramEnabled() {
 export async function tg<T = unknown>(method: string, body: Record<string, unknown> = {}): Promise<T> {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   if (!token) throw new Error("TELEGRAM_BOT_TOKEN not set");
-  const r = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-    signal: AbortSignal.timeout(20_000),
-  });
+  let r: Response | undefined;
+  // Retry network failures only; a rejected request won't succeed on retry.
+  for (let i = 1; !r; i++) {
+    try {
+      r = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(20_000),
+      });
+    } catch (err) {
+      if (i >= 3) throw err;
+      await new Promise((res) => setTimeout(res, 800 * i));
+    }
+  }
   const j = await r.json();
   if (!j.ok) throw new Error(`Telegram ${method}: ${j.description}`);
   return j.result as T;

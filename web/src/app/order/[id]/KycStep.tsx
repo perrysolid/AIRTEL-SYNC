@@ -93,7 +93,7 @@ export function KycStep({ order, onUpdate }: { order: PublicOrder; onUpdate: (o:
         <p className="mt-1 text-sm text-ink-soft">Your GST and Udyam records come straight from the government — nothing to photograph, nothing to mistype.</p>
         <div className="mt-3 flex gap-2">
           <input value={gstin} onChange={(e) => setGstin(e.target.value.toUpperCase())} maxLength={15} placeholder="Your 15-character GSTIN" className="min-w-0 flex-1 rounded-lg border border-rule bg-paper px-3 py-2.5 font-mono uppercase placeholder:font-sans placeholder:normal-case" aria-label="GSTIN" />
-          <button onClick={digilocker} disabled={gstin.length < 15 || !!busy} className="rounded-lg bg-ink px-4 font-semibold text-paper disabled:opacity-40">Fetch</button>
+          <button onClick={digilocker} disabled={gstin.length < 15 || !!busy} className="rounded-lg bg-ink px-4 font-semibold text-white disabled:opacity-40">Fetch</button>
         </div>
       </div>
 

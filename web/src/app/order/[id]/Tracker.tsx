@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CheckCircle2, Circle, CircleDot, FastForward, RadioTower } from "lucide-react";
 import type { PublicOrder } from "@/lib/order-view";
 import { act } from "./SignPay";
+import { Shop3D } from "@/components/shop/Shop3D";
 
 function status(dueDay: number, doneAtDay: number | undefined, clock: number) {
   if (doneAtDay !== undefined || dueDay <= clock) return "done";
@@ -16,6 +17,7 @@ export function Tracker({ order, onUpdate }: { order: PublicOrder; onUpdate: (o:
   const t = order.timeline;
   const [busy, setBusy] = useState(false);
   const allLive = t.clockDay >= order.liveDay;
+  const live = t.tracks.filter((tr) => tr.steps.every((s) => status(s.dueDay, s.doneAtDay, t.clockDay) === "done")).flatMap((tr) => tr.productIds);
   const run = async (action: string) => {
     setBusy(true);
     try {
@@ -28,7 +30,14 @@ export function Tracker({ order, onUpdate }: { order: PublicOrder; onUpdate: (o:
   return (
     <section>
       <h2 className="text-2xl font-extrabold">{allLive ? "Everything is live" : `Day ${t.clockDay} of ${order.liveDay}`}</h2>
-      <p className="mt-1 text-ink-soft">{allLive ? "One bill, one support number. Reply HELP on WhatsApp any time." : "Each service switches on as soon as it's ready — you don't have to wait for all of them."}</p>
+      <div className="card relative mt-4 h-64 overflow-hidden sm:h-72">
+        <Shop3D items={order.lines.map((l) => l.productId)} live={live} className="absolute inset-0" />
+        <div className="absolute top-3 left-3 flex gap-2 text-xs font-semibold">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-sheet/90 px-2.5 py-1 backdrop-blur"><span className="h-2 w-2 rounded-full bg-signal" /> Live</span>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-sheet/90 px-2.5 py-1 backdrop-blur"><span className="h-2 w-2 rounded-full bg-marigold" /> Setting up</span>
+        </div>
+      </div>
+      <p className="mt-3 text-ink-soft">{allLive ? "One bill, one support number. Reply HELP on WhatsApp any time." : "Each service switches on as soon as it's ready — you don't have to wait for all of them."}</p>
 
       <div className="mt-4 space-y-3">
         {t.tracks.map((tr) => {
@@ -59,7 +68,7 @@ export function Tracker({ order, onUpdate }: { order: PublicOrder; onUpdate: (o:
       <div className="mt-4 rounded-xl border border-dashed border-rule p-3">
         <div className="text-sm font-semibold text-ink-soft">Demo controls</div>
         <div className="mt-2 flex flex-wrap gap-2">
-          <button disabled={busy || allLive} onClick={() => run("next_day")} className="inline-flex items-center gap-1.5 rounded-lg bg-ink px-3 py-2 text-sm font-semibold text-paper disabled:opacity-40">
+          <button disabled={busy || allLive} onClick={() => run("next_day")} className="inline-flex items-center gap-1.5 rounded-lg bg-ink px-3 py-2 text-sm font-semibold text-white disabled:opacity-40">
             <FastForward size={15} /> Next day
           </button>
           <button disabled={busy || !t.tracks.some((x) => x.productIds.some((id) => ["P01", "P02", "P03"].includes(id)))} onClick={() => run("fibre_not_feasible")} className="inline-flex items-center gap-1.5 rounded-lg border border-rule bg-sheet px-3 py-2 text-sm font-semibold disabled:opacity-40">

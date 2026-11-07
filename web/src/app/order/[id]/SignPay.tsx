@@ -47,7 +47,7 @@ export function EsignStep({ order, onUpdate }: { order: PublicOrder; onUpdate: (
           <label className="block text-sm font-semibold" htmlFor="otp">Enter the 6-digit OTP <span className="font-normal text-ink-soft">(demo: any 6 digits)</span></label>
           <div className="mt-1 flex gap-2">
             <input id="otp" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))} className="min-w-0 flex-1 rounded-lg border border-rule bg-sheet px-3 py-2.5 text-center font-mono text-xl tracking-[0.4em]" />
-            <button disabled={otp.length !== 6} className="rounded-lg bg-ink px-5 font-semibold text-paper disabled:opacity-40">Sign</button>
+            <button disabled={otp.length !== 6} className="rounded-lg bg-ink px-5 font-semibold text-white disabled:opacity-40">Sign</button>
           </div>
           {error && <p role="alert" className="mt-2 text-bad">{error}</p>}
         </form>
