@@ -1,7 +1,8 @@
 import { advisorTurn } from "../advisor";
 import type { AdvisorEvent } from "../advisor-types";
 import { aiProviders } from "../ai";
-import { transcribeAudio } from "../gemini";
+import { transcribeAudio as geminiTranscribe } from "../gemini";
+import { transcribeAudio as groqTranscribe } from "../groq";
 import { createOrder } from "../orders";
 import { sha256 } from "../privacy";
 import { store, type AdvisorSession, type BotChat, type Order } from "../store";
@@ -129,15 +130,19 @@ export async function botTurn(input: BotInput): Promise<BotMessage[]> {
   return out;
 }
 
-/** Voice notes: transcribe with Gemini, then treat like typed text. */
+/** Voice notes: transcribe with Gemini (or Groq Whisper), then treat like typed text. */
 export async function transcribeVoice(data: Buffer, mimeType: string): Promise<string | undefined> {
-  if (!aiProviders().includes("gemini")) return undefined;
-  try {
-    return await transcribeAudio(data, mimeType);
-  } catch (err) {
-    console.warn(`[bot] voice transcription failed: ${(err as Error).message}`);
-    return undefined;
+  for (const p of aiProviders()) {
+    const transcribe = p === "groq" ? groqTranscribe : p === "gemini" ? geminiTranscribe : undefined;
+    if (!transcribe) continue;
+    try {
+      const text = await transcribe(data, mimeType);
+      if (text) return text;
+    } catch (err) {
+      console.warn(`[bot] ${p} voice transcription failed: ${(err as Error).message}`);
+    }
   }
+  return undefined;
 }
 
 export const VOICE_UNAVAILABLE: BotMessage = { text: "I couldn't listen to that voice note right now — please type your message instead. 🙏" };

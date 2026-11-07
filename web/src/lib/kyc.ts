@@ -104,7 +104,11 @@ export function validateKyc(docs: KycDocs, today: Date = CASE_TODAY): KycResult 
       add({ id: "gstin_missing", doc: "gst_certificate", status: "fail", title: "GSTIN not found on certificate", detail: "We couldn't find a GSTIN on the uploaded document.", fix: "Upload the GST registration certificate (REG-06) or type your GSTIN" });
     } else {
       const look = lookupGstin(f.gstin);
-      if (!look.check.formatOk) {
+      // A blurry photo yields guessed characters; that's a retake, not a forged number.
+      const shaky = gst.qualityIssues.some((q) => /blur|low light|dark|glare|cropped/i.test(q));
+      if (shaky && !look.record) {
+        add({ id: "gst_certificate_illegible", doc: "gst_certificate", status: "fail", title: "GSTIN not clearly readable", detail: `The photo looks ${gst.qualityIssues.join(", ")} and the number we read (${look.gstin}) doesn't check out, so we won't guess.`, fix: "Retake the photo of your GST certificate in good light, flat and in focus" });
+      } else if (!look.check.formatOk) {
         add({ id: "gstin_format", doc: "gst_certificate", status: "fail", title: "GSTIN format invalid", detail: look.check.error ?? "Invalid format", fix: "Check the GSTIN and upload a clearer copy" });
       } else if (!look.check.checksumOk) {
         add({ id: "gstin_checksum", doc: "gst_certificate", status: "fail", title: "GSTIN check digit fails", detail: `${look.gstin} fails the GSTIN checksum — one character is wrong or the number has been altered.`, fix: "Our team will verify this manually; please keep the original certificate handy" });

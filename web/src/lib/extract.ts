@@ -3,16 +3,17 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
 import { aiProviders, anthropic, EXTRACT_MODEL, pauseProvider } from "./ai";
 import { GEMINI_EXTRACT_MODEL, GeminiError, generate, thinking } from "./gemini";
+import { GROQ_VISION_MODEL, GroqError, chat } from "./groq";
 import { ExtractedDocSchema, type DocType, type ExtractedDoc } from "./kyc-types";
 
 /**
  * Reads a KYC document image into structured fields.
- * Primary: Gemini (or Claude) vision with a strict output schema (handles rotation, blur
+ * Primary: Gemini (or Groq, or Claude) vision with a strict output schema (handles rotation, blur
  * detection and odd layouts). Fallback: on-device Tesseract OCR + label parsing.
  * Images are processed in memory and never written to disk.
  */
 
-export type ExtractEngine = "gemini-vision" | "claude-vision" | "tesseract";
+export type ExtractEngine = "groq-vision" | "gemini-vision" | "claude-vision" | "tesseract";
 
 export interface ExtractionResult {
   doc: ExtractedDoc;
@@ -65,6 +66,29 @@ async function extractWithGemini(image: Buffer, mediaType: string): Promise<Extr
   const parsed = ExtractedDocSchema.safeParse(JSON.parse(text));
   return parsed.success ? parsed.data : undefined;
 }
+
+/** Groq has JSON mode but no schema enforcement, so the schema goes in the prompt and zod checks the result. */
+async function extractWithGroq(image: Buffer, mediaType: string): Promise<ExtractedDoc | undefined> {
+  const res = await chat({
+    model: GROQ_VISION_MODEL,
+    temperature: 0,
+    response_format: { type: "json_object" },
+    messages: [
+      {
+        role: "user",
+        content: [
+          { type: "text", text: `${PROMPT}\n\nReply with one JSON object matching this JSON Schema:\n${JSON.stringify(EXTRACT_JSON_SCHEMA)}` },
+          { type: "image_url", image_url: { url: `data:${mediaType};base64,${image.toString("base64")}` } },
+        ],
+      },
+    ],
+  });
+  if (!res.content) return undefined;
+  const parsed = ExtractedDocSchema.safeParse(JSON.parse(res.content));
+  return parsed.success ? parsed.data : undefined;
+}
+
+const ENGINES = { groq: [extractWithGroq, "groq-vision"], gemini: [extractWithGemini, "gemini-vision"], anthropic: [extractWithClaude, "claude-vision"] } as const;
 
 // ---------------------------------------------------------------------------
 // Tesseract fallback
@@ -160,12 +184,14 @@ export async function extractDocument(image: Buffer, mediaType: "image/png" | "i
   const t0 = Date.now();
   for (const provider of aiProviders()) {
     try {
-      const doc = provider === "gemini" ? await extractWithGemini(image, mediaType) : await extractWithClaude(image, mediaType);
-      if (doc) return { doc: withHint(doc, hint), engine: provider === "gemini" ? "gemini-vision" : "claude-vision", ms: Date.now() - t0 };
+      const [extract, engine] = ENGINES[provider];
+      const doc = await extract(image, mediaType);
+      if (doc) return { doc: withHint(doc, hint), engine, ms: Date.now() - t0 };
     } catch (err) {
       // Fall through to the next provider, then on-device OCR, so KYC never blocks on a model.
-      const status = err instanceof GeminiError || err instanceof Anthropic.APIError ? err.status : undefined;
-      if (status && [401, 402, 403, 429].includes(status)) pauseProvider(provider);
+      const status = err instanceof GeminiError || err instanceof GroqError || err instanceof Anthropic.APIError ? err.status : undefined;
+      // A 429 here is the vision model's own rate limit; don't pause the advisor for it.
+      if (status && [401, 402, 403].includes(status)) pauseProvider(provider, status);
       console.warn(`[extract] ${provider} vision failed (${status ?? (err as Error).message}); trying next engine`);
     }
   }

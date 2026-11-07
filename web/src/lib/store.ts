@@ -1,4 +1,5 @@
 import type { GeminiContent } from "./gemini";
+import type { GroqMessage } from "./groq";
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
@@ -35,6 +36,7 @@ export interface AdvisorSession {
   /** Full model transcripts (AI mode) — kept server-side only. */
   messages: Anthropic.Beta.BetaMessageParam[];
   geminiContents?: GeminiContent[];
+  groqMessages?: GroqMessage[];
   /** Plain transcript for the UI and for partner hand-off summaries. */
   transcript: { role: "user" | "assistant"; text: string; at: string }[];
   recommendation?: Recommendation;

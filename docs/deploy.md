@@ -9,7 +9,7 @@ flowchart LR
   TG[Telegram] -->|webhook| R
   WA[WhatsApp Cloud API] -->|webhook| R
   R --> D[(Persistent disk: store.json)]
-  R --> G[Gemini / Claude]
+  R --> G[Gemini / Groq / Claude]
 ```
 
 - **Backend (Render)** runs every `/api/*` route: advisor, quote, orders, Smart KYC, the store, and the Telegram and WhatsApp webhooks. It holds all secrets.
@@ -19,7 +19,7 @@ flowchart LR
 
 1. Render dashboard → **New → Blueprint** → connect `perrysolid/AIRTEL-SYNC`. Render reads `render.yaml`.
 2. Fill in the secret env vars it asks for (copy from `web/.env.local`):
-   `GEMINI_API_KEY`, `TELEGRAM_BOT_TOKEN`, `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_APP_SECRET`, and optionally `ANTHROPIC_API_KEY`.
+   `GEMINI_API_KEY`, `GROQ_API_KEY`, `TELEGRAM_BOT_TOKEN`, `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_APP_SECRET`, and optionally `ANTHROPIC_API_KEY`.
    Leave `PUBLIC_BASE_URL` for step 3. `TELEGRAM_WEBHOOK_SECRET` is generated.
 3. Deploy. Check `https://<service>.onrender.com/api/health` shows `"ok": true`.
 

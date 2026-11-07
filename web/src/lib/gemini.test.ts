@@ -7,6 +7,7 @@ import type { GeminiPart } from "./gemini";
 beforeAll(() => {
   delete process.env.AI_DISABLED;
   delete process.env.ANTHROPIC_API_KEY;
+  delete process.env.GROQ_API_KEY;
   process.env.GEMINI_API_KEY = "test-key";
 });
 afterEach(() => vi.unstubAllGlobals());
