@@ -64,6 +64,8 @@ export const ProfileSchema = z.object({
   currentProvider: z.string().optional(),
   monthlySpend: z.number().min(0).optional(),
   fibreAvailable: z.boolean().optional(),
+  /** Install-address pincode, set by the Network Reality Check. */
+  pincode: z.string().regex(/^[1-9]\d{5}$/).optional(),
   needs: z.array(z.enum(NEEDS)).default([]),
   /** Quantities the owner told us; anything missing is inferred from size. */
   mobileLines: z.number().int().min(0).max(1000).optional(),

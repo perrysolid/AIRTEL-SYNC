@@ -54,7 +54,10 @@ export default function Home() {
     <div className="min-h-dvh">
       <header className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
         <Logo />
-        <nav className="flex items-center gap-4 text-sm font-medium text-ink-soft">
+        <nav aria-label="Main" className="flex items-center gap-4 text-sm font-medium text-ink-soft">
+          {[["Solutions", "/solutions"], ["Products", "/products"], ["How it works", "/how-it-works"], ["Scam Shield", "/shield"], ["Help", "/help"]].map(([l, h]) => (
+            <Link key={h} href={h} className="hidden underline-offset-4 hover:underline lg:inline">{l}</Link>
+          ))}
           <a href="#track" className="hidden underline-offset-4 hover:underline sm:inline">Track order</a>
           <Link href="/console" className="underline-offset-4 hover:underline">Partner console</Link>
         </nav>
@@ -130,6 +133,31 @@ export default function Home() {
           </form>
         </section>
       </main>
+
+      <section aria-labelledby="tools" className="border-t border-rule">
+        <div className="mx-auto max-w-6xl px-4 py-12">
+          <h2 id="tools" className="text-2xl font-extrabold tracking-tight">Beyond the sale: tools that keep your business running</h2>
+          <p className="mt-1 max-w-2xl text-ink-soft">Free to try, no sign-up. They also work as commands in WhatsApp and Telegram.</p>
+          <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              ["🛡️", "Scam Shield", "Forward a suspicious message, link or payment screenshot. Get a verdict, the red flags and what to do next.", "/shield"],
+              ["📡", "Network Reality Check", "Know what can be installed at your pincode before you pay. No fibre? We switch you to 5G AirFiber.", "/network"],
+              ["💓", "Health & backup", "Service status, automatic tickets with an SLA, and a backup link that keeps your billing running.", "/solutions"],
+              ["📅", "Installation slots", "Book and reschedule the technician visit yourself. Two free reschedules, no phone calls.", "/help"],
+              ["🏪", "Branch-in-a-Box", "Opening a second shop? Copy your setup, reuse your KYC and book the install in one tap.", "/solutions"],
+              ["💬", "Everything in chat", "SHIELD, NETWORK, SCHEDULE, TROUBLE, BRANCH and BACKUP work in WhatsApp and Telegram.", "/whatsapp"],
+            ].map(([icon, title, text, href]) => (
+              <li key={title}>
+                <Link href={href} className="card flex h-full flex-col gap-1 p-5 transition-transform hover:-translate-y-0.5">
+                  <span className="text-3xl" aria-hidden>{icon}</span>
+                  <h3 className="mt-1 text-lg font-bold">{title}</h3>
+                  <p className="text-ink-soft">{text}</p>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
 
       <section aria-labelledby="how" className="border-t border-rule bg-sheet/70">
         <div className="mx-auto max-w-6xl px-4 py-12">

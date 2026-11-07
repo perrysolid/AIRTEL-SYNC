@@ -167,6 +167,13 @@ async function ocrWorker(): Promise<TesseractWorker> {
   return g.__ocrWorker;
 }
 
+/** Plain on-device OCR (no document parsing). Used by Scam Shield to read a forwarded screenshot; nothing is stored. */
+export async function ocrPlainText(image: Buffer): Promise<string> {
+  const worker = await ocrWorker();
+  const { data } = await worker.recognize(image, { rotateAuto: true });
+  return data.text ?? "";
+}
+
 async function extractWithTesseract(image: Buffer): Promise<ExtractedDoc> {
   const worker = await ocrWorker();
   const { data } = await worker.recognize(image, { rotateAuto: true });

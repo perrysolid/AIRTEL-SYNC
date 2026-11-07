@@ -71,6 +71,20 @@ flowchart LR
 | `analytics.ts` | Propensity scoring (trained by `scripts/train_propensity.py`) and funnel stats |
 | `privacy.ts` | Purposes, masking, redaction, hashing |
 
+## Added on the `nanki` branch (`web/src/lib`)
+
+| Module | Role |
+|---|---|
+| `scam.ts` | Scam Shield rules engine (pure functions, English + Hindi, nothing stored) |
+| `network.ts`, `network-session.ts` | Pincode serviceability (simulated), AirFiber fallback, re-quote of an open session |
+| `scheduler.ts` | Installation slots and reschedules; moves the internet track's install step |
+| `continuity.ts` | Outage simulation, tickets with SLA and partner routing, backup add-on, speed check |
+| `branch.ts` | Branch-in-a-Box: per-site copy, network check, reused KYC/consent, branch order |
+| `partners.ts` | Synthetic partner pool for escalation |
+| `bots/features.ts` | SHIELD, NETWORK, SCHEDULE, TROUBLE, BRANCH, BACKUP for every chat channel; per-chat flow state in the store |
+
+These reuse the existing rules engine, pricing, store, tracker and notification paths; new `Order` fields are optional so older stores still load.
+
 ## Deployment
 
 ```mermaid

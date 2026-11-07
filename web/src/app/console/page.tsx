@@ -13,7 +13,13 @@ const pct = (x: number | null | undefined, d = 1) => (x === null || x === undefi
 
 export default function ConsolePage() {
   const [data, setData] = useState<ConsoleData>();
-  const [tab, setTab] = useState<"queue" | "calls" | "orders" | "insights">("queue");
+  const [tab, setTab] = useState<"queue" | "calls" | "orders" | "service" | "insights">("queue");
+  const [nudged, setNudged] = useState<Record<string, string>>({});
+  const nudge = async (id: string) => {
+    const r = await fetch("/api/console/nudge", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sessionId: id }) });
+    const j = await r.json();
+    setNudged((n) => ({ ...n, [id]: r.ok ? "Nudge sent ✓" : j.error }));
+  };
   const load = async () => setData(await (await fetch("/api/console", { cache: "no-store" })).json());
   useEffect(() => {
     void load();
@@ -50,6 +56,7 @@ export default function ConsolePage() {
             ["queue", `Advisor hand-offs (${data.unclosed.length})`],
             ["calls", "Who to call today"],
             ["orders", `Orders (${data.orders.length})`],
+            ["service", `Service health (${data.service.tickets.filter((t: any) => t.status === "Open").length} open)`],
             ["insights", "Funnel insights"],
           ] as const).map(([k, label]) => (
             <button key={k} onClick={() => setTab(k)} aria-pressed={tab === k} className={`-mb-px border-b-2 px-3 py-2 text-sm font-semibold ${tab === k ? "border-ink" : "border-transparent text-ink-soft"}`}>
@@ -76,9 +83,42 @@ export default function ConsolePage() {
                     <div className="mt-3 flex gap-2">
                       {u.quoteMonthly && <Link href={`/quote/${u.id}`} className="rounded-lg border border-rule px-3 py-1.5 text-sm font-semibold">Open quote ({inr(u.quoteMonthly)}/mo)</Link>}
                       <button className="inline-flex items-center gap-1.5 rounded-lg bg-ink px-3 py-1.5 text-sm font-semibold text-white"><PhoneCall size={14} /> Claim & call</button>
+                      {u.canNudge && <button onClick={() => nudge(u.id)} className="rounded-lg border border-rule px-3 py-1.5 text-sm font-semibold">🔔 Nudge in chat</button>}
                     </div>
+                    {nudged[u.id] && <p role="status" className="mt-2 text-sm font-medium text-ink-soft">{nudged[u.id]}</p>}
                   </article>
                 ))}
+              </div>
+            )}
+          </section>
+        )}
+
+        {tab === "service" && (
+          <section className="mt-4">
+            <p className="text-ink-soft">Support tickets raised automatically (outages) or by owners in chat, routed to the partner for their city with an SLA.</p>
+            <div className="mt-3 grid gap-3 sm:grid-cols-3">
+              <Kpi label="Active outages" value={String(data.service.activeOutages)} target="live from router telemetry in production" />
+              <Kpi label="Branches opened" value={String(data.service.branches)} target="Branch-in-a-Box orders" />
+              <Kpi label="Install slots booked" value={String(data.service.booked)} target="self-serve scheduler" />
+            </div>
+            {data.service.tickets.length === 0 ? (
+              <p className="mt-6 rounded-xl border border-dashed border-rule p-6 text-center text-ink-soft">No tickets yet. Open an order, go to Health &amp; backup and simulate an outage to see one appear here.</p>
+            ) : (
+              <div className="mt-4 overflow-x-auto rounded-xl border border-rule bg-sheet">
+                <table className="w-full min-w-[640px] text-left text-sm">
+                  <thead className="border-b border-rule text-ink-soft"><tr><th className="p-3">Ticket</th><th className="p-3">Business</th><th className="p-3">Issue</th><th className="p-3">Assigned to</th><th className="p-3">Status</th></tr></thead>
+                  <tbody>
+                    {data.service.tickets.map((t: any) => (
+                      <tr key={t.id} className="border-b border-rule last:border-0">
+                        <td className="p-3 font-mono">{t.id}</td>
+                        <td className="p-3"><div className="font-semibold">{t.business}</div><div className="text-ink-soft">{t.city} · <Link href={`/order/${t.orderId}`} className="underline">{t.orderId}</Link></div></td>
+                        <td className="p-3">{t.kind.replace("_", " ")}<div className="text-ink-soft">{t.detail}</div></td>
+                        <td className="p-3">{t.assignedTo}</td>
+                        <td className="p-3"><span className={`rounded px-2 py-0.5 text-xs font-bold ${t.status === "Resolved" ? "bg-ok/15 text-ok" : "bg-marigold/25 text-warn"}`}>{t.status} · SLA {t.slaHours}h</span></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </section>

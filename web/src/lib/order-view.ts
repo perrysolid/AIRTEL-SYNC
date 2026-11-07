@@ -49,6 +49,18 @@ export function publicOrder(o: Order) {
     liveDay: liveDay(o.timeline),
     steps,
     notifications: o.notifications,
+    pincode: o.pincode,
+    slot: o.slot,
+    reschedules: o.reschedules ?? 0,
+    outageActive: !!o.outageActive,
+    incidents: o.incidents ?? [],
+    tickets: o.tickets ?? [],
+    hasFailover: o.lines.some((l) => l.productId === "P09"),
+    parentId: o.parentId,
+    branches: o.branches ?? [],
+    pendingDocs: o.pendingDocs ?? [],
+    segment: o.profile.segment,
+    sites: o.profile.sites ?? 1,
   };
 }
 export type PublicOrder = ReturnType<typeof publicOrder>;

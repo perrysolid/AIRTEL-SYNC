@@ -25,6 +25,7 @@ export async function GET() {
       reason: s.handoff?.reason ?? (s.status === "quoted" ? "Got a quote but didn't order" : "Dropped mid-conversation"),
       lastOwnerMessage: readable([...s.transcript].reverse().find((t) => t.role === "user" && t.text)?.text)?.slice(0, 140),
       quoteMonthly: s.quote?.monthly,
+      canNudge: !!s.botChat && !!s.quote && s.status !== "handoff",
     }));
 
   return Response.json({
@@ -58,6 +59,12 @@ export async function GET() {
       kycIssues: o.kyc?.result.checks.filter((c) => c.status === "fail").map((c) => c.title) ?? [],
       stage: o.payment ? (o.timeline.clockDay >= liveDay(o.timeline) ? "Live" : `Activating (day ${o.timeline.clockDay}/${liveDay(o.timeline)})`) : o.esign ? "Awaiting payment" : o.kyc?.result.verdict === "verified" ? "Awaiting e-sign" : "KYC",
     })),
+    service: {
+      activeOutages: orders.filter((o) => o.outageActive).length,
+      branches: orders.filter((o) => o.parentId).length,
+      booked: orders.filter((o) => o.slot).length,
+      tickets: orders.flatMap((o) => (o.tickets ?? []).map((t) => ({ ...t, orderId: o.id, business: o.businessName, city: o.city }))).sort((a, b) => b.at.localeCompare(a.at)).slice(0, 40),
+    },
     consents: { total: store.listConsents().length, ledgerHead: store.listConsents().at(-1)?.hash.slice(0, 16) },
     audit: store.listAudit().slice(-25).reverse(),
   });

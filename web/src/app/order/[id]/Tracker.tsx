@@ -5,6 +5,10 @@ import { CheckCircle2, Circle, CircleDot, FastForward, RadioTower } from "lucide
 import type { PublicOrder } from "@/lib/order-view";
 import { act } from "./SignPay";
 import { Shop3D } from "@/components/shop/Shop3D";
+import { BranchPanel, HealthPanel, SlotPanel } from "./Extras";
+
+const TABS = [["progress", "Progress"], ["slot", "Install slot"], ["health", "Health & backup"], ["branch", "New branch"]] as const;
+type Tab = (typeof TABS)[number][0];
 
 function status(dueDay: number, doneAtDay: number | undefined, clock: number) {
   if (doneAtDay !== undefined || dueDay <= clock) return "done";
@@ -16,6 +20,11 @@ function status(dueDay: number, doneAtDay: number | undefined, clock: number) {
 export function Tracker({ order, onUpdate }: { order: PublicOrder; onUpdate: (o: PublicOrder) => void }) {
   const t = order.timeline;
   const [busy, setBusy] = useState(false);
+  // ?tab=slot|health|branch deep-links straight to a panel (the tracker only renders client-side, so reading the URL here is safe)
+  const [tab, setTab] = useState<Tab>(() => {
+    const t = typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("tab");
+    return TABS.some(([k]) => k === t) ? (t as Tab) : "progress";
+  });
   const allLive = t.clockDay >= order.liveDay;
   const live = t.tracks.filter((tr) => tr.steps.every((s) => status(s.dueDay, s.doneAtDay, t.clockDay) === "done")).flatMap((tr) => tr.productIds);
   const run = async (action: string) => {
@@ -29,6 +38,18 @@ export function Tracker({ order, onUpdate }: { order: PublicOrder; onUpdate: (o:
 
   return (
     <section>
+      <div role="tablist" aria-label="Order sections" className="no-scrollbar -mx-4 mb-4 flex gap-2 overflow-x-auto px-4">
+        {TABS.map(([k, label]) => (
+          <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)} className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold ${tab === k ? "border-ink bg-ink text-white" : "border-rule bg-sheet text-ink-soft"}`}>{label}</button>
+        ))}
+      </div>
+      {tab === "slot" && <SlotPanel order={order} onUpdate={onUpdate} />}
+      {tab === "health" && <HealthPanel order={order} onUpdate={onUpdate} />}
+      {tab === "branch" && <BranchPanel order={order} onUpdate={onUpdate} />}
+      {tab === "progress" && (<>
+      {!order.slot && order.timeline.tracks.some((x) => x.key === "internet") && (
+        <button onClick={() => setTab("slot")} className="mb-4 flex w-full items-center gap-2 rounded-xl border border-marigold-deep bg-marigold/15 p-3 text-left font-semibold">📅 Pick your installation slot <span className="ml-auto text-sm font-bold underline">Choose a time →</span></button>
+      )}
       <h2 className="text-2xl font-extrabold">{allLive ? "Everything is live" : `Day ${t.clockDay} of ${order.liveDay}`}</h2>
       <div className="card relative mt-4 h-64 overflow-hidden sm:h-72">
         <Shop3D items={order.lines.map((l) => l.productId)} live={live} className="absolute inset-0" />
@@ -76,6 +97,7 @@ export function Tracker({ order, onUpdate }: { order: PublicOrder; onUpdate: (o:
           </button>
         </div>
       </div>
+      </>)}
     </section>
   );
 }

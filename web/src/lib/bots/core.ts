@@ -4,10 +4,11 @@ import { aiProviders } from "../ai";
 import { transcribeAudio as geminiTranscribe } from "../gemini";
 import { transcribeAudio as groqTranscribe } from "../groq";
 import { createOrder } from "../orders";
-import { sha256 } from "../privacy";
 import { store, type AdvisorSession, type BotChat, type Order } from "../store";
 import { liveDay, stepStatus } from "../tracker";
 import { inr } from "../format";
+import { featureTurn } from "./features";
+import { contactKey, currentSession, latestOrder } from "./lookup";
 import { publicUrl, type BotMessage } from "./types";
 
 /**
@@ -26,22 +27,7 @@ export interface BotInput {
   language?: string;
 }
 
-const contactKey = (chat: BotChat) => sha256(`${chat.channel}:${chat.chatId}`);
-
-export function currentSession(chat: BotChat): AdvisorSession | undefined {
-  const key = contactKey(chat);
-  return store
-    .listSessions()
-    .filter((s) => s.contactHash === key && s.status !== "ordered")
-    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
-}
-
-function latestOrder(chat: BotChat, phone?: string): Order | undefined {
-  return store
-    .listOrders()
-    .filter((o) => (o.botChat?.channel === chat.channel && o.botChat.chatId === chat.chatId) || (phone && o.phone === phone.replace(/\D/g, "").slice(-10)))
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
-}
+export { currentSession };
 
 export function statusMessage(order: Order): BotMessage {
   const t = order.timeline;
@@ -58,7 +44,7 @@ export function statusMessage(order: Order): BotMessage {
 }
 
 const HELP: BotMessage = {
-  text: "I'm Udyam, Accel Business's advisor. Tell me about your business in any language — or send a voice note — and I'll suggest the right internet, phone and digital tools with one monthly price.\n\n**STATUS** — track your order\n**NEW** — start over\n**HUMAN** — talk to a person",
+  text: "I'm Udyam, Accel Business's advisor. Tell me about your business in any language — or send a voice note — and I'll suggest the right internet, phone and digital tools with one monthly price.\n\n**STATUS** — track your order\n**SHIELD** — check a suspicious message\n**NETWORK 411016** — is my area covered?\n**SCHEDULE** — book your install slot\n**TROUBLE** — slow or no internet\n**BRANCH** — open a new location\n**BACKUP** — add a backup link\n**NEW** — start over\n**HUMAN** — talk to a person",
 };
 
 function placeOrder(s: AdvisorSession, input: BotInput): BotMessage[] {
@@ -89,6 +75,9 @@ export async function botTurn(input: BotInput): Promise<BotMessage[]> {
     const o = latestOrder(input.chat, input.phone ?? (input.chat.channel === "whatsapp" ? input.chat.chatId : undefined));
     return [o ? statusMessage(o) : { text: "You don't have an order yet. Tell me about your business and I'll find the right plan." }];
   }
+  // Scam Shield, Network check, scheduler, troubleshooter, Branch-in-a-Box, backup: handled before the advisor.
+  const feature = await featureTurn(input, raw, cmd);
+  if (feature) return feature;
   if (cmd === "new" || cmd === "restart") s = undefined;
   if (raw === "a:order" || (s?.pendingOrder && input.phone)) {
     if (s) return placeOrder(s, input);

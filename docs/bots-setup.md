@@ -8,7 +8,7 @@ Both bots share one brain (`web/src/lib/bots/core.ts`): the same advisor, rules 
 | Voice notes | Transcribed (Gemini, or Groq Whisper as backup), shown back, answered | Same |
 | Ordering | "✅ Order this plan" → share-number button → order | Uses the sender's number — one tap |
 | Documents | Redirected to the consent-first secure KYC page (never read in chat) | Same |
-| Commands | /start /status /new /human /help (English + Hindi menus) | STATUS, NEW, HUMAN, HELP |
+| Commands | /start /status /new /human /help /shield /network /schedule /trouble /branch /backup (English + Hindi menus) | STATUS, NEW, HUMAN, HELP, SHIELD, NETWORK, SCHEDULE, TROUBLE, BRANCH, BACKUP |
 
 ## Telegram (5 minutes)
 

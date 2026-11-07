@@ -10,6 +10,9 @@
 | Service activation | contact name, mobile, installation address, chosen services | life of account | required |
 | Partner help | business type, city, enquiry summary (no documents) | 90 days | optional, off by default |
 | Offers | mobile, segment | until withdrawn | optional, off by default |
+| Scam Shield | the message, link or screenshot you choose to check | not stored: analysed in memory, screenshots read on-device (Tesseract) and discarded | you choose to share |
+| Network check | pincode of the install address | kept on the quote/order so the right line is installed | needed to install |
+| Branch-in-a-Box | new branch name, city, pincode | life of the account | required for the branch |
 
 Notice is itemised, plain-language, versioned (`2026-07-v1`) and shown **before** any document is read — the extraction API returns 403 without a recorded consent.
 

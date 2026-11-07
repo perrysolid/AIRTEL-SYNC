@@ -101,6 +101,43 @@ export interface Order {
   timeline: OrderTimeline;
   notifications: { at: string; channel: "whatsapp" | "telegram" | "sms"; text: string }[];
   botChat?: BotChat;
+
+  // ---- Added on nanki: install scheduling, service health, branches (all optional, so old stores still load) ----
+  /** Pincode of the install address, set by the Network Reality Check. */
+  pincode?: string;
+  /** Owner-chosen installation slot. `day` is on the order's demo clock. */
+  slot?: { id: string; label: string; date: string; window: string; day: number };
+  reschedules?: number;
+  outageActive?: boolean;
+  incidents?: Incident[];
+  tickets?: Ticket[];
+  /** Branch-in-a-Box: the head-office order this one was cloned from, and the branches cloned from this one. */
+  parentId?: string;
+  branches?: { id: string; name: string; city: string }[];
+  /** Documents still needed from the owner (e.g. the new branch's address proof). */
+  pendingDocs?: string[];
+}
+
+export interface Ticket {
+  id: string;
+  kind: "outage" | "no_internet" | "slow_speed" | "billing" | "other";
+  detail: string;
+  stepsTried: string[];
+  at: string;
+  status: "Open" | "Resolved";
+  slaHours: number;
+  assignedTo: string;
+}
+
+export interface Incident {
+  id: string;
+  at: string;
+  /** True when a backup link kept the business online. */
+  failover: boolean;
+  minutes: number;
+  status: "Active" | "Resolved";
+  ticketId?: string;
+  switchSeconds?: number;
 }
 
 export interface AuditEvent {
@@ -111,7 +148,18 @@ export interface AuditEvent {
   detail: string;
 }
 
+/** Where a multi-step chat feature (slot picker, troubleshooter, branch) currently is for one chat. */
+export interface BotFlow {
+  kind: "shield" | "network" | "schedule" | "trouble" | "branch";
+  orderId?: string;
+  /** Option values offered last, so "2" works on transports without buttons. */
+  opts?: string[];
+  step?: string;
+  data?: Record<string, string>;
+}
+
 interface DB {
+  flows?: Record<string, BotFlow>;
   sessions: Record<string, AdvisorSession>;
   orders: Record<string, Order>;
   consents: ConsentRecord[];
@@ -159,6 +207,18 @@ export const store = {
     return s;
   },
   listSessions: () => Object.values(load().sessions),
+
+  getFlow: (key: string) => load().flows?.[key],
+  saveFlow(key: string, f: BotFlow) {
+    (load().flows ??= {})[key] = f;
+    persist();
+  },
+  clearFlow(key: string) {
+    if (load().flows?.[key]) {
+      delete load().flows![key];
+      persist();
+    }
+  },
 
   getOrder: (id: string) => load().orders[id],
   saveOrder(o: Order) {

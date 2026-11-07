@@ -11,6 +11,7 @@ import type { Recommendation } from "@/lib/recommend";
 import type { Profile } from "@/lib/profile";
 import { inr } from "@/lib/format";
 import { Shop3D, VISUAL_LABEL } from "@/components/shop/Shop3D";
+import { NetworkCard } from "@/components/NetworkCard";
 
 interface State {
   quote: Quote;
@@ -28,6 +29,7 @@ export default function QuotePage() {
   const [error, setError] = useState("");
   const [form, setForm] = useState({ contactName: "", phone: "", partnerCode: "" });
   const [placing, setPlacing] = useState(false);
+  const [rev, setRev] = useState(0);
 
   useEffect(() => {
     void (async () => {
@@ -36,7 +38,7 @@ export default function QuotePage() {
       if (!r.ok) setError(j.error ?? "Couldn't load your quote");
       else setData(j);
     })();
-  }, [id, toggles, qty, term]);
+  }, [id, toggles, qty, term, rev]);
 
   if (error) {
     return (
@@ -86,7 +88,9 @@ export default function QuotePage() {
         </aside>
         <div className="min-w-0 lg:pt-6">
 
-        <fieldset className="lg:mt-0">
+        <NetworkCard sessionId={id} initialPin={profile.pincode} onChanged={() => { setToggles({}); setQty({}); setRev((r) => r + 1); }} />
+
+        <fieldset className="mt-6 lg:mt-6">
           <legend className="mb-2 font-semibold">How long do you want to commit?</legend>
           <div className="grid grid-cols-3 gap-2">
             {([12, 24, 36] as Term[]).map((t) => {

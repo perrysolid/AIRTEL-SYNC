@@ -56,6 +56,11 @@ export default function WhatsAppSim() {
             </div>
           ))}
         </div>
+        <div className="no-scrollbar flex gap-1.5 overflow-x-auto px-2 pt-1" aria-label="Quick commands">
+          {["STATUS", "SHIELD", "NETWORK 411016 Pune", "SCHEDULE", "TROUBLE", "BRANCH", "BACKUP", "HELP"].map((c) => (
+            <button key={c} disabled={busy} onClick={() => void send(c)} className="shrink-0 rounded-full border border-[#cfe9e3] bg-white px-3 py-1 text-xs font-bold text-[#0b6b5d] shadow-sm disabled:opacity-50">{c}</button>
+          ))}
+        </div>
         <form
           className="flex gap-2 p-2"
           onSubmit={(e) => {

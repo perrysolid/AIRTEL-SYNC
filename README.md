@@ -24,6 +24,15 @@ Airtel SYNC hackathon, Track A ("Project Udyam Digital"). A small-business owner
 - **Chat bots.** One bot core for both channels: native buttons and lists, multi-select, voice notes, one-tap ordering inside the chat, order updates pushed back, documents redirected to the consent-first KYC page (never read in chat).
 - **Partner console.** Advisor hand-offs with full context, propensity-ranked call list (logistic regression, AUC 0.745, 2.4× lift in the top decile), order pipeline, funnel/channel/churn insights, masked audit log, hash-chained consent ledger.
 - **Privacy.** Document images are never stored (hash only), identifiers are masked in UI and logs, and owners can export, withdraw or erase their data.
+- **Beyond the sale (added on the `nanki` branch).**
+  - **Scam Shield.** Paste, upload a screenshot, or just forward a suspicious message in chat. Transparent rules (look-alike links, OTP asks, fake KYC, "sent by mistake", digital-arrest, fake UPI screenshots) give a verdict, the reasons and the next step (Chakshu, 1930), in English and Hindi. It never says "safe", and never treats a screenshot as proof of payment. Text is analysed in memory, never stored.
+  - **Network Reality Check.** A pincode check before payment: fibre, 5G AirFiber or a survey. On the quote page it re-prices the plan onto AirFiber automatically when fibre is not available. *Coverage is simulated from the pincode in this demo.*
+  - **Installation scheduler.** Pick, then reschedule (two free), the technician window; the tracker's install step moves with it.
+  - **Health and backup.** Simulated outage with an automatic ticket (SLA, partner for the city), or "online on backup" when a backup link is in the bundle; a break-even calculator and one-tap Backup 4G/5G add-on, re-priced by the normal pricing engine. A speed under 80% of plan opens a ticket.
+  - **Branch-in-a-Box.** Copy a head-office setup to a new address: per-site quantities, network check for the new pincode, reused consent/KYC/agreement, and only the new address proof outstanding.
+  - **Chat commands** on WhatsApp, Telegram and the simulator: `SHIELD`, `NETWORK 411016`, `SCHEDULE`, `TROUBLE`, `BRANCH`, `BACKUP`. A forwarded link or scam text is checked even without a command.
+  - **Lead rescue** from the console: nudge a chat lead who built a plan but did not order.
+  - **Marketing pages:** Solutions (live-priced example bundles and segment stats), Products (all 25, filterable), How it works (every drop reason mapped to a fix), Help centre.
 
 ## Run it
 
@@ -44,6 +53,10 @@ npm run telegram               # optional, second terminal: Telegram bot via lon
 | `/whatsapp` | WhatsApp simulator (no Meta account needed) |
 | `/console` | Partner and sales console |
 | `/privacy` | Privacy note and data rights |
+| `/shield` | Scam Shield: check a message, link or screenshot |
+| `/network` | Network Reality Check by pincode |
+| `/solutions`, `/products`, `/how-it-works`, `/help` | Segments with live prices, the 25-product catalogue, the journey mapped to the data, FAQ |
+| `/order/:id?tab=slot\|health\|branch` | Tracker tabs: install slot, service health and backup, new branch |
 | `/api/health` | Which integrations are configured (never their values) |
 
 In KYC, *Demo: load a specimen applicant* runs any of K01–K12 through the real pipeline.
@@ -70,9 +83,10 @@ If a provider fails on billing or auth it is paused for 10 minutes (1 minute for
 ### Tests
 
 ```bash
-npm test                                   # 90 unit tests: rules, pricing, KYC, NLU, advisor tool loops (Gemini, Groq), bots
+npm test                                   # 133 unit tests: rules, pricing, KYC, NLU, advisor tool loops (Gemini, Groq), bots, Scam Shield, network, scheduler, continuity, branches, chat features
 OCR_IT=1 npx vitest run extract.ocr        # image → OCR → rules for all 12 applicants
 BASE=http://localhost:3000 node scripts/smoke.mjs   # end-to-end journey against a running server
+BASE=http://localhost:3000 node scripts/smoke-extras.mjs   # the nanki features end to end (scam, network, slots, health, branch, chat, console)
 npm run lint && npm run typecheck
 ```
 
@@ -106,5 +120,7 @@ render.yaml           Render Blueprint for the backend
 - [Privacy & security note](docs/privacy-note.md)
 - [Business case](docs/business-case.md)
 - [Demo script](docs/demo-script.md)
+
+The first Python/Vite prototype of the `nanki` features is kept in `legacy/nanki-prototype/` for reference; the live implementation is in `web/`.
 
 All businesses, people and identifiers in the dataset and specimen documents are fictional, supplied by the hackathon.

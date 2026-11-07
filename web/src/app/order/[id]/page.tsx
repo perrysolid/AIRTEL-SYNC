@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
@@ -41,6 +42,12 @@ export default function OrderPage() {
         <h1 className="mt-6 text-3xl font-extrabold tracking-tight">{order.businessName}</h1>
         <p className="text-ink-soft">{order.city}{order.city && " · "}{order.lines.length} services · {order.term} months</p>
 
+        {order.parentId && (
+          <p className="mt-3 rounded-xl border border-rule bg-sheet p-3 text-sm">🏪 Branch of <Link href={`/order/${order.parentId}`} className="font-semibold underline underline-offset-2">{order.parentId}</Link>. Consent, KYC and agreement were reused from head office.</p>
+        )}
+        {order.pendingDocs.length > 0 && (
+          <p className="mt-3 rounded-xl border border-marigold-deep bg-marigold/15 p-3 text-sm"><b>Still needed:</b> {order.pendingDocs.join(", ")}.</p>
+        )}
         <ol className="mt-5 grid grid-cols-5 gap-1" aria-label="Progress">
           {order.steps.map((s, i) => {
             const current = order.steps.findIndex((x) => !x.done) === i;
