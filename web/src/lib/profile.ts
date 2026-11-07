@@ -63,6 +63,8 @@ export const ProfileSchema = z.object({
   currentInternet: z.string().optional(),
   currentProvider: z.string().optional(),
   monthlySpend: z.number().min(0).optional(),
+  /** Most the owner wants to pay per month, incl. GST; the plan is trimmed to fit. */
+  budget: z.number().min(0).optional(),
   fibreAvailable: z.boolean().optional(),
   needs: z.array(z.enum(NEEDS)).default([]),
   /** Quantities the owner told us; anything missing is inferred from size. */

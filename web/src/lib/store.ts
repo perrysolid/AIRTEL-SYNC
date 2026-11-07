@@ -57,6 +57,12 @@ export interface AdvisorSession {
   /** Telegram multi-select: options ticked so far. */
   multiPick?: string[];
   botChat?: BotChat;
+  /** CRM lead this session resumed from (win-back link), e.g. L00042. */
+  leadId?: string;
+  /** Order whose owner referred this business (REF- link). */
+  referredBy?: string;
+  /** When the "your plan is saved" reminder went out (once per quote). */
+  nudgedAt?: string;
   /** Owner tapped "Order" in chat but we still need their mobile number. */
   pendingOrder?: boolean;
 }
@@ -104,6 +110,10 @@ export interface Order {
   timeline: OrderTimeline;
   notifications: { at: string; channel: "whatsapp" | "telegram" | "sms"; text: string }[];
   botChat?: BotChat;
+  leadId?: string;
+  referredBy?: string;
+  /** Reminder sent per waiting step (kyc / esign / pay), so each goes out once. */
+  nudges?: Record<string, string>;
 }
 
 export interface AuditEvent {

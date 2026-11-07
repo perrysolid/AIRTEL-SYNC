@@ -1,6 +1,7 @@
 import { product } from "./catalogue";
 import { buildQuote } from "./pricing";
 import { inferSegment, NEED_LABELS, tierForCity, type Need, type Profile } from "./profile";
+import { fitToBudget } from "./budget";
 import { recommend } from "./recommend";
 import { profileFromGstin } from "./registry";
 import { mergeParsed, parseUtterance } from "./nlu";
@@ -199,7 +200,8 @@ export function runGuidedTurn(s: AdvisorSession, input: string, emit: (e: Adviso
 
   // Everything we need — build the bundle.
   emit({ type: "status", label: "Checking eligibility across 25 products…" });
-  const rec = recommend({ profile: p, requestedProducts: s.requestedProducts, declinedProducts: s.declinedProducts });
+  let rec = recommend({ profile: p, requestedProducts: s.requestedProducts, declinedProducts: s.declinedProducts });
+  if (p.budget) rec = fitToBudget(rec, p.budget);
   const quote = buildQuote({ lines: rec.lines, currentMonthlySpend: p.monthlySpend });
   s.recommendation = rec;
   s.quote = quote;

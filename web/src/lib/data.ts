@@ -108,6 +108,7 @@ interface Datasets {
   udyam: Map<string, UdyamRow>;
   leads: LeadRow[];
   leadsByGstin: Map<string, LeadRow>;
+  leadsById: Map<string, LeadRow>;
 }
 
 const g = globalThis as unknown as { __udyamData?: Datasets };
@@ -121,6 +122,7 @@ export function datasets(): Datasets {
       udyam: new Map(readCsv<UdyamRow>("mock_udyam_registry.csv").map((r) => [r.udyam_number, r])),
       leads,
       leadsByGstin: new Map(leads.filter((l) => l.gstin).map((l) => [l.gstin, l])),
+      leadsById: new Map(leads.map((l) => [l.lead_id, l])),
     };
   }
   return g.__udyamData;

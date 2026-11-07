@@ -1,3 +1,4 @@
+import { fitToBudget } from "./budget";
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { ADVISOR_MODEL, aiProvider, anthropic, pauseProvider, type AiProvider } from "./ai";
@@ -82,6 +83,7 @@ const TOOLS: Anthropic.Beta.BetaTool[] = [
         fibreAvailable: { type: "boolean", description: "false if the owner says fibre/broadband cabling isn't available at their site" },
         currentInternet: { type: "string" },
         monthlySpend: { type: "number", description: "What they pay today for all telecom, INR/month" },
+        budget: { type: "number", description: "Most they want to pay per month incl. GST, INR, if they named one ('under 3000'). The plan is trimmed to fit." },
         needs: { type: "array", items: { type: "string", enum: [...NEEDS] } },
         mobileLines: { type: "integer", minimum: 0 },
         emailUsers: { type: "integer", minimum: 0 },
@@ -172,8 +174,10 @@ function runTool(s: AdvisorSession, name: string, input: unknown, emit: (e: Advi
       s.requestedProducts = [...new Set([...s.requestedProducts, ...valid(args.data.requested_products)])];
       s.declinedProducts = [...new Set([...s.declinedProducts, ...valid(args.data.declined_products)])];
       s.requestedProducts = s.requestedProducts.filter((x) => !s.declinedProducts.includes(x));
-      const rec = recommend({ profile: s.profile, requestedProducts: s.requestedProducts, declinedProducts: s.declinedProducts });
-      const quote = buildQuote({ lines: rec.lines, term: args.data.term_months as Term | undefined, currentMonthlySpend: s.profile.monthlySpend });
+      const term = args.data.term_months as Term | undefined;
+      let rec = recommend({ profile: s.profile, requestedProducts: s.requestedProducts, declinedProducts: s.declinedProducts });
+      if (s.profile.budget) rec = fitToBudget(rec, s.profile.budget, term);
+      const quote = buildQuote({ lines: rec.lines, term, currentMonthlySpend: s.profile.monthlySpend });
       s.recommendation = rec;
       s.quote = quote;
       s.status = "quoted";

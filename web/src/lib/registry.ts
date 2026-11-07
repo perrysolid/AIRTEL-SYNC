@@ -1,4 +1,4 @@
-import { datasets, type GstinRow, type UdyamRow } from "./data";
+import { datasets, type GstinRow, type LeadRow, type UdyamRow } from "./data";
 import { segmentFromLabel } from "./catalogue";
 import { repairGstinOcr, validateGstin, validateUdyam } from "./gstin";
 import type { Profile } from "./profile";
@@ -83,19 +83,42 @@ export function profileFromGstin(raw: string): { lookup: GstinLookup; profile: P
   }
   const lead = datasets().leadsByGstin.get(r.gstin);
   if (lead) {
-    profile.businessType = lead.business_type;
-    profile.segment = segmentFromLabel(lead.segment);
-    profile.cityTier = Number(lead.city_tier) as 1 | 2;
-    profile.employees = Number(lead.employee_count);
-    profile.sites = Number(lead.num_sites);
-    profile.currentInternet = INTERNET_FROM_LEAD[lead.current_internet] ?? lead.current_internet;
-    profile.currentProvider = lead.current_provider;
-    profile.monthlySpend = Number(lead.monthly_telecom_spend_inr);
-    profile.language = lead.preferred_language;
-    if (lead.udyam_number) profile.udyam = lead.udyam_number;
+    Object.assign(profile, leadFacts(lead));
     known.push("business type", "team size", "number of sites", "current internet", "current spend");
   }
   return { lookup, profile, known };
+}
+
+/** What the CRM already knows about a lead, as advisor profile facts. */
+function leadFacts(lead: LeadRow): Partial<Profile> {
+  return {
+    businessType: lead.business_type,
+    segment: segmentFromLabel(lead.segment),
+    cityTier: Number(lead.city_tier) as 1 | 2,
+    employees: Number(lead.employee_count),
+    sites: Number(lead.num_sites),
+    currentInternet: INTERNET_FROM_LEAD[lead.current_internet] ?? lead.current_internet,
+    currentProvider: lead.current_provider,
+    monthlySpend: Number(lead.monthly_telecom_spend_inr),
+    language: lead.preferred_language,
+    ...(lead.udyam_number ? { udyam: lead.udyam_number } : {}),
+  };
+}
+
+/** A win-back link (lead code like L00042) pre-fills the advisor from the CRM. */
+export function profileFromLead(leadId: string): { lead: LeadRow; profile: Partial<Profile> } | undefined {
+  const lead = datasets().leadsById.get(leadId.toUpperCase());
+  if (!lead) return undefined;
+  const profile: Partial<Profile> = {
+    ...leadFacts(lead),
+    businessName: lead.business_name,
+    city: lead.city,
+    state: lead.state,
+    hasGstin: lead.has_gstin === "Y",
+    ...(lead.gstin ? { gstin: lead.gstin, gstinActive: lookupGstin(lead.gstin).record?.status === "Active" } : {}),
+    needs: [],
+  };
+  return { lead, profile };
 }
 
 const norm = (s?: string | null) => (s ?? "").toLowerCase().replace(/\(prop\.?[^)]*\)/g, " ").replace(/[^a-z0-9]+/g, " ").trim();
