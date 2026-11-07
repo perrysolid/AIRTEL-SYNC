@@ -18,7 +18,7 @@ async function talk(lines: string[], language = "en") {
 
 describe("guided advisor (no LLM)", () => {
   it("reaches a bundle from one rich sentence plus needs", async () => {
-    const { events } = await talk(["", "I run a dental clinic in Pune with 8 staff, we have GST", "needs:email,backup_internet"]);
+    const { events } = await talk(["", "I run a dental clinic in Pune with 8 staff, we have GST", "cur:Home broadband", "needs:email,backup_internet"]);
     const bundle = events.find((e) => e.type === "bundle");
     expect(bundle).toBeTruthy();
     if (bundle?.type === "bundle") {
@@ -35,7 +35,7 @@ describe("guided advisor (no LLM)", () => {
   });
 
   it("speaks Hindi and handles chip answers", async () => {
-    const { events, text } = await talk(["", "type:Kirana store", "city:Jaipur", "emp:2", "gst:no", "needs:pos_billing,whatsapp"], "hi");
+    const { events, text } = await talk(["", "type:Kirana store", "city:Jaipur", "emp:2", "gst:no", "cur:Mobile hotspot", "needs:pos_billing,whatsapp"], "hi");
     expect(text).toMatch(/नमस्ते/);
     const bundle = events.find((e) => e.type === "bundle");
     expect(bundle?.type === "bundle" && bundle.recommendation.excluded.map((e) => e.productId)).toContain("P15");

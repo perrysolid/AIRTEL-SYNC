@@ -25,6 +25,7 @@ const T = {
   employees: { en: "How many people work there, including you?", hi: "आपको मिलाकर वहाँ कितने लोग काम करते हैं?" },
   sites: { en: "How many locations (shops/branches) do you have?", hi: "आपकी कितनी ब्रांच या दुकानें हैं?" },
   gst: { en: "Is your business registered for GST?", hi: "क्या आपका बिज़नेस GST में रजिस्टर्ड है?" },
+  current: { en: "What do you use for internet today?", hi: "अभी इंटरनेट के लिए क्या इस्तेमाल करते हैं?" },
   needs: {
     en: "What would help your business most? Pick all that apply.",
     hi: "आपके बिज़नेस के लिए क्या सबसे ज़रूरी है? जितने चाहें चुनें।",
@@ -83,6 +84,15 @@ const EMP_CHIPS: Chip[] = [
   { label: "11-25", value: "emp:15" }, { label: "26-50", value: "emp:35" }, { label: "50+", value: "emp:60" },
 ];
 
+const CURRENT_CHIPS = (lang: Lang): Chip[] =>
+  [
+    ["Mobile hotspot", "मोबाइल हॉटस्पॉट"],
+    ["Home broadband", "घर का ब्रॉडबैंड"],
+    ["Business broadband", "बिज़नेस ब्रॉडबैंड"],
+    ["Leased line", "लीज़्ड लाइन"],
+    ["Nothing yet", "अभी कुछ नहीं"],
+  ].map(([en, hi]) => ({ label: lang === "hi" ? hi : en, value: `cur:${en}` }));
+
 const SITE_CHIPS: Chip[] = [1, 2, 3, 5, 8, 10].map((n) => ({ label: String(n), value: `sites:${n}` }));
 
 const NEEDS_BY_SEGMENT: Record<string, Need[]> = {
@@ -100,6 +110,7 @@ function applyChip(p: Profile, value: string): Profile {
     case "emp": return { ...p, employees: Number(v) };
     case "sites": return { ...p, sites: Number(v) };
     case "gst": return { ...p, hasGstin: v === "yes" };
+    case "cur": return { ...p, currentInternet: v };
     case "needs": return { ...p, needs: [...new Set([...p.needs, ...(v ? (v.split(",") as Need[]) : [])])] };
     default: return p;
   }
@@ -120,9 +131,10 @@ export function runGuidedTurn(s: AdvisorSession, input: string, emit: (e: Adviso
   }
 
   let p = s.profile;
-  if (/^(type|city|emp|sites|gst|needs):/.test(input)) {
+  if (/^(type|city|emp|sites|gst|cur|needs):/.test(input)) {
     p = applyChip(p, input);
     if (input.startsWith("needs:")) s.guidedStep = "needs_done";
+    if (input.startsWith("cur:")) s.guidedStep = "current_done";
   } else {
     if (/\b(human|agent|call me|talk to (someone|person)|insaan|baat karni)\b|कॉल/i.test(input)) {
       s.status = "handoff";
@@ -152,6 +164,7 @@ export function runGuidedTurn(s: AdvisorSession, input: string, emit: (e: Adviso
     if (s.guidedStep === "gst" && (parsed.yes || parsed.no)) p.hasGstin = !!parsed.yes;
     if (s.guidedStep === "type" && !p.businessType && !parsed.gstin && input.length < 40) p.businessType = input;
     if (s.guidedStep === "city" && !p.city && input.length < 30) p.city = input.trim();
+    if (s.guidedStep === "current" && !p.currentInternet && input.length < 40) p.currentInternet = input.trim();
     if (s.guidedStep === "needs") s.guidedStep = "needs_done";
   }
   if (p.city && !p.cityTier) p.cityTier = tierForCity(p.city);
@@ -177,6 +190,8 @@ export function runGuidedTurn(s: AdvisorSession, input: string, emit: (e: Adviso
   if (!p.employees) return ask("employees", t("employees", lang), EMP_CHIPS);
   if (p.segment === "multi" && !p.sites) return ask("sites", t("sites", lang), SITE_CHIPS);
   if (p.hasGstin === undefined) return ask("gst", t("gst", lang), yesNo(lang));
+  // Current tools: shapes the pitch (hotspot → reliable fibre) and the savings line.
+  if (!p.currentInternet && s.guidedStep !== "current_done") return ask("current", t("current", lang), CURRENT_CHIPS(lang));
   if (s.guidedStep !== "needs_done" && p.needs.filter((n) => n !== "internet").length === 0) {
     const options = NEEDS_BY_SEGMENT[p.segment ?? "micro"].map((n) => ({ label: NEED_LABELS[n], value: n }));
     return ask("needs", t("needs", lang), options, "multi");

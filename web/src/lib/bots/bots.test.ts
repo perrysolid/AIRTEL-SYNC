@@ -30,7 +30,7 @@ describe("chat bot core", () => {
 
   it("reaches a bundle, asks for a number on Order, then creates an order linked to the chat", async () => {
     const c = chat("t2");
-    const [bundle] = await walk(c, ["c:type:Kirana store", "c:city:Jaipur", "c:emp:2", "c:gst:no", "needs:pos_billing,cctv"]);
+    const [bundle] = await walk(c, ["c:type:Kirana store", "c:city:Jaipur", "c:emp:2", "c:gst:no", "c:cur:Mobile hotspot", "needs:pos_billing,cctv"]);
     expect(bundle.buttons?.map((b) => b.action ?? b.url)).toEqual([expect.stringContaining("/quote/"), "a:order"]);
 
     const [ask] = await botTurn({ chat: c, text: "a:order", firstName: "Sunita" });
@@ -48,14 +48,14 @@ describe("chat bot core", () => {
 
   it("WhatsApp uses the sender's number, so Order needs no extra step", async () => {
     const c: BotChat = { channel: "whatsapp", chatId: `9198765${String(Date.now()).slice(-5)}` };
-    await walk(c, ["I have a dental clinic in Pune with 8 staff, we have GST", "needs:email"]);
+    await walk(c, ["I have a dental clinic in Pune with 8 staff, we have GST", "c:cur:Home broadband", "needs:email"]);
     const [m] = await botTurn({ chat: c, text: "a:order", phone: c.chatId, firstName: "Asha" });
     expect(m.text).toMatch(/Order ACC-/);
   });
 
   it("accepts '1,3' for multi-select on text channels", async () => {
     const c: BotChat = { channel: "whatsapp", chatId: `9187654${String(Date.now()).slice(-5)}` };
-    const [needs] = await walk(c, ["c:type:Kirana store", "c:city:Jaipur", "c:emp:2", "c:gst:no"]);
+    const [needs] = await walk(c, ["c:type:Kirana store", "c:city:Jaipur", "c:emp:2", "c:gst:no", "c:cur:Mobile hotspot"]);
     expect(needs.multi).toBe(true);
     const [bundle] = await botTurn({ chat: c, text: "1,2", phone: c.chatId });
     expect(bundle.buttons?.some((b) => b.action === "a:order")).toBe(true);
@@ -75,6 +75,25 @@ describe("chat bot core", () => {
     expect(calls[0].body).toMatchObject({ chat_id: id("t2") });
     delete process.env.TELEGRAM_BOT_TOKEN;
   });
+
+  it("with a public URL, each update arrives as the live status card with the text as caption", async () => {
+    process.env.TELEGRAM_BOT_TOKEN = "123:abc";
+    process.env.PUBLIC_BASE_URL = "https://demo.example.com";
+    const calls: { url: string; body: Record<string, unknown> }[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (url: string, init: RequestInit) => {
+      calls.push({ url, body: JSON.parse(init.body as string) });
+      return Response.json({ ok: true, result: { message_id: 1 } });
+    }));
+    const order = store.listOrders().find((o) => o.botChat?.chatId === id("t2"))!;
+    notifyOrder(order, ["💳 Payment received", "✅ Mobile lines live"]);
+    await vi.waitFor(() => expect(calls).toHaveLength(1));
+    expect(calls[0].url).toContain("/sendPhoto");
+    expect(calls[0].body.photo).toMatch(/^https:\/\/demo\.example\.com\/api\/card\/order\/ACC-/);
+    expect(calls[0].body.caption).toBe("💳 Payment received\n✅ Mobile lines live");
+    expect(JSON.stringify(calls[0].body.reply_markup)).toContain(`/order/${order.id}`);
+    delete process.env.TELEGRAM_BOT_TOKEN;
+    delete process.env.PUBLIC_BASE_URL;
+  });
 });
 
 describe("channel rendering", () => {
@@ -92,6 +111,17 @@ describe("channel rendering", () => {
   it("WhatsApp: long text is sent before the interactive prompt", () => {
     const out = payloads({ text: "x".repeat(1500), buttons: [{ label: "Order", action: "a:order" }] });
     expect(out.map((p) => p.type)).toEqual(["text", "interactive"]);
+  });
+
+  it("WhatsApp: a card goes first with the text as caption, a lone link becomes a native button", () => {
+    process.env.PUBLIC_BASE_URL = "https://demo.example.com";
+    const out = payloads({ text: "**Day 1 of 5**", image: "https://demo.example.com/api/card/order/ACC-1", buttons: [{ label: "Open live tracker", url: "https://demo.example.com/order/ACC-1" }] });
+    expect(out[0]).toMatchObject({ type: "image", image: { link: "https://demo.example.com/api/card/order/ACC-1", caption: "*Day 1 of 5*" } });
+    expect(out[1]).toMatchObject({ type: "interactive", interactive: { type: "cta_url", action: { parameters: { display_text: "Open live tracker" } } } });
+    // Without a public URL, Meta can't fetch the card: plain text with the link inline.
+    delete process.env.PUBLIC_BASE_URL;
+    const local = payloads({ text: "Day 1", image: "http://localhost/x.png", buttons: [{ label: "Tracker", url: "http://localhost/order/1" }] });
+    expect(local.map((p) => p.type)).toEqual(["text"]);
   });
 
   it("Telegram: bold, ticks and contact keyboard", () => {

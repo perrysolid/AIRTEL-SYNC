@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { chatText, type BotMessage } from "./types";
+import { chatText, linkButtonsAllowed, type BotMessage } from "./types";
 
 /** WhatsApp Cloud API (Meta Graph) client: interactive buttons, lists and CTA links. */
 
@@ -24,36 +24,52 @@ async function graph<T = unknown>(path: string, body?: unknown, method = "POST")
 const clip = (s: string, n: number) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
 
 export function payloads(msg: BotMessage): Record<string, unknown>[] {
-  let text = chatText(msg.text, (t) => `*${t}*`);
+  const text = chatText(msg.text, (t) => `*${t}*`);
   const opts = msg.options ?? [];
+  const actions = (msg.buttons ?? []).filter((b) => b.action);
+  const links = (msg.buttons ?? []).filter((b) => b.url);
   const out: Record<string, unknown>[] = [];
 
-  if (msg.multi && opts.length) {
-    text += "\n\n" + opts.map((o, i) => `${i + 1}. ${o.label}`).join("\n") + "\n\n_Reply with all the numbers that apply, e.g. 1,3_";
-    return [{ type: "text", text: { body: clip(text, 4096) } }];
+  // Card first (Meta fetches it by URL, so it must be public https); the text rides as its caption.
+  let body = text;
+  if (msg.image && linkButtonsAllowed()) {
+    out.push({ type: "image", image: { link: msg.image, caption: clip(text, 1024) } });
+    body = "";
   }
-  const actionButtons = (msg.buttons ?? []).filter((b) => b.action);
-  const links = (msg.buttons ?? []).filter((b) => b.url);
-  if (links.length) text += "\n\n" + links.map((b) => `${b.label}: ${b.url}`).join("\n");
+
+  if (msg.multi && opts.length) {
+    const list = opts.map((o, i) => `${i + 1}. ${o.label}`).join("\n") + "\n\n_Reply with all the numbers that apply, e.g. 1,3_";
+    out.push({ type: "text", text: { body: clip(body ? `${body}\n\n${list}` : list, 4096) } });
+    return out;
+  }
+
+  const interactive = opts.length > 0 || actions.length > 0;
+  // A lone link becomes a native "open" button; otherwise links go inline.
+  const cta = !interactive && links.length === 1 && linkButtonsAllowed() ? links[0] : undefined;
+  if (!cta && links.length) {
+    const linkText = links.map((b) => `${b.label}: ${b.url}`).join("\n");
+    body = body ? `${body}\n\n${linkText}` : linkText;
+  }
 
   // Interactive bodies are capped at 1024 chars: send long text first, then a short prompt with the buttons.
-  const interactive = opts.length > 0 || actionButtons.length > 0;
-  let body = text;
-  if (interactive && text.length > 1000) {
-    out.push({ type: "text", text: { body: clip(text, 4096) } });
-    body = "Choose an option 👇";
+  if ((interactive || cta) && body.length > 1000) {
+    out.push({ type: "text", text: { body: clip(body, 4096) } });
+    body = "";
   }
+  const prompt = body || (opts.length ? "Choose an option 👇" : "Tap below 👇");
   if (opts.length && opts.length <= 3) {
-    out.push({ type: "interactive", interactive: { type: "button", body: { text: body }, action: { buttons: opts.map((o) => ({ type: "reply", reply: { id: `c:${o.value}`, title: clip(o.label, 20) } })) } } });
+    out.push({ type: "interactive", interactive: { type: "button", body: { text: prompt }, action: { buttons: opts.map((o) => ({ type: "reply", reply: { id: `c:${o.value}`, title: clip(o.label, 20) } })) } } });
   } else if (opts.length) {
     out.push({
       type: "interactive",
-      interactive: { type: "list", body: { text: body }, action: { button: "Choose", sections: [{ title: "Options", rows: opts.slice(0, 10).map((o) => ({ id: `c:${o.value}`, title: clip(o.label, 24) })) }] } },
+      interactive: { type: "list", body: { text: prompt }, action: { button: "Choose", sections: [{ title: "Options", rows: opts.slice(0, 10).map((o) => ({ id: `c:${o.value}`, title: clip(o.label, 24) })) }] } },
     });
-  } else if (actionButtons.length) {
-    out.push({ type: "interactive", interactive: { type: "button", body: { text: body }, action: { buttons: actionButtons.slice(0, 3).map((b) => ({ type: "reply", reply: { id: b.action, title: clip(b.label, 20) } })) } } });
-  } else {
-    out.push({ type: "text", text: { body: clip(text, 4096), preview_url: false } });
+  } else if (actions.length) {
+    out.push({ type: "interactive", interactive: { type: "button", body: { text: prompt }, action: { buttons: actions.slice(0, 3).map((b) => ({ type: "reply", reply: { id: b.action, title: clip(b.label, 20) } })) } } });
+  } else if (cta) {
+    out.push({ type: "interactive", interactive: { type: "cta_url", body: { text: prompt }, action: { name: "cta_url", parameters: { display_text: clip(cta.label, 20), url: cta.url } } } });
+  } else if (body) {
+    out.push({ type: "text", text: { body: clip(body, 4096), preview_url: false } });
   }
   return out;
 }

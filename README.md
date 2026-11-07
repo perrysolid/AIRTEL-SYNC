@@ -21,7 +21,8 @@ Airtel SYNC hackathon, Track A ("Project Udyam Digital"). A small-business owner
   - **Registry recovery:** if the GSTIN is unreadable or the Udyam certificate is missing, the other documents' business name plus location find the registration, which the owner confirms. Only a unique match counts (842 trade names repeat in the registry).
   - **No false rejections from bad photos:** a number read off a blurred photo that fails the checksum asks for a retake instead of being treated as forged. Look-alike OCR repairs are accepted only when they pass the checksum *and* exist in the registry.
 - **Order and tracker.** Per-purpose consent (DPDP), e-sign by OTP, UPI AutoPay, a separate activation track per service, automatic fibre → 5G AirFiber fallback, updates pushed to the chat the order came from, `STATUS` command.
-- **Chat bots.** One bot core for both channels: native buttons and lists, multi-select, voice notes, one-tap ordering inside the chat, order updates pushed back, documents redirected to the consent-first KYC page (never read in chat).
+- **Chat bots.** One bot core for both channels: native buttons and lists, multi-select, voice notes, one-tap ordering inside the chat, documents redirected to the consent-first KYC page (never read in chat).
+  - **Visual live updates:** the plan arrives as a quote card, and every order event (order placed, KYC verdict, e-sign, payment, each service going live, fibre → AirFiber switch, all live) arrives as one message carrying a freshly rendered status card (journey stepper + each service's state) and an *Open live tracker* button. Cards carry no personal data. `STATUS` returns the same card anytime.
 - **Partner console.** Advisor hand-offs with full context, propensity-ranked call list (logistic regression, AUC 0.745, 2.4× lift in the top decile), order pipeline, funnel/channel/churn insights, masked audit log, hash-chained consent ledger.
 - **Privacy.** Document images are never stored (hash only), identifiers are masked in UI and logs, and owners can export, withdraw or erase their data.
 
@@ -61,7 +62,7 @@ All keys are optional and live in `web/.env.local` (git-ignored; the template is
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET` | Telegram bot |
 | `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_APP_SECRET` | WhatsApp Cloud API bot |
 | `SARVAM_API_KEY` | Natural Indian-language voice (falls back to the browser's voice) |
-| `PUBLIC_BASE_URL` | Public URL used in links sent by the bots |
+| `PUBLIC_BASE_URL` | Public URL for links and status cards sent by the bots (defaults to Render's own URL) |
 | `BACKEND_URL` | Frontend only: proxy `/api/*` to a separate backend |
 | `STORE_DIR` | Where the order store is written (a persistent disk in production) |
 
@@ -70,7 +71,7 @@ If a provider fails on billing or auth it is paused for 10 minutes (1 minute for
 ### Tests
 
 ```bash
-npm test                                   # 90 unit tests: rules, pricing, KYC, NLU, advisor tool loops (Gemini, Groq), bots
+npm test                                   # 94 unit tests: rules, pricing, KYC, NLU, advisor tool loops (Gemini, Groq), bots, chat cards
 OCR_IT=1 npx vitest run extract.ocr        # image → OCR → rules for all 12 applicants
 BASE=http://localhost:3000 node scripts/smoke.mjs   # end-to-end journey against a running server
 npm run lint && npm run typecheck
@@ -88,7 +89,7 @@ Frontend on **Vercel**, backend on **Render**, from this one codebase: Vercel pr
 
 ```
 web/
-  src/app/            pages and API routes (advisor SSE, quote, order, kyc, whatsapp, telegram, console, health)
+  src/app/            pages and API routes (advisor SSE, quote, order, kyc, whatsapp, telegram, chat cards, console, health)
   src/lib/            rules engine, pricing, KYC, registry, AI providers, store, tracker, privacy
   src/lib/bots/       shared bot core + Telegram and WhatsApp Cloud adapters
   src/components/shop three.js shop scene

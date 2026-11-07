@@ -1,6 +1,6 @@
 # WhatsApp and Telegram bots
 
-Both bots share one brain (`web/src/lib/bots/core.ts`): the same advisor, rules engine, in-chat ordering and order tracking as the web app. Order updates (KYC verified, payment received, each service going live) are pushed to the chat the order came from.
+Both bots share one brain (`web/src/lib/bots/core.ts`): the same advisor, rules engine, in-chat ordering and order tracking as the web app. Order updates (KYC verified, payment received, each service going live) are pushed to the chat the order came from, one message per event: a status card image rendered on the fly (`/api/card/order/:id`), the update text as its caption and an *Open live tracker* button. The plan arrives as a quote card (`/api/card/quote/:session`). Chat apps fetch cards by URL, so they need a public https base URL (`PUBLIC_BASE_URL`, or Render's own URL automatically); without one, the bots send plain text with inline links.
 
 | | Telegram | WhatsApp (Cloud API) |
 |---|---|---|

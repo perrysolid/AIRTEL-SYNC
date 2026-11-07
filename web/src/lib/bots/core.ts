@@ -9,6 +9,7 @@ import { store, type AdvisorSession, type BotChat, type Order } from "../store";
 import { liveDay, stepStatus } from "../tracker";
 import { inr } from "../format";
 import { publicUrl, type BotMessage } from "./types";
+import { orderCardUrl, quoteCardUrl } from "../cards";
 
 /**
  * Channel-agnostic chat bot: the same advisor, ordering and order-status
@@ -48,13 +49,13 @@ export function statusMessage(order: Order): BotMessage {
   const link = { label: "Open tracker", url: publicUrl(`/order/${order.id}`) };
   if (t.clockDay < 0) {
     const next = !order.kyc || order.kyc.result.verdict !== "verified" ? "verify your business (2 minutes, secure page)" : !order.esign ? "e-sign the agreement" : "complete the first payment";
-    return { text: `**Order ${order.id}**\nWaiting for you to ${next}.`, buttons: [{ ...link, label: "Continue my order" }] };
+    return { text: `**Order ${order.id}**\nWaiting for you to ${next}.`, image: orderCardUrl(order), buttons: [{ ...link, label: "Continue my order" }] };
   }
   const lines = t.tracks.map((tr) => {
     const nextStep = tr.steps.find((s) => stepStatus(s, t.clockDay) !== "done");
     return `${nextStep ? "⏳" : "✅"} ${tr.title}: ${nextStep ? `${nextStep.label} (day ${nextStep.dueDay})` : "live"}`;
   });
-  return { text: `**Order ${order.id}** — day ${t.clockDay} of ${liveDay(t)}\n${lines.join("\n")}`, buttons: [link] };
+  return { text: `**Order ${order.id}** — day ${t.clockDay} of ${liveDay(t)}\n${lines.join("\n")}`, image: orderCardUrl(order), buttons: [link] };
 }
 
 const HELP: BotMessage = {
@@ -73,6 +74,7 @@ function placeOrder(s: AdvisorSession, input: BotInput): BotMessage[] {
   return [
     {
       text: `✅ **Order ${o.id} created** — ${o.lines.length} services for **${inr(o.quote.monthlyWithGst)}/month** incl. GST.\n\nNext: verify your business on our secure page (about 2 minutes — DigiLocker or photos). I'll send every update right here, so there's no need to call us.`,
+      image: orderCardUrl(o),
       buttons: [{ label: "Verify my business", url: publicUrl(`/order/${o.id}`) }],
     },
   ];
@@ -119,6 +121,7 @@ export async function botTurn(input: BotInput): Promise<BotMessage[]> {
   if (quoted && session.quote) {
     out.push({
       text: body,
+      image: quoteCardUrl(session),
       buttons: [
         { label: "See & adjust my quote", url: publicUrl(`/quote/${session.id}`) },
         { label: "✅ Order this plan", action: "a:order" },
