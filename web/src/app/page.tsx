@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 import { MessageCircle, Mic, MessageSquareText, Search, Send } from "lucide-react";
 import { Shop3D, VISUAL_LABEL } from "@/components/shop/Shop3D";
 import { Logo } from "@/components/Brand";
+import { HeroScene } from "@/components/HeroScene";
+import { PhoneMock } from "@/components/PhoneMock";
 import { PromoBar } from "@/components/SiteNav";
 import { LANGUAGES } from "@/lib/advisor-types";
 
@@ -43,6 +45,17 @@ const STEPS = [
   ["Go live", "SIMs today, internet in days. Updates on WhatsApp."],
 ];
 
+const TOOLS: [string, string, string, string][] = [
+  ["🛡️", "Scam Shield", "Forward a suspicious message, link or payment screenshot. Get a verdict, the red flags and what to do next.", "/shield"],
+  ["📡", "Network Reality Check", "Know what can be installed at your pincode before you pay. No fibre? We switch you to 5G AirFiber.", "/network"],
+  ["💓", "Health & backup", "Service status, automatic tickets with an SLA, and a backup link that keeps your billing running.", "/solutions"],
+  ["📅", "Installation slots", "Book and reschedule the technician visit yourself. Two free reschedules, no phone calls.", "/help"],
+  ["🏪", "Branch-in-a-Box", "Opening a second shop? Copy your setup, reuse your KYC and book the install in one tap.", "/solutions"],
+  ["💬", "Everything in chat", "SHIELD, NETWORK, SCHEDULE, TROUBLE, BRANCH and BACKUP work in WhatsApp and Telegram.", "/whatsapp"],
+];
+
+const NAV: [string, string][] = [["Solutions", "/solutions"], ["Products", "/products"], ["How it works", "/how-it-works"], ["Scam Shield", "/shield"], ["Help", "/help"]];
+
 export default function Home() {
   const [lang, setLang] = useState("hi");
   const [orderId, setOrderId] = useState("");
@@ -54,21 +67,107 @@ export default function Home() {
   return (
     <div className="min-h-dvh">
       <PromoBar />
-      <header className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-        <Logo />
-        <nav aria-label="Main" className="flex items-center gap-4 text-sm font-medium text-ink-soft">
-          {[["Solutions", "/solutions"], ["Products", "/products"], ["How it works", "/how-it-works"], ["Scam Shield", "/shield"], ["Help", "/help"]].map(([l, h]) => (
-            <Link key={h} href={h} className="hidden underline-offset-4 hover:underline lg:inline">{l}</Link>
-          ))}
-          <a href="#track" className="hidden underline-offset-4 hover:underline sm:inline">Track order</a>
-          <Link href="/console" className="underline-offset-4 hover:underline">Partner console</Link>
-        </nav>
-      </header>
 
-      <main className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] gap-2 px-4 pb-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-center lg:gap-8">
-        <div className="relative order-first h-[300px] sm:h-[380px] lg:order-last lg:h-[600px]">
+      {/* ------------------------------------------------------------------ hero: a connected city at night */}
+      <section className="relative isolate overflow-hidden bg-[#060914] pb-[min(48vw,340px)] text-white">
+        <HeroScene className="absolute inset-0 -z-20 h-full w-full" />
+        <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-b from-[#060914]/80 via-[#060914]/35 to-[#060914]/80" />
+        <div aria-hidden className="absolute inset-0 -z-10 bg-[radial-gradient(60rem_26rem_at_50%_38%,rgb(6_9_20/0.72),transparent_70%)]" />
+
+        <header className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
+          <Logo onDark />
+          <nav aria-label="Main" className="flex items-center gap-5 text-sm font-semibold text-white/80">
+            {NAV.map(([l, h]) => <Link key={h} href={h} className="hidden hover:text-white lg:inline">{l}</Link>)}
+            <a href="#track" className="hidden hover:text-white sm:inline">Track order</a>
+            <Link href="/console" className="rounded-full border border-white/30 px-3.5 py-1.5 hover:bg-white/10">Partner console</Link>
+          </nav>
+        </header>
+
+        <div className="mx-auto max-w-4xl px-4 pt-4 text-center sm:pt-9">
+          <nav aria-label="Language" className="rise no-scrollbar -mx-4 flex justify-start gap-2 overflow-x-auto px-4 py-2 sm:justify-center sm:overflow-visible sm:flex-wrap">
+            {LANGUAGES.map((l) => (
+              <button
+                key={l.code}
+                onClick={() => setLang(l.code)}
+                aria-pressed={lang === l.code}
+                className={`shrink-0 rounded-full border px-3.5 py-1.5 text-[15px] backdrop-blur transition-all ${lang === l.code ? "border-brand bg-brand text-white shadow-[0_10px_24px_-10px_var(--brand)]" : "border-white/20 bg-white/10 text-white/90 hover:bg-white/20"}`}
+              >
+                {l.native}
+              </button>
+            ))}
+          </nav>
+
+          <h1 key={lang} lang={lang} className="rise mt-7 text-[2.3rem] leading-[1.08] font-extrabold tracking-tight text-balance [text-shadow:0_2px_30px_rgb(0_0_0/0.6)] sm:text-5xl lg:text-[3.6rem]" style={{ ["--i" as string]: 1 }}>
+            {g.line}
+          </h1>
+          <p lang={lang} className="rise mx-auto mt-4 max-w-2xl text-lg leading-relaxed text-white/85 [text-shadow:0_1px_18px_rgb(0_0_0/0.6)]" style={{ ["--i" as string]: 2 }}>
+            {g.sub}
+          </p>
+
+          <div className="rise mt-7 flex flex-wrap items-center justify-center gap-4" style={{ ["--i" as string]: 3 }}>
+            <button
+              onClick={() => router.push(`/advisor?lang=${lang}&voice=1`)}
+              className="group inline-flex items-center gap-3 rounded-full bg-brand py-3 pr-6 pl-3 text-lg font-extrabold text-white shadow-[0_16px_36px_-12px_var(--brand)] transition-transform hover:-translate-y-0.5 active:scale-[0.97]"
+            >
+              <span className="grid h-12 w-12 place-items-center rounded-full bg-white text-brand transition-transform group-hover:scale-105"><Mic size={24} strokeWidth={2.4} /></span>
+              <span lang={lang}>{g.talk}</span>
+            </button>
+            <Link href={`/advisor?lang=${lang}`} lang={lang} className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-5 py-3 font-semibold text-white backdrop-blur transition-transform hover:-translate-y-0.5 hover:bg-white/20">
+              <MessageSquareText size={18} /> {g.type}
+            </Link>
+          </div>
+          <div className="rise mt-5 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm font-semibold" style={{ ["--i" as string]: 4 }}>
+            <Link href={`/whatsapp?lang=${lang}`} className="inline-flex items-center gap-1.5 text-[#7be0b4] underline-offset-4 hover:underline"><MessageCircle size={16} /> Continue on WhatsApp</Link>
+            <a href={`https://t.me/${TELEGRAM}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-[#8fd3ff] underline-offset-4 hover:underline"><Send size={16} /> Chat on Telegram</a>
+          </div>
+        </div>
+
+        {/* the white horizon the phones stand on */}
+        <div aria-hidden className="absolute inset-x-0 bottom-0 -z-0 mx-auto h-[min(20vw,150px)] w-[150%] -translate-x-[16.6%] rounded-t-[100%] bg-white" />
+      </section>
+
+      {/* ------------------------------------------------------------------ three real screens of the product */}
+      <section aria-label="The product on a phone" className="relative z-10 -mt-[min(48vw,340px)]">
+        <div className="mx-auto flex max-w-4xl items-end justify-center px-2">
+          <div className="phone-in -mr-[3vw] mb-0 w-[29vw] max-w-[230px] translate-y-[5vw] sm:-mr-8 sm:translate-y-10" style={{ ["--i" as string]: 1, ["--r" as string]: "-7deg", rotate: "-7deg" }}>
+            <PhoneMock src="/screens/advisor.png" alt="The advisor recommends a bundle with a clear monthly price" />
+          </div>
+          <div className="phone-in z-10 w-[35vw] max-w-[270px]" style={{ ["--i" as string]: 0 }}>
+            <PhoneMock src="/screens/quote.png" alt="The quote: a live 3D shop, the plan and one monthly price" />
+          </div>
+          <div className="phone-in -ml-[3vw] w-[29vw] max-w-[230px] translate-y-[5vw] sm:-ml-8 sm:translate-y-10" style={{ ["--i" as string]: 2, ["--r" as string]: "7deg", rotate: "7deg" }}>
+            <PhoneMock src="/screens/shield.png" alt="Scam Shield flags a fake KYC message and says what to do" />
+          </div>
+        </div>
+        <div className="mx-auto mt-14 grid max-w-3xl grid-cols-3 gap-2 px-4 text-center text-[13px] font-bold text-ink sm:mt-24 sm:text-sm">
+          <span>Tell the advisor</span><span className="text-brand">See one clear price</span><span>Stay protected</span>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------------------ the 3D shop that builds itself + order tracking */}
+      <main className="mx-auto mt-14 grid max-w-6xl grid-cols-[minmax(0,1fr)] items-center gap-6 px-4 pb-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-10">
+        <section className="min-w-0">
+          <span aria-hidden className="mb-3 block h-1 w-12 rounded-full bg-brand" />
+          <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Watch your shop come alive, one service at a time</h2>
+          <p className="mt-3 max-w-lg text-lg text-ink-soft">Every product in your plan shows up on your shop as the advisor adds it. Then, on the tracker, each one turns from setting-up to live.</p>
+          <form
+            id="track"
+            className="card mt-8 max-w-lg scroll-mt-24 p-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (orderId.trim()) router.push(`/order/${orderId.trim().toUpperCase()}`);
+            }}
+          >
+            <label htmlFor="track-id" className="text-sm font-semibold">Already ordered? Check your status</label>
+            <div className="mt-2 flex gap-2">
+              <input id="track-id" value={orderId} onChange={(e) => setOrderId(e.target.value)} placeholder="Order ID, e.g. ACC-3F9A2C71D0" className="min-w-0 flex-1 rounded-xl border border-rule bg-paper px-3 py-2.5 uppercase placeholder:normal-case" />
+              <button className="inline-flex items-center gap-1.5 rounded-xl bg-brand px-4 py-2 font-semibold text-white"><Search size={16} /> Track</button>
+            </div>
+          </form>
+        </section>
+        <div className="relative h-[300px] sm:h-[380px] lg:h-[480px]">
           <Shop3D items={items} className="absolute inset-0" />
-          <div className="pointer-events-none absolute inset-x-0 bottom-2 flex justify-center lg:bottom-10" aria-live="polite">
+          <div className="pointer-events-none absolute inset-x-0 bottom-2 flex justify-center" aria-live="polite">
             {latest && (
               <span key={latest} className="chip-in inline-flex items-center gap-2 rounded-full border border-rule bg-sheet/90 px-3.5 py-1.5 text-sm font-semibold shadow-[var(--shadow-card)] backdrop-blur">
                 <span className="h-2 w-2 rounded-full bg-signal" /> {VISUAL_LABEL[latest]} connected
@@ -76,64 +175,6 @@ export default function Home() {
             )}
           </div>
         </div>
-
-        <section className="min-w-0">
-          <nav aria-label="Language" className="rise no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 py-2 lg:mx-0 lg:flex-wrap lg:px-0">
-            {LANGUAGES.map((l) => (
-              <button
-                key={l.code}
-                onClick={() => setLang(l.code)}
-                aria-pressed={lang === l.code}
-                className={`shrink-0 rounded-full border px-3.5 py-1.5 text-[15px] transition-all ${lang === l.code ? "border-brand bg-brand text-white shadow-[var(--shadow-card)]" : "border-rule bg-sheet text-ink hover:-translate-y-0.5 hover:border-ink-soft"}`}
-              >
-                {l.native}
-              </button>
-            ))}
-          </nav>
-
-          <h1 key={lang} lang={lang} className="rise mt-6 text-[2.5rem] leading-[1.05] font-extrabold tracking-tight text-balance sm:text-5xl lg:text-[3.6rem]" style={{ ["--i" as string]: 1 }}>
-            {g.line}
-          </h1>
-          <p lang={lang} className="rise mt-4 max-w-lg text-lg leading-relaxed text-ink-soft" style={{ ["--i" as string]: 2 }}>
-            {g.sub}
-          </p>
-
-          <div className="rise mt-8 flex flex-wrap items-center gap-4" style={{ ["--i" as string]: 3 }}>
-            <button
-              onClick={() => router.push(`/advisor?lang=${lang}&voice=1`)}
-              className="group inline-flex items-center gap-3 rounded-full bg-brand py-3 pr-6 pl-3 text-lg font-extrabold text-white shadow-[0_14px_30px_-12px_var(--brand-deep)] transition-transform hover:-translate-y-0.5 active:scale-[0.97]"
-            >
-              <span className="grid h-12 w-12 place-items-center rounded-full bg-white text-brand transition-transform group-hover:scale-105"><Mic size={24} strokeWidth={2.4} /></span>
-              <span lang={lang}>{g.talk}</span>
-            </button>
-            <Link href={`/advisor?lang=${lang}`} lang={lang} className="inline-flex items-center gap-2 rounded-full border border-rule bg-sheet px-5 py-3 font-semibold shadow-[var(--shadow-card)] transition-transform hover:-translate-y-0.5">
-              <MessageSquareText size={18} /> {g.type}
-            </Link>
-          </div>
-          <div className="rise mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm font-semibold" style={{ ["--i" as string]: 4 }}>
-            <Link href={`/whatsapp?lang=${lang}`} className="inline-flex items-center gap-1.5 text-wa underline-offset-4 hover:underline">
-              <MessageCircle size={16} /> Continue on WhatsApp
-            </Link>
-            <a href={`https://t.me/${TELEGRAM}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-[#1f8ccf] underline-offset-4 hover:underline">
-              <Send size={16} /> Chat on Telegram
-            </a>
-          </div>
-
-          <form
-            className="rise card mt-10 max-w-lg p-4"
-            style={{ ["--i" as string]: 5 }}
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (orderId.trim()) router.push(`/order/${orderId.trim().toUpperCase()}`);
-            }}
-          >
-            <label htmlFor="track" className="text-sm font-semibold">Already ordered? Check your status</label>
-            <div className="mt-2 flex gap-2">
-              <input id="track" value={orderId} onChange={(e) => setOrderId(e.target.value)} placeholder="Order ID, e.g. ACC-3F9A2C71D0" className="min-w-0 flex-1 rounded-xl border border-rule bg-paper px-3 py-2.5 uppercase placeholder:normal-case" />
-              <button className="inline-flex items-center gap-1.5 rounded-xl bg-brand px-4 py-2 font-semibold text-white"><Search size={16} /> Track</button>
-            </div>
-          </form>
-        </section>
       </main>
 
       <section aria-labelledby="tools" className="border-y border-brand/15 bg-brand-soft">
@@ -142,14 +183,7 @@ export default function Home() {
           <h2 id="tools" className="text-2xl font-extrabold tracking-tight">Beyond the sale: tools that keep your business running</h2>
           <p className="mt-1 max-w-2xl text-ink-soft">Free to try, no sign-up. They also work as commands in WhatsApp and Telegram.</p>
           <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {[
-              ["🛡️", "Scam Shield", "Forward a suspicious message, link or payment screenshot. Get a verdict, the red flags and what to do next.", "/shield"],
-              ["📡", "Network Reality Check", "Know what can be installed at your pincode before you pay. No fibre? We switch you to 5G AirFiber.", "/network"],
-              ["💓", "Health & backup", "Service status, automatic tickets with an SLA, and a backup link that keeps your billing running.", "/solutions"],
-              ["📅", "Installation slots", "Book and reschedule the technician visit yourself. Two free reschedules, no phone calls.", "/help"],
-              ["🏪", "Branch-in-a-Box", "Opening a second shop? Copy your setup, reuse your KYC and book the install in one tap.", "/solutions"],
-              ["💬", "Everything in chat", "SHIELD, NETWORK, SCHEDULE, TROUBLE, BRANCH and BACKUP work in WhatsApp and Telegram.", "/whatsapp"],
-            ].map(([icon, title, text, href]) => (
+            {TOOLS.map(([icon, title, text, href]) => (
               <li key={title}>
                 <Link href={href} className="card flex h-full flex-col gap-1 p-5 transition-transform hover:-translate-y-0.5">
                   <span className="text-3xl" aria-hidden>{icon}</span>
@@ -162,7 +196,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section aria-labelledby="how" className="border-t border-rule bg-sheet/70">
+      <section aria-labelledby="how" className="bg-white">
         <div className="mx-auto max-w-6xl px-4 py-12">
           <span aria-hidden className="mb-3 block h-1 w-12 rounded-full bg-brand" />
           <h2 id="how" className="text-2xl font-extrabold tracking-tight">From hello to live, without a single follow-up call</h2>
