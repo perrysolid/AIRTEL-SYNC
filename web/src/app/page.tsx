@@ -69,12 +69,12 @@ export default function Home() {
       <PromoBar />
 
       {/* ------------------------------------------------------------------ hero: a connected city at night */}
-      <section className="relative isolate overflow-hidden bg-[#060914] pb-[min(48vw,340px)] text-white">
+      <section className="relative isolate flex min-h-[calc(100dvh-2rem)] flex-col overflow-hidden bg-[#060914] text-white">
         <HeroScene className="absolute inset-0 -z-20 h-full w-full" />
         <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-b from-[#060914]/80 via-[#060914]/35 to-[#060914]/80" />
         <div aria-hidden className="absolute inset-0 -z-10 bg-[radial-gradient(60rem_26rem_at_50%_38%,rgb(6_9_20/0.72),transparent_70%)]" />
 
-        <header className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
+        <header className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4">
           <Logo onDark />
           <nav aria-label="Main" className="flex items-center gap-5 text-sm font-semibold text-white/80">
             {NAV.map(([l, h]) => <Link key={h} href={h} className="hidden hover:text-white lg:inline">{l}</Link>)}
@@ -83,69 +83,65 @@ export default function Home() {
           </nav>
         </header>
 
-        <div className="mx-auto max-w-4xl px-4 pt-4 text-center sm:pt-9">
-          <nav aria-label="Language" className="rise no-scrollbar -mx-4 flex justify-start gap-2 overflow-x-auto px-4 py-2 sm:justify-center sm:overflow-visible sm:flex-wrap">
+        <div className="mx-auto w-full max-w-4xl flex-none px-4 pt-3 text-center sm:pt-[2.6dvh]">
+          <nav aria-label="Language" className="rise no-scrollbar -mx-4 flex justify-start gap-2 overflow-x-auto px-4 py-1 sm:justify-center sm:overflow-visible sm:flex-wrap">
             {LANGUAGES.map((l) => (
               <button
                 key={l.code}
                 onClick={() => setLang(l.code)}
                 aria-pressed={lang === l.code}
-                className={`shrink-0 rounded-full border px-3.5 py-1.5 text-[15px] backdrop-blur transition-all ${lang === l.code ? "border-brand bg-brand text-white shadow-[0_10px_24px_-10px_var(--brand)]" : "border-white/20 bg-white/10 text-white/90 hover:bg-white/20"}`}
+                className={`shrink-0 rounded-full border px-3.5 py-1 text-[15px] backdrop-blur transition-all ${lang === l.code ? "border-brand bg-brand text-white shadow-[0_10px_24px_-10px_var(--brand)]" : "border-white/20 bg-white/10 text-white/90 hover:bg-white/20"}`}
               >
                 {l.native}
               </button>
             ))}
           </nav>
 
-          <h1 key={lang} lang={lang} className="rise mt-7 text-[2.3rem] leading-[1.08] font-extrabold tracking-tight text-balance [text-shadow:0_2px_30px_rgb(0_0_0/0.6)] sm:text-5xl lg:text-[3.6rem]" style={{ ["--i" as string]: 1 }}>
+          <h1 key={lang} lang={lang} className="rise mt-[2.4dvh] text-[clamp(1.75rem,5.4dvh,3.4rem)] leading-[1.1] font-extrabold tracking-tight text-balance [text-shadow:0_2px_30px_rgb(0_0_0/0.6)]" style={{ ["--i" as string]: 1 }}>
             {g.line}
           </h1>
-          <p lang={lang} className="rise mx-auto mt-4 max-w-2xl text-lg leading-relaxed text-white/85 [text-shadow:0_1px_18px_rgb(0_0_0/0.6)]" style={{ ["--i" as string]: 2 }}>
+          <p lang={lang} className="rise mx-auto mt-[1.6dvh] max-w-2xl text-[clamp(0.95rem,2.3dvh,1.15rem)] leading-snug text-white/85 [text-shadow:0_1px_18px_rgb(0_0_0/0.6)]" style={{ ["--i" as string]: 2 }}>
             {g.sub}
           </p>
 
-          <div className="rise mt-7 flex flex-wrap items-center justify-center gap-4" style={{ ["--i" as string]: 3 }}>
+          <div className="rise mt-[2.8dvh] flex flex-wrap items-center justify-center gap-3" style={{ ["--i" as string]: 3 }}>
             <button
               onClick={() => router.push(`/advisor?lang=${lang}&voice=1`)}
-              className="group inline-flex items-center gap-3 rounded-full bg-brand py-3 pr-6 pl-3 text-lg font-extrabold text-white shadow-[0_16px_36px_-12px_var(--brand)] transition-transform hover:-translate-y-0.5 active:scale-[0.97]"
+              className="group inline-flex items-center gap-3 rounded-full bg-brand py-2 pr-5 pl-2 text-base font-extrabold text-white shadow-[0_16px_36px_-12px_var(--brand)] transition-transform hover:-translate-y-0.5 active:scale-[0.97]"
             >
-              <span className="grid h-12 w-12 place-items-center rounded-full bg-white text-brand transition-transform group-hover:scale-105"><Mic size={24} strokeWidth={2.4} /></span>
+              <span className="grid h-10 w-10 place-items-center rounded-full bg-white text-brand transition-transform group-hover:scale-105"><Mic size={20} strokeWidth={2.4} /></span>
               <span lang={lang}>{g.talk}</span>
             </button>
-            <Link href={`/advisor?lang=${lang}`} lang={lang} className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-5 py-3 font-semibold text-white backdrop-blur transition-transform hover:-translate-y-0.5 hover:bg-white/20">
+            <Link href={`/advisor?lang=${lang}`} lang={lang} className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-2.5 text-[15px] font-semibold text-white backdrop-blur transition-transform hover:-translate-y-0.5 hover:bg-white/20">
               <MessageSquareText size={18} /> {g.type}
             </Link>
           </div>
-          <div className="rise mt-5 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm font-semibold" style={{ ["--i" as string]: 4 }}>
+          <div className="rise mt-[1.8dvh] flex flex-wrap justify-center gap-x-6 gap-y-1 text-sm font-semibold" style={{ ["--i" as string]: 4 }}>
             <Link href={`/whatsapp?lang=${lang}`} className="inline-flex items-center gap-1.5 text-[#7be0b4] underline-offset-4 hover:underline"><MessageCircle size={16} /> Continue on WhatsApp</Link>
             <a href={`https://t.me/${TELEGRAM}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-[#8fd3ff] underline-offset-4 hover:underline"><Send size={16} /> Chat on Telegram</a>
           </div>
         </div>
 
-        {/* the white horizon the phones stand on */}
-        <div aria-hidden className="absolute inset-x-0 bottom-0 -z-0 mx-auto h-[min(20vw,150px)] w-[150%] -translate-x-[16.6%] rounded-t-[100%] bg-white" />
-      </section>
-
-      {/* ------------------------------------------------------------------ three real screens of the product */}
-      <section aria-label="The product on a phone" className="relative z-10 -mt-[min(48vw,340px)]">
-        <div className="mx-auto flex max-w-4xl items-end justify-center px-2">
-          <div className="phone-in -mr-[3vw] mb-0 w-[29vw] max-w-[230px] translate-y-[5vw] sm:-mr-8 sm:translate-y-10" style={{ ["--i" as string]: 1, ["--r" as string]: "-7deg", rotate: "-7deg" }}>
-            <PhoneMock src="/screens/advisor.png" alt="The advisor recommends a bundle with a clear monthly price" />
+        {/* ----------------------------------------------- the stage: a semicircle with three phones standing on its border */}
+        <div role="group" aria-label="The product on a phone" className="relative mt-auto h-[clamp(215px,38dvh,400px)] w-full flex-none">
+          <div aria-hidden className="absolute top-[calc(38%-18px)] left-1/2 aspect-square w-[calc(min(135vw,1500px)+36px)] -translate-x-1/2 rounded-full border border-white/40 shadow-[0_0_70px_rgb(228_0_0/0.45)]" />
+          <div aria-hidden className="absolute top-[38%] left-1/2 aspect-square w-[min(135vw,1500px)] -translate-x-1/2 rounded-full bg-white" />
+          <div className="absolute inset-x-0 bottom-[7%] flex items-end justify-center gap-[clamp(8px,2.4vw,30px)]">
+            <div className="phone-in w-[min(25vw,clamp(86px,12.6dvh,128px))] translate-y-[7%]" style={{ ["--i" as string]: 1, ["--r" as string]: "-8deg", rotate: "-8deg" }}>
+              <PhoneMock src="/screens/advisor.png" alt="The advisor recommends a bundle with a clear monthly price" />
+            </div>
+            <div className="phone-in z-10 w-[min(29vw,clamp(100px,15dvh,150px))]" style={{ ["--i" as string]: 0 }}>
+              <PhoneMock src="/screens/quote.png" alt="The quote: a live 3D shop, the plan and one monthly price" />
+            </div>
+            <div className="phone-in w-[min(25vw,clamp(86px,12.6dvh,128px))] translate-y-[7%]" style={{ ["--i" as string]: 2, ["--r" as string]: "8deg", rotate: "8deg" }}>
+              <PhoneMock src="/screens/shield.png" alt="Scam Shield flags a fake KYC message and says what to do" />
+            </div>
           </div>
-          <div className="phone-in z-10 w-[35vw] max-w-[270px]" style={{ ["--i" as string]: 0 }}>
-            <PhoneMock src="/screens/quote.png" alt="The quote: a live 3D shop, the plan and one monthly price" />
-          </div>
-          <div className="phone-in -ml-[3vw] w-[29vw] max-w-[230px] translate-y-[5vw] sm:-ml-8 sm:translate-y-10" style={{ ["--i" as string]: 2, ["--r" as string]: "7deg", rotate: "7deg" }}>
-            <PhoneMock src="/screens/shield.png" alt="Scam Shield flags a fake KYC message and says what to do" />
-          </div>
-        </div>
-        <div className="mx-auto mt-14 grid max-w-3xl grid-cols-3 gap-2 px-4 text-center text-[13px] font-bold text-ink sm:mt-24 sm:text-sm">
-          <span>Tell the advisor</span><span className="text-brand">See one clear price</span><span>Stay protected</span>
         </div>
       </section>
 
       {/* ------------------------------------------------------------------ the 3D shop that builds itself + order tracking */}
-      <main className="mx-auto mt-14 grid max-w-6xl grid-cols-[minmax(0,1fr)] items-center gap-6 px-4 pb-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-10">
+      <main className="mx-auto mt-4 grid max-w-6xl grid-cols-[minmax(0,1fr)] items-center gap-6 px-4 pb-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-10">
         <section className="min-w-0">
           <span aria-hidden className="mb-3 block h-1 w-12 rounded-full bg-brand" />
           <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Watch your shop come alive, one service at a time</h2>
