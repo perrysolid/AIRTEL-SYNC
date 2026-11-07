@@ -370,12 +370,21 @@ export async function advisorTurn(opts: { sessionId?: string; message: string; c
   // "Hi" opens the conversation; "2" picks the second option on text-only channels.
   let message = opts.message.trim();
   if (s.transcript.length <= 1 && /^(hi+|hello|hey|namaste|नमस्ते|start|hii)\W*$/i.test(message)) message = "";
-  const pick = message.match(/^(\d{1,2})$/);
-  if (pick && s.lastChips?.[Number(pick[1]) - 1]) message = s.lastChips[Number(pick[1]) - 1].value;
+  // On text-only channels "2" picks the second option, and "1,3" picks several.
+  const picks = /^\d{1,2}(\s*[, ]\s*\d{1,2})*$/.test(message) ? message.split(/[\s,]+/).map((n) => s!.lastChips?.[Number(n) - 1]) : [];
+  if (picks.length && picks.every(Boolean)) {
+    if (s.lastChipsMode === "multi") message = "needs:" + picks.map((c) => c!.value).join(",");
+    else if (picks.length === 1) message = picks[0]!.value;
+  }
   s.lastChips = undefined;
+  s.lastChipsMode = undefined;
+  s.multiPick = undefined;
   const outer = emit;
   emit = (e) => {
-    if (e.type === "chips" && e.mode === "single") s!.lastChips = e.options;
+    if (e.type === "chips") {
+      s!.lastChips = e.options;
+      s!.lastChipsMode = e.mode;
+    }
     outer(e);
   };
 

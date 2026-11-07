@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { z } from "zod";
 import { now, store } from "@/lib/store";
+import { notifyOrder } from "@/lib/notify";
 import { publicOrder } from "@/lib/order-view";
 import { advance, fallbackToAirFiber } from "@/lib/tracker";
 import { sha256 } from "@/lib/privacy";
@@ -23,7 +24,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (!o) return Response.json({ error: "Order not found" }, { status: 404 });
   const body = Body.safeParse(await req.json().catch(() => ({})));
   if (!body.success) return Response.json({ error: body.error.issues[0]?.message ?? "Invalid input" }, { status: 400 });
-  const notify = (text: string) => o.notifications.push({ at: now(), channel: "whatsapp", text });
+  const notify = (text: string) => notifyOrder(o, text);
 
   switch (body.data.action) {
     case "esign": {

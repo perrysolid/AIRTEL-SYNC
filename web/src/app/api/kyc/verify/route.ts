@@ -2,6 +2,7 @@ import { z } from "zod";
 import { validateKyc, type KycDocs } from "@/lib/kyc";
 import { ExtractedDocSchema, DOC_TYPES } from "@/lib/kyc-types";
 import { now, store } from "@/lib/store";
+import { notifyOrder } from "@/lib/notify";
 import { publicOrder } from "@/lib/order-view";
 
 export const runtime = "nodejs";
@@ -26,16 +27,14 @@ export async function POST(req: Request) {
   o.kyc = { result, docs: o.kyc?.docs ?? [], at: now(), registryLookups: { gstin: gst ?? undefined, udyam: udyam ?? undefined } };
   if (gst) o.profile = { ...o.profile, gstin: gst };
   if (udyam) o.profile = { ...o.profile, udyam };
-  o.notifications.push({
-    at: now(),
-    channel: "whatsapp",
-    text:
-      result.verdict === "verified"
+  notifyOrder(
+    o,
+    result.verdict === "verified"
         ? "✅ Business verified in under 2 minutes. Next: e-sign your agreement with Aadhaar OTP."
         : result.verdict === "rejected"
           ? "🔎 Our verification team is reviewing your documents and will call within 4 working hours. No need to chase us — we'll update you here."
           : `📄 Almost there: ${result.actions[0] ?? "one document needs a fix"}.`,
-  });
+  );
   store.saveOrder(o);
   store.audit("system", `kyc:${result.verdict}`, o.id, result.checks.filter((c) => c.status === "fail").map((c) => c.id).join(","));
   return Response.json(publicOrder(o));

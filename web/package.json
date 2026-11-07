@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "telegram": "node --env-file-if-exists=.env.local scripts/telegram-poll.mjs",
+    "telegram:webhook": "node --env-file-if-exists=.env.local scripts/telegram-webhook.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.6.0",

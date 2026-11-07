@@ -11,7 +11,7 @@ Airtel Sync hackathon prototype. A small-business owner talks (in their own lang
 
 ## What's in it
 
-- **Advisor (web voice, text, WhatsApp)** — Gemini with function calling (Claude as optional second provider) gathers facts and explains; a deterministic rules engine is the only thing that decides eligibility and price, so it cannot quote an ineligible product or invent a price. 10 Indian languages for voice; full offline bilingual (English/Hindi) guided mode when no API key or network. Numbered replies ("2") work on WhatsApp.
+- **Advisor (web voice, text, WhatsApp, Telegram)** — Gemini with function calling (Claude as optional second provider) gathers facts and explains; a deterministic rules engine is the only thing that decides eligibility and price, so it cannot quote an ineligible product or invent a price. 10 Indian languages for voice; full offline bilingual (English/Hindi) guided mode when no API key or network. Numbered replies ("2") work on WhatsApp.
 - **Quote** — receipt-style bill, add-ons toggle on/off, quantities, 12/24/36-month terms, One Bill discount, GST, setup savings, what was excluded and *why*, with an alternative.
 - **Smart KYC** — DigiLocker fetch or phone photos → Gemini vision (or Tesseract offline, auto-rotation) → cross-checks against the GST and Udyam registries: checksum, status, legal name, Udyam, address-proof age, signatory authority and expiry. Look-alike OCR repairs only accepted when they pass checksum *and* exist in the registry. **12/12 specimen applicants get the right verdict offline.**
 - **Order & tracker** — consent (DPDP, per purpose), e-sign by OTP, UPI AutoPay, per-service activation tracks, automatic fibre → 5G AirFiber fallback, WhatsApp notification feed, `STATUS` keyword.
@@ -42,16 +42,16 @@ In KYC, *Demo: load a specimen applicant* runs any of K01–K12 through the real
 ### Tests
 
 ```bash
-npm test                                   # 74 unit tests: rules, pricing, KYC, NLU, advisor flows, Gemini tool loop
+npm test                                   # 82 unit tests: rules, pricing, KYC, NLU, advisor, Gemini tool loop, bots
 OCR_IT=1 npx vitest run extract.ocr        # image → OCR → rules for all 12 applicants
 BASE=http://localhost:3000 node scripts/smoke.mjs   # end-to-end journey against a running server
 ```
 
 If a provider fails on billing, auth or quota, it is paused for 10 minutes and the app carries on with the next provider or the offline mode — the demo never breaks.
 
-### WhatsApp (optional)
+### WhatsApp and Telegram bots
 
-Point a Twilio WhatsApp sandbox's incoming webhook at `https://<public-url>/api/whatsapp` (e.g. via `ngrok http 3000`), set `TWILIO_AUTH_TOKEN` and `PUBLIC_BASE_URL`.
+Same advisor in chat, with native buttons, voice notes, one-tap ordering and order updates pushed to the chat. Telegram runs locally with `npm run telegram` (no public URL). Setup for both: [docs/bots-setup.md](docs/bots-setup.md).
 
 ## Docs
 
@@ -59,3 +59,4 @@ Point a Twilio WhatsApp sandbox's incoming webhook at `https://<public-url>/api/
 - [Privacy & security note](docs/privacy-note.md)
 - [Business case](docs/business-case.md)
 - [Demo script](docs/demo-script.md)
+- [WhatsApp and Telegram setup](docs/bots-setup.md)

@@ -94,3 +94,12 @@ export async function* streamGenerate(model: string, body: GeminiRequest): Async
     if (done) break;
   }
 }
+
+/** Transcribes a voice note (WhatsApp/Telegram send OGG/Opus) in whatever language was spoken. */
+export async function transcribeAudio(data: Buffer, mimeType: string): Promise<string | undefined> {
+  const res = await generate(GEMINI_MODEL, {
+    contents: [{ role: "user", parts: [{ inlineData: { mimeType: mimeType.split(";")[0], data: data.toString("base64") } }, { text: "Transcribe this voice note exactly, in the language and script spoken (Hindi in Devanagari). Return only the transcript." }] }],
+    generationConfig: { thinkingConfig: thinking(GEMINI_MODEL), temperature: 0 },
+  });
+  return res.candidates?.[0]?.content?.parts?.filter((p) => p.text && !p.thought).map((p) => p.text).join("").trim() || undefined;
+}

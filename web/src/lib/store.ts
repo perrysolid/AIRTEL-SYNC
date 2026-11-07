@@ -15,7 +15,13 @@ import type { OrderTimeline } from "./tracker";
  * interfaces map 1:1 onto Postgres tables (see docs/architecture.md).
  */
 
-export type Channel = "web" | "voice" | "whatsapp" | "partner";
+export type Channel = "web" | "voice" | "whatsapp" | "telegram" | "partner";
+
+/** Where a chat-bot conversation lives, so order updates reach the same chat. */
+export interface BotChat {
+  channel: "whatsapp" | "telegram";
+  chatId: string;
+}
 
 export interface AdvisorSession {
   id: string;
@@ -42,6 +48,12 @@ export interface AdvisorSession {
   contactHash?: string;
   /** Last single-choice options offered, so "2" works on WhatsApp and voice. */
   lastChips?: { label: string; value: string }[];
+  lastChipsMode?: "single" | "multi";
+  /** Telegram multi-select: options ticked so far. */
+  multiPick?: string[];
+  botChat?: BotChat;
+  /** Owner tapped "Order" in chat but we still need their mobile number. */
+  pendingOrder?: boolean;
 }
 
 export interface ConsentRecord {
@@ -85,7 +97,8 @@ export interface Order {
   esign?: { at: string; method: "aadhaar-otp-mock"; docHash: string };
   payment?: { at: string; method: string; amount: number; ref: string };
   timeline: OrderTimeline;
-  notifications: { at: string; channel: "whatsapp" | "sms"; text: string }[];
+  notifications: { at: string; channel: "whatsapp" | "telegram" | "sms"; text: string }[];
+  botChat?: BotChat;
 }
 
 export interface AuditEvent {
