@@ -44,7 +44,7 @@ export default function QuotePage() {
     return (
       <main className="mx-auto max-w-xl px-4 py-16 text-center">
         <p className="text-lg">{error === "No bundle yet" ? "This plan isn't ready yet." : error}</p>
-        <Link href="/advisor" className="mt-4 inline-block rounded-full bg-ink px-5 py-2.5 font-semibold text-white">Talk to the advisor</Link>
+        <Link href="/advisor" className="mt-4 inline-block rounded-full bg-brand px-5 py-2.5 font-semibold text-white">Talk to the advisor</Link>
       </main>
     );
   }
@@ -79,7 +79,7 @@ export default function QuotePage() {
                   <li key={l.productId} className="chip-in rounded-full border border-rule bg-sheet/90 px-2.5 py-0.5 text-xs font-semibold backdrop-blur">{VISUAL_LABEL[l.productId] ?? l.name}</li>
                 ))}
               </ul>
-              <div className="shrink-0 rounded-2xl bg-ink px-4 py-2 text-right text-white shadow-[var(--shadow-lift)]">
+              <div className="shrink-0 rounded-2xl bg-brand px-4 py-2 text-right text-white shadow-[var(--shadow-lift)]">
                 <div className="text-xs opacity-70">per month + GST</div>
                 <div key={quote.monthly} className="chip-in text-2xl font-extrabold tabular-nums">{inr(quote.monthly)}</div>
               </div>
@@ -101,7 +101,7 @@ export default function QuotePage() {
                   disabled={!allowed}
                   onClick={() => setTerm(t)}
                   aria-pressed={quote.term === t}
-                  className={`rounded-xl border px-2 py-2.5 text-center disabled:opacity-40 ${quote.term === t ? "border-ink bg-ink text-white" : "border-rule bg-sheet"}`}
+                  className={`rounded-xl border px-2 py-2.5 text-center disabled:opacity-40 ${quote.term === t ? "border-brand bg-brand text-white" : "border-rule bg-sheet"}`}
                 >
                   <div className="text-lg font-bold">{t} months</div>
                   <div className={`text-xs ${quote.term === t ? "text-white/80" : "text-ink-soft"}`}>{t === 12 ? "standard price" : t === 24 ? "lower price, ½ setup" : "lowest price, no setup"}</div>
@@ -152,7 +152,7 @@ export default function QuotePage() {
           <p className="mt-3 text-sm text-ink-soft">{recommendation.assumptions.join(". ")}.</p>
         )}
 
-        <form onSubmit={placeOrder} className="mt-8 rounded-xl border-2 border-ink bg-sheet p-4">
+        <form onSubmit={placeOrder} className="mt-8 rounded-xl border-2 border-brand bg-sheet p-4">
           <h2 className="text-xl font-extrabold">Get started for {inr(quote.monthlyWithGst)}/month</h2>
           <p className="text-sm text-ink-soft">Next you&apos;ll verify your business in about 2 minutes. Nothing is charged until you approve.</p>
           <div className="mt-4 space-y-3">
@@ -170,7 +170,7 @@ export default function QuotePage() {
             </label>
           </div>
           {error && <p role="alert" className="mt-3 text-sm font-medium text-bad">{error}</p>}
-          <button disabled={placing} className="mt-4 w-full rounded-xl bg-marigold px-4 py-3.5 text-lg font-extrabold text-ink disabled:opacity-60">
+          <button disabled={placing} className="mt-4 w-full rounded-xl bg-brand px-4 py-3.5 text-lg font-extrabold text-white disabled:opacity-60">
             {placing ? "Creating your order…" : "Continue to verification"}
           </button>
         </form>

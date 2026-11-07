@@ -56,7 +56,7 @@ export async function GET() {
       partnerCode: o.partnerCode,
       monthly: o.quote.monthly,
       kyc: o.kyc?.result.verdict ?? "pending",
-      kycIssues: o.kyc?.result.checks.filter((c) => c.status === "fail").map((c) => c.title) ?? [],
+      kycIssues: o.kyc?.result.checks?.filter((c) => c.status === "fail").map((c) => c.title) ?? [],
       stage: o.payment ? (o.timeline.clockDay >= liveDay(o.timeline) ? "Live" : `Activating (day ${o.timeline.clockDay}/${liveDay(o.timeline)})`) : o.esign ? "Awaiting payment" : o.kyc?.result.verdict === "verified" ? "Awaiting e-sign" : "KYC",
     })),
     service: {

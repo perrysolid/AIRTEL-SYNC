@@ -4,11 +4,11 @@ export function Logo({ small = false }: { small?: boolean }) {
   return (
     <Link href="/" className="inline-flex items-center gap-2 font-extrabold text-ink" aria-label="Accel Business home">
       <svg viewBox="0 0 64 64" className={small ? "h-7 w-7" : "h-9 w-9"} aria-hidden>
-        <rect width="64" height="64" rx="14" fill="var(--ink)" />
-        <path d="M18 46 32 16l14 30h-8l-6-14-6 14z" fill="var(--marigold)" />
+        <rect width="64" height="64" rx="16" fill="var(--brand)" />
+        <path d="M43 22v22M43 33a11 11 0 1 1-4.2-8.7" fill="none" stroke="#fff" strokeWidth="6.5" strokeLinecap="round" />
       </svg>
-      <span className={small ? "text-lg leading-none" : "text-xl leading-none"}>
-        Accel <span className="font-medium text-ink-soft">Business</span>
+      <span className={small ? "text-lg leading-none tracking-tight" : "text-xl leading-none tracking-tight"}>
+        <span className="font-extrabold text-brand">accel</span> <span className="font-medium text-ink-soft">business</span>
       </span>
     </Link>
   );

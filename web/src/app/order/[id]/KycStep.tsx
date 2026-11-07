@@ -93,7 +93,7 @@ export function KycStep({ order, onUpdate }: { order: PublicOrder; onUpdate: (o:
         <p className="mt-1 text-sm text-ink-soft">Your GST and Udyam records come straight from the government — nothing to photograph, nothing to mistype.</p>
         <div className="mt-3 flex gap-2">
           <input value={gstin} onChange={(e) => setGstin(e.target.value.toUpperCase())} maxLength={15} placeholder="Your 15-character GSTIN" className="min-w-0 flex-1 rounded-lg border border-rule bg-paper px-3 py-2.5 font-mono uppercase placeholder:font-sans placeholder:normal-case" aria-label="GSTIN" />
-          <button onClick={digilocker} disabled={gstin.length < 15 || !!busy} className="rounded-lg bg-ink px-4 font-semibold text-white disabled:opacity-40">Fetch</button>
+          <button onClick={digilocker} disabled={gstin.length < 15 || !!busy} className="rounded-lg bg-brand px-4 font-semibold text-white disabled:opacity-40">Fetch</button>
         </div>
       </div>
 
@@ -114,7 +114,7 @@ export function KycStep({ order, onUpdate }: { order: PublicOrder; onUpdate: (o:
       {error && <p role="alert" className="mt-3 font-medium text-bad">{error}</p>}
       {busy && <p className="mt-3 flex items-center gap-2 text-ink-soft"><Loader2 size={16} className="animate-spin" /> {busy}</p>}
 
-      <button onClick={verify} disabled={readCount === 0 || !!busy || Object.values(slots).some((s) => s.status === "reading")} className="mt-4 w-full rounded-xl bg-marigold px-4 py-3.5 text-lg font-extrabold text-ink disabled:opacity-50">
+      <button onClick={verify} disabled={readCount === 0 || !!busy || Object.values(slots).some((s) => s.status === "reading")} className="mt-4 w-full rounded-xl bg-brand px-4 py-3.5 text-lg font-extrabold text-white disabled:opacity-50">
         Verify {readCount > 0 ? `${readCount} document${readCount > 1 ? "s" : ""}` : "documents"}
       </button>
     </section>

@@ -74,7 +74,7 @@ export function ConsentStep({ orderId, onDone }: { orderId: string; onDone: () =
         Data fiduciary: Accel Telecom Ltd (fictional). Grievance officer: privacy@accel.example · Notice version 2026-07-v1. You can also read this in हिन्दी and 8 other languages.
       </p>
       {error && <p role="alert" className="mt-2 font-medium text-bad">{error}</p>}
-      <button onClick={submit} disabled={busy} className="mt-4 w-full rounded-xl bg-marigold px-4 py-3.5 text-lg font-extrabold text-ink disabled:opacity-60">
+      <button onClick={submit} disabled={busy} className="mt-4 w-full rounded-xl bg-brand px-4 py-3.5 text-lg font-extrabold text-white disabled:opacity-60">
         {busy ? "Saving…" : "I agree — continue"}
       </button>
     </section>

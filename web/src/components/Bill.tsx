@@ -50,7 +50,7 @@ export function Bill({
       <Row label="Subtotal" value={inr(quote.subtotal)} />
       {quote.oneBillDiscount > 0 && <Row label="One Bill discount (5%)" value={`− ${inr(quote.oneBillDiscount)}`} accent />}
       <Row label="GST 18%" value={inr(quote.gst)} />
-      <div className="mt-2 flex items-baseline justify-between border-t-2 border-ink pt-2">
+      <div className="mt-2 flex items-baseline justify-between border-t-2 border-brand pt-2">
         <span className="font-semibold">TOTAL / MONTH</span>
         <span className="text-2xl font-semibold tabular-nums">{inr(quote.monthlyWithGst)}</span>
       </div>
@@ -94,7 +94,7 @@ function Line({ l, compact, onToggle, onQty }: { l: QuoteLine; compact: boolean;
               onChange={(e) => onToggle(l.productId, e.target.checked)}
               aria-label={`${l.active ? "Remove" : "Add"} ${l.name}`}
             />
-            <span className="relative h-5 w-9 rounded-full bg-rule transition-colors peer-checked:bg-ink peer-focus-visible:outline-3 peer-focus-visible:outline-marigold after:absolute after:top-0.5 after:left-0.5 after:h-4 after:w-4 after:rounded-full after:bg-sheet after:transition-transform peer-checked:after:translate-x-4" />
+            <span className="relative h-5 w-9 rounded-full bg-rule transition-colors peer-checked:bg-brand peer-focus-visible:outline-3 peer-focus-visible:outline-marigold after:absolute after:top-0.5 after:left-0.5 after:h-4 after:w-4 after:rounded-full after:bg-sheet after:transition-transform peer-checked:after:translate-x-4" />
           </label>
         )}
         <span className="font-semibold">{l.name}</span>

@@ -17,10 +17,10 @@ const EXAMPLES: [string, string][] = [
 ];
 const TONE = {
   scam: { Icon: ShieldAlert, box: "border-bad bg-bad/10", text: "text-bad", bar: "bg-bad" },
-  suspicious: { Icon: ShieldQuestion, box: "border-marigold-deep bg-marigold/15", text: "text-warn", bar: "bg-marigold-deep" },
+  suspicious: { Icon: ShieldQuestion, box: "border-warn bg-warn/15", text: "text-warn", bar: "bg-warn" },
   clear: { Icon: ShieldCheck, box: "border-ok bg-ok/10", text: "text-ok", bar: "bg-ok" },
 } as const;
-const DOT = { high: "bg-bad", med: "bg-marigold-deep", info: "bg-signal" } as const;
+const DOT = { high: "bg-bad", med: "bg-warn", info: "bg-signal" } as const;
 
 export default function ShieldPage() {
   const [text, setText] = useState("");
@@ -72,13 +72,13 @@ export default function ShieldPage() {
           <label htmlFor="msg" className="font-semibold">Paste the message, link or number</label>
           <div role="group" aria-label="Answer language" className="flex rounded-full border border-rule p-0.5 text-sm font-semibold">
             {(["en", "hi"] as const).map((l) => (
-              <button key={l} aria-pressed={lang === l} onClick={() => { setLang(l); if (res && text) void check(text, l); }} className={`rounded-full px-3 py-1 ${lang === l ? "bg-ink text-white" : "text-ink-soft"}`}>{l === "en" ? "English" : "हिन्दी"}</button>
+              <button key={l} aria-pressed={lang === l} onClick={() => { setLang(l); if (res && text) void check(text, l); }} className={`rounded-full px-3 py-1 ${lang === l ? "bg-brand text-white" : "text-ink-soft"}`}>{l === "en" ? "English" : "हिन्दी"}</button>
             ))}
           </div>
         </div>
         <textarea id="msg" rows={5} value={text} onChange={(e) => setText(e.target.value)} placeholder="e.g. “Your SIM will be blocked. Update KYC at http://…”" className="mt-2 w-full resize-y rounded-xl border border-rule bg-paper p-3" />
         <div className="mt-3 flex flex-wrap gap-2">
-          <button disabled={!text.trim() || busy} onClick={() => check()} className="inline-flex items-center gap-2 rounded-xl bg-ink px-5 py-3 font-bold text-white disabled:opacity-50">
+          <button disabled={!text.trim() || busy} onClick={() => check()} className="inline-flex items-center gap-2 rounded-xl bg-brand px-5 py-3 font-bold text-white disabled:opacity-50">
             {busy ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />} Check it
           </button>
           <button disabled={busy} onClick={() => file.current?.click()} className="inline-flex items-center gap-2 rounded-xl border border-rule bg-sheet px-5 py-3 font-semibold">
@@ -127,12 +127,12 @@ export default function ShieldPage() {
             <h3 className="text-lg font-bold">What to do now</h3>
             <ol className="mt-2 space-y-2">
               {res.actions.map((a, i) => (
-                <li key={i} className="flex gap-3"><span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-ink text-sm font-bold text-white">{i + 1}</span><span>{a}</span></li>
+                <li key={i} className="flex gap-3"><span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-brand text-sm font-bold text-white">{i + 1}</span><span>{a}</span></li>
               ))}
             </ol>
             {res.verdict !== "clear" && (
               <div className="mt-4 flex flex-wrap gap-2">
-                <a href="https://sancharsaathi.gov.in" target="_blank" rel="noreferrer" className="rounded-xl bg-ink px-4 py-2.5 text-sm font-bold text-white">Report on Chakshu</a>
+                <a href="https://sancharsaathi.gov.in" target="_blank" rel="noreferrer" className="rounded-xl bg-brand px-4 py-2.5 text-sm font-bold text-white">Report on Chakshu</a>
                 <a href="tel:1930" className="inline-flex items-center gap-1.5 rounded-xl border border-rule bg-sheet px-4 py-2.5 text-sm font-semibold"><Phone size={14} /> Lost money? Call 1930</a>
               </div>
             )}

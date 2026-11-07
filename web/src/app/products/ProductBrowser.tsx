@@ -41,7 +41,7 @@ export function ProductBrowser({ products }: { products: Product[] }) {
         </div>
         <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Category">
           {CATS.map((c) => (
-            <button key={c} onClick={() => setCat(c)} aria-pressed={cat === c} className={`rounded-full border px-3.5 py-1.5 text-sm font-semibold ${cat === c ? "border-ink bg-ink text-white" : "border-rule bg-sheet text-ink-soft"}`}>{ICON[c]} {c}</button>
+            <button key={c} onClick={() => setCat(c)} aria-pressed={cat === c} className={`rounded-full border px-3.5 py-1.5 text-sm font-semibold ${cat === c ? "border-brand bg-brand text-white" : "border-rule bg-sheet text-ink-soft"}`}>{ICON[c]} {c}</button>
           ))}
         </div>
       </div>
@@ -58,7 +58,7 @@ export function ProductBrowser({ products }: { products: Product[] }) {
               <span className="rounded-md bg-paper px-2 py-1">{p.minContract}-month min</span>
               <span className="rounded-md bg-paper px-2 py-1">Setup {inr(p.setupFee)}</span>
               <span className="rounded-md bg-paper px-2 py-1">Live ~{p.installDays}d</span>
-              {p.requiresGstin ? <span className="rounded-md bg-marigold/25 px-2 py-1 text-warn">GSTIN needed</span> : <span className="rounded-md bg-ok/15 px-2 py-1 text-ok">No GSTIN</span>}
+              {p.requiresGstin ? <span className="rounded-md bg-warn/25 px-2 py-1 text-warn">GSTIN needed</span> : <span className="rounded-md bg-ok/15 px-2 py-1 text-ok">No GSTIN</span>}
               {p.requiresOneOf.length > 0 && <span className="rounded-md bg-signal/15 px-2 py-1 text-signal">Needs an internet plan</span>}
               {p.minEmployees > 1 && <span className="rounded-md bg-paper px-2 py-1">{p.minEmployees}+ people</span>}
               {p.minSites > 1 && <span className="rounded-md bg-paper px-2 py-1">{p.minSites}+ sites</span>}
@@ -69,7 +69,7 @@ export function ProductBrowser({ products }: { products: Product[] }) {
         ))}
       </ul>
       {rows.length === 0 && <div className="card mt-4 p-6 text-center text-ink-soft">No products match. Try clearing a filter.</div>}
-      <div className="card mt-6 p-6 text-center"><div className="font-bold">Not sure what you need?</div><p className="text-ink-soft">The advisor recommends the right products and checks eligibility for you.</p><Link href="/advisor" className="mt-3 inline-block rounded-xl bg-marigold px-5 py-2.5 font-extrabold text-ink">Ask the advisor</Link></div>
+      <div className="card mt-6 p-6 text-center"><div className="font-bold">Not sure what you need?</div><p className="text-ink-soft">The advisor recommends the right products and checks eligibility for you.</p><Link href="/advisor" className="mt-3 inline-block rounded-xl bg-brand px-5 py-2.5 font-extrabold text-white">Ask the advisor</Link></div>
     </>
   );
 }

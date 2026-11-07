@@ -37,7 +37,7 @@ export default function ConsolePage() {
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
           <div className="flex items-center gap-3">
             <Logo small />
-            <span className="rounded bg-ink px-2 py-0.5 text-xs font-semibold text-white">Partner & sales console</span>
+            <span className="rounded bg-brand px-2 py-0.5 text-xs font-semibold text-white">Partner & sales console</span>
           </div>
           <button onClick={load} className="inline-flex items-center gap-1.5 text-sm text-ink-soft"><RefreshCw size={14} /> Refresh</button>
         </div>
@@ -59,7 +59,7 @@ export default function ConsolePage() {
             ["service", `Service health (${data.service.tickets.filter((t: any) => t.status === "Open").length} open)`],
             ["insights", "Funnel insights"],
           ] as const).map(([k, label]) => (
-            <button key={k} onClick={() => setTab(k)} aria-pressed={tab === k} className={`-mb-px border-b-2 px-3 py-2 text-sm font-semibold ${tab === k ? "border-ink" : "border-transparent text-ink-soft"}`}>
+            <button key={k} onClick={() => setTab(k)} aria-pressed={tab === k} className={`-mb-px border-b-2 px-3 py-2 text-sm font-semibold ${tab === k ? "border-brand" : "border-transparent text-ink-soft"}`}>
               {label}
             </button>
           ))}
@@ -75,14 +75,14 @@ export default function ConsolePage() {
                 {data.unclosed.map((u: any) => (
                   <article key={u.id} className="rounded-xl border border-rule bg-sheet p-4">
                     <div className="flex items-center justify-between">
-                      <span className={`rounded px-2 py-0.5 text-xs font-bold ${u.status === "handoff" ? "bg-marigold text-ink" : "bg-paper text-ink-soft"}`}>{u.reason}</span>
+                      <span className={`rounded px-2 py-0.5 text-xs font-bold ${u.status === "handoff" ? "bg-brand text-white" : "bg-paper text-ink-soft"}`}>{u.reason}</span>
                       <span className="text-xs text-ink-soft">{u.channel} · {u.language} · {new Date(u.updatedAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span>
                     </div>
                     <p className="mt-2 font-semibold">{u.summary || "Not enough details yet"}</p>
                     {u.lastOwnerMessage && <p className="mt-1 text-sm text-ink-soft">Last said: “{u.lastOwnerMessage}”</p>}
                     <div className="mt-3 flex gap-2">
                       {u.quoteMonthly && <Link href={`/quote/${u.id}`} className="rounded-lg border border-rule px-3 py-1.5 text-sm font-semibold">Open quote ({inr(u.quoteMonthly)}/mo)</Link>}
-                      <button className="inline-flex items-center gap-1.5 rounded-lg bg-ink px-3 py-1.5 text-sm font-semibold text-white"><PhoneCall size={14} /> Claim & call</button>
+                      <button className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-sm font-semibold text-white"><PhoneCall size={14} /> Claim & call</button>
                       {u.canNudge && <button onClick={() => nudge(u.id)} className="rounded-lg border border-rule px-3 py-1.5 text-sm font-semibold">🔔 Nudge in chat</button>}
                     </div>
                     {nudged[u.id] && <p role="status" className="mt-2 text-sm font-medium text-ink-soft">{nudged[u.id]}</p>}
@@ -114,7 +114,7 @@ export default function ConsolePage() {
                         <td className="p-3"><div className="font-semibold">{t.business}</div><div className="text-ink-soft">{t.city} · <Link href={`/order/${t.orderId}`} className="underline">{t.orderId}</Link></div></td>
                         <td className="p-3">{t.kind.replace("_", " ")}<div className="text-ink-soft">{t.detail}</div></td>
                         <td className="p-3">{t.assignedTo}</td>
-                        <td className="p-3"><span className={`rounded px-2 py-0.5 text-xs font-bold ${t.status === "Resolved" ? "bg-ok/15 text-ok" : "bg-marigold/25 text-warn"}`}>{t.status} · SLA {t.slaHours}h</span></td>
+                        <td className="p-3"><span className={`rounded px-2 py-0.5 text-xs font-bold ${t.status === "Resolved" ? "bg-ok/15 text-ok" : "bg-warn/25 text-warn"}`}>{t.status} · SLA {t.slaHours}h</span></td>
                       </tr>
                     ))}
                   </tbody>
@@ -140,7 +140,7 @@ export default function ConsolePage() {
                       <td className="p-3"><div className="font-semibold">{c.business}</div><div className="text-ink-soft">{c.type} · {c.city} · {c.contact}</div></td>
                       <td className="p-3">{c.dropReason}<div className="text-ink-soft">at {c.stage} · via {c.source}</div></td>
                       <td className="p-3">{c.language}</td>
-                      <td className="p-3"><span className={`rounded px-2 py-0.5 font-bold ${c.band === "hot" ? "bg-ok/15 text-ok" : c.band === "warm" ? "bg-marigold/20 text-ink" : "bg-paper text-ink-soft"}`}>{pct(c.probability, 0)}</span></td>
+                      <td className="p-3"><span className={`rounded px-2 py-0.5 font-bold ${c.band === "hot" ? "bg-ok/15 text-ok" : c.band === "warm" ? "bg-warn/20 text-ink" : "bg-paper text-ink-soft"}`}>{pct(c.probability, 0)}</span></td>
                       <td className="p-3 text-ink-soft">{c.reasons.map((r: any) => `${r.effect > 0 ? "+" : "−"} ${r.label}`).join(", ")}</td>
                     </tr>
                   ))}
@@ -185,7 +185,7 @@ export default function ConsolePage() {
                 {s.funnel.map((f: any, i: number) => (
                   <li key={f.stage}>
                     <div className="flex justify-between text-sm"><span>{f.stage}</span><span className="tabular-nums">{f.count.toLocaleString("en-IN")}{i > 0 && <span className="text-ink-soft"> · {pct(f.count / s.funnel[i - 1].count, 0)}</span>}</span></div>
-                    <div className="mt-1 h-3 rounded bg-paper"><div className="h-3 rounded bg-ink" style={{ width: `${(f.count / maxFunnel) * 100}%` }} /></div>
+                    <div className="mt-1 h-3 rounded bg-paper"><div className="h-3 rounded bg-brand" style={{ width: `${(f.count / maxFunnel) * 100}%` }} /></div>
                   </li>
                 ))}
               </ul>

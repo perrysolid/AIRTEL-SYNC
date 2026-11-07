@@ -46,7 +46,7 @@ export default function NetworkPage() {
               {CITIES.map((c) => <option key={c}>{c}</option>)}
             </select>
           </label>
-          <button disabled={pin.length !== 6 || busy} onClick={() => go()} className="inline-flex items-center gap-2 rounded-xl bg-ink px-5 py-3 font-bold text-white disabled:opacity-50">
+          <button disabled={pin.length !== 6 || busy} onClick={() => go()} className="inline-flex items-center gap-2 rounded-xl bg-brand px-5 py-3 font-bold text-white disabled:opacity-50">
             {busy && <Loader2 size={16} className="animate-spin" />} Check my area
           </button>
         </div>
@@ -61,7 +61,7 @@ export default function NetworkPage() {
       {r && (
         <div className="card mt-6 p-5">
           <NetworkOptions r={r} />
-          <Link href="/advisor" className="mt-4 inline-block rounded-xl bg-marigold px-5 py-3 font-extrabold text-ink">Build my plan for this address →</Link>
+          <Link href="/advisor" className="mt-4 inline-block rounded-xl bg-brand px-5 py-3 font-extrabold text-white">Build my plan for this address →</Link>
         </div>
       )}
     </PageShell>

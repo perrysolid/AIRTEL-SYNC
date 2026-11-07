@@ -114,7 +114,7 @@ export function HealthPanel({ order, onUpdate }: { order: PublicOrder; onUpdate:
           <h3 className="flex items-center gap-2 text-xl font-extrabold"><span className={`h-3 w-3 rounded-full ${down ? "bg-bad" : "bg-signal"}`} /> {status}</h3>
           <div className="flex gap-2">
             <button disabled={c.outageActive} onClick={() => outage("start")} className="inline-flex items-center gap-1.5 rounded-lg border border-rule bg-sheet px-3 py-2 text-sm font-semibold disabled:opacity-40"><Zap size={15} /> Simulate an outage</button>
-            <button disabled={!c.outageActive} onClick={() => outage("end")} className="rounded-lg bg-ink px-3 py-2 text-sm font-semibold text-white disabled:opacity-40">Restore link</button>
+            <button disabled={!c.outageActive} onClick={() => outage("end")} className="rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-white disabled:opacity-40">Restore link</button>
           </div>
         </div>
         {c.outageActive && (
@@ -129,7 +129,7 @@ export function HealthPanel({ order, onUpdate }: { order: PublicOrder; onUpdate:
             <div className="flex items-center gap-1.5 text-sm font-bold"><Siren size={14} /> Tickets &amp; SLA</div>
             <ul className="mt-1 divide-y divide-rule text-sm">
               {order.tickets.map((t) => (
-                <li key={t.id} className="flex items-center justify-between gap-2 py-2"><span><span className="font-mono">{t.id}</span> · {t.kind.replace("_", " ")} · {t.assignedTo}</span><span className={`rounded-full px-2 py-0.5 text-xs font-bold ${t.status === "Resolved" ? "bg-ok/15 text-ok" : "bg-marigold/25 text-warn"}`}>{t.status} · SLA {t.slaHours}h</span></li>
+                <li key={t.id} className="flex items-center justify-between gap-2 py-2"><span><span className="font-mono">{t.id}</span> · {t.kind.replace("_", " ")} · {t.assignedTo}</span><span className={`rounded-full px-2 py-0.5 text-xs font-bold ${t.status === "Resolved" ? "bg-ok/15 text-ok" : "bg-warn/25 text-warn"}`}>{t.status} · SLA {t.slaHours}h</span></li>
               ))}
             </ul>
           </div>
@@ -150,9 +150,9 @@ export function HealthPanel({ order, onUpdate }: { order: PublicOrder; onUpdate:
         {c.hasFailover ? (
           <p className="mt-3 flex gap-2 rounded-xl bg-ok/10 p-3"><Check className="shrink-0 text-ok" /> Backup 4G/5G Failover is already in your bundle.</p>
         ) : c.canAddFailover ? (
-          <div className="mt-3 flex flex-wrap items-center gap-3 rounded-xl bg-marigold/15 p-3">
+          <div className="mt-3 flex flex-wrap items-center gap-3 rounded-xl bg-warn/15 p-3">
             <p className="min-w-0 flex-1">{c.worthIt ? "At these numbers, one bad month of outages costs more than backup would." : "At these numbers backup is optional, but it protects you in a bad month."}</p>
-            <button onClick={failover} className="rounded-xl bg-marigold px-4 py-2.5 font-extrabold text-ink">Add Backup 4G/5G</button>
+            <button onClick={failover} className="rounded-xl bg-brand px-4 py-2.5 font-extrabold text-white">Add Backup 4G/5G</button>
           </div>
         ) : (
           <p className="mt-3 flex gap-2 rounded-xl bg-signal/10 p-3 text-sm"><TriangleAlert size={16} className="mt-0.5 shrink-0" /> Backup failover needs a fixed-line plan (fibre or leased line). On 5G AirFiber, ask your partner about adding a fixed line.</p>
@@ -168,7 +168,7 @@ function Slider({ id, label, ...p }: { id: string; label: string; min: number; m
   return (
     <div className="mt-3">
       <label htmlFor={id} className="text-sm font-semibold">{label}</label>
-      <input id={id} type="range" min={p.min} max={p.max} step={p.step} value={p.value} onChange={(e) => p.onChange(Number(e.target.value))} className="mt-1 w-full accent-[var(--marigold-deep)]" />
+      <input id={id} type="range" min={p.min} max={p.max} step={p.step} value={p.value} onChange={(e) => p.onChange(Number(e.target.value))} className="mt-1 w-full accent-[var(--brand-deep)]" />
     </div>
   );
 }
@@ -214,7 +214,7 @@ export function BranchPanel({ order, onUpdate }: { order: PublicOrder; onUpdate:
 
   return (
     <section className="card p-5">
-      <span className="rounded-full bg-marigold/25 px-2.5 py-0.5 text-xs font-bold text-warn">Branch-in-a-Box</span>
+      <span className="rounded-full bg-brand-soft px-2.5 py-0.5 text-xs font-bold text-brand">Branch-in-a-Box</span>
       <h3 className="mt-2 flex items-center gap-2 text-xl font-extrabold"><Store size={22} /> Open a new location in one tap</h3>
       <p className="mt-1 text-ink-soft">We copy your current setup to the new address, reuse your verified KYC, check the network there and start activation. You only upload the new address proof.</p>
       {order.branches.length > 0 && (
@@ -225,7 +225,7 @@ export function BranchPanel({ order, onUpdate }: { order: PublicOrder; onUpdate:
         <label><span className="text-sm font-semibold">City</span><select value={f.city} onChange={(e) => setF({ ...f, city: e.target.value })} className="mt-1 w-full rounded-xl border border-rule bg-paper px-3 py-2.5">{BRANCH_CITIES.map((c) => <option key={c}>{c}</option>)}</select></label>
         <label><span className="text-sm font-semibold">Pincode</span><input value={f.pincode} inputMode="numeric" maxLength={6} onChange={(e) => setF({ ...f, pincode: e.target.value.replace(/\D/g, "") })} className="mt-1 w-full rounded-xl border border-rule bg-paper px-3 py-2.5 font-mono" /></label>
       </div>
-      <button disabled={f.pincode.length !== 6 || busy} onClick={preview} className="mt-3 inline-flex items-center gap-2 rounded-xl bg-ink px-5 py-2.5 font-bold text-white disabled:opacity-50">{busy && <Loader2 size={15} className="animate-spin" />} Preview</button>
+      <button disabled={f.pincode.length !== 6 || busy} onClick={preview} className="mt-3 inline-flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 font-bold text-white disabled:opacity-50">{busy && <Loader2 size={15} className="animate-spin" />} Preview</button>
       {err && <p role="alert" className="mt-3 font-medium text-bad">{err}</p>}
 
       {pv && (
@@ -234,12 +234,12 @@ export function BranchPanel({ order, onUpdate }: { order: PublicOrder; onUpdate:
           <ul className="mt-1 divide-y divide-rule text-[15px]">
             {pv.quote.lines.filter((l) => l.active).map((l) => <li key={l.productId} className="flex justify-between py-1.5"><span>{l.name} × {l.qty}</span><span className="tabular-nums">{inr(l.monthly)}</span></li>)}
           </ul>
-          <div className="mt-2 flex justify-between border-t-2 border-ink pt-2 font-extrabold"><span>New branch / month (incl. GST)</span><span className="tabular-nums">{inr(pv.quote.monthlyWithGst)}</span></div>
+          <div className="mt-2 flex justify-between border-t-2 border-brand pt-2 font-extrabold"><span>New branch / month (incl. GST)</span><span className="tabular-nums">{inr(pv.quote.monthlyWithGst)}</span></div>
           <div className="text-sm text-ink-soft">Your total after adding it: {inr(pv.totalAfter)}/month · one bill</div>
           <div className="mt-4"><NetworkOptions r={pv.network} /></div>
-          {pv.removed.length > 0 && <p className="mt-3 flex gap-2 rounded-xl bg-marigold/15 p-3 text-sm"><TriangleAlert size={16} className="mt-0.5 shrink-0" /> Not copied because it needs a fixed line: {pv.removed.join(", ")}.</p>}
+          {pv.removed.length > 0 && <p className="mt-3 flex gap-2 rounded-xl bg-warn/15 p-3 text-sm"><TriangleAlert size={16} className="mt-0.5 shrink-0" /> Not copied because it needs a fixed line: {pv.removed.join(", ")}.</p>}
           <p className="mt-3 flex gap-2 rounded-xl bg-ok/10 p-3 text-sm"><Check size={16} className="mt-0.5 shrink-0 text-ok" /><span><b>KYC reused.</b> Only needed: {pv.needs.join(", ")}.</span></p>
-          <button disabled={busy} onClick={create} className="mt-4 w-full rounded-xl bg-marigold px-4 py-3 text-lg font-extrabold text-ink disabled:opacity-60">Create this branch</button>
+          <button disabled={busy} onClick={create} className="mt-4 w-full rounded-xl bg-brand px-4 py-3 text-lg font-extrabold text-white disabled:opacity-60">Create this branch</button>
         </div>
       )}
       {done && (

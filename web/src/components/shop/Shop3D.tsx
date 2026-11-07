@@ -9,7 +9,7 @@ const ShopScene = dynamic(() => import("./ShopScene"), { ssr: false, loading: ()
 function ShopPlaceholder() {
   return (
     <div className="grid h-full w-full place-items-center">
-      <div className="h-2/3 w-2/3 animate-pulse rounded-[2rem] bg-gradient-to-br from-[#e9f6f4] to-[#fdf3dc]" />
+      <div className="h-2/3 w-2/3 animate-pulse rounded-[2rem] bg-gradient-to-br from-[#fff0f0] to-[#f4f4f4]" />
     </div>
   );
 }

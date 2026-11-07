@@ -1,27 +1,32 @@
 @import "tailwindcss";
 
 /*
- * Accel Business — "the shop counter" system.
- * Ledger-ink indigo on cool ledger paper, marigold for the one thing to press,
- * stamp colours for verdicts. Mukta carries Latin + Devanagari in one voice;
+ * Accel Business — white and red, in the manner of India's big telecom brands.
+ * Clean white surfaces, one confident brand red for everything you can press, charcoal text,
+ * green for "live/verified", amber only for "needs a look". Mukta carries Latin + Devanagari in one voice;
  * the bill uses a receipt-printer mono and nothing else does.
  */
 :root {
   color-scheme: light;
-  --ink: #161a33;
-  --ink-soft: #565b78;
-  --paper: #f5f6fa;
+  --ink: #1f1f1f;
+  --ink-soft: #666666;
+  --paper: #f6f6f6;
   --sheet: #ffffff;
-  --rule: #e3e5ee;
+  --rule: #e8e8e8;
+  /* brand */
+  --brand: #e40000;
+  --brand-deep: #b80000;
+  --brand-soft: #fff0f0;
+  /* status */
   --marigold: #f2a900;
-  --marigold-deep: #c98a00;
-  --signal: #12a39a;
+  --marigold-deep: #b27800;
+  --signal: #12a05e;
   --stamp-green: #1f8a5b;
-  --stamp-red: #d93d42;
-  --stamp-amber: #b0720f;
+  --stamp-red: #b3001b;
+  --stamp-amber: #9a6200;
   --wa: #0f7a5f;
-  --shadow-card: 0 1px 2px rgb(22 26 51 / 0.04), 0 8px 24px -12px rgb(22 26 51 / 0.12);
-  --shadow-lift: 0 2px 4px rgb(22 26 51 / 0.05), 0 22px 48px -20px rgb(22 26 51 / 0.25);
+  --shadow-card: 0 1px 2px rgb(31 31 31 / 0.05), 0 8px 24px -14px rgb(31 31 31 / 0.16);
+  --shadow-lift: 0 2px 4px rgb(31 31 31 / 0.06), 0 22px 48px -22px rgb(228 0 0 / 0.35);
 }
 
 @theme inline {
@@ -30,6 +35,10 @@
   --color-paper: var(--paper);
   --color-sheet: var(--sheet);
   --color-rule: var(--rule);
+  --color-brand: var(--brand);
+  --color-brand-deep: var(--brand-deep);
+  --color-brand-soft: var(--brand-soft);
+  --color-amber: var(--marigold);
   --color-marigold: var(--marigold);
   --color-marigold-deep: var(--marigold-deep);
   --color-ok: var(--stamp-green);
@@ -45,15 +54,13 @@
 
 html,
 body {
-  background: var(--paper);
+  background: var(--sheet);
   color: var(--ink);
 }
 
-/* Soft daylight behind every page: a warm glow top-left, a cool one top-right. */
+/* Pure white page; a whisper of brand red in the top corner, like a campaign banner bleeding in. */
 body {
-  background-image:
-    radial-gradient(60rem 40rem at -10% -10%, rgb(242 169 0 / 0.1), transparent 60%),
-    radial-gradient(50rem 36rem at 110% -5%, rgb(18 163 154 / 0.1), transparent 60%);
+  background-image: radial-gradient(46rem 30rem at 108% -8%, rgb(228 0 0 / 0.07), transparent 62%);
   background-attachment: fixed;
   min-height: 100dvh;
 }
@@ -64,7 +71,7 @@ body {
 }
 
 :focus-visible {
-  outline: 3px solid var(--marigold);
+  outline: 3px solid var(--brand);
   outline-offset: 2px;
   border-radius: 6px;
 }
@@ -117,7 +124,7 @@ body {
   }
   @keyframes pulse {
     0% {
-      box-shadow: 0 0 0 0 color-mix(in srgb, var(--marigold) 70%, transparent);
+      box-shadow: 0 0 0 0 color-mix(in srgb, var(--brand) 60%, transparent);
     }
     100% {
       box-shadow: 0 0 0 22px transparent;

@@ -194,7 +194,7 @@ function Advisor() {
             voice.stopSpeaking();
           }}
           aria-pressed={voiceMode}
-          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm ${voiceMode ? "border-ink bg-ink text-white" : "border-rule bg-sheet"}`}
+          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm ${voiceMode ? "border-brand bg-brand text-white" : "border-rule bg-sheet"}`}
         >
           {voiceMode ? <Headphones size={15} /> : <Keyboard size={15} />} {voiceMode ? "Voice" : "Text"}
         </button>
@@ -216,7 +216,7 @@ function Advisor() {
         <div className="mx-auto max-w-xl space-y-3 px-4 py-4" aria-live="polite">
           {msgs.map((m, i) =>
             m.kind === "user" ? (
-              <div key={i} className="chip-in ml-auto w-fit max-w-[85%] rounded-2xl rounded-br-md bg-ink px-4 py-2.5 text-white shadow-[var(--shadow-card)]">{m.text}</div>
+              <div key={i} className="chip-in ml-auto w-fit max-w-[85%] rounded-2xl rounded-br-md bg-brand px-4 py-2.5 text-white shadow-[var(--shadow-card)]">{m.text}</div>
             ) : m.kind === "bot" ? (
               <div key={i} lang={lang} className="chip-in max-w-[92%] rounded-2xl rounded-bl-md border border-rule bg-sheet px-4 py-3 leading-relaxed shadow-[var(--shadow-card)]">
                 <Rich text={m.text} />
@@ -230,7 +230,7 @@ function Advisor() {
                   </div>
                 )}
                 <Bill quote={m.quote} businessName={profile?.businessName} compact />
-                <Link href={`/quote/${sessionRef.current}`} className="mt-2 flex items-center justify-center rounded-xl bg-marigold px-4 py-3 text-center font-bold text-ink">
+                <Link href={`/quote/${sessionRef.current}`} className="mt-2 flex items-center justify-center rounded-xl bg-brand px-4 py-3 text-center font-bold text-white">
                   Review and adjust my plan
                 </Link>
               </div>
@@ -258,7 +258,7 @@ function Advisor() {
                     key={c.value}
                     onClick={() => (chips.mode === "multi" ? setMulti((s) => (on ? s.filter((x) => x !== c.value) : [...s, c.value])) : void send(c.value, c.label))}
                     aria-pressed={chips.mode === "multi" ? on : undefined}
-                    className={`chip-in inline-flex items-center gap-1 rounded-full border px-3.5 py-2 text-[15px] shadow-[var(--shadow-card)] transition-all ${on ? "border-ink bg-ink text-white" : "border-rule bg-sheet hover:-translate-y-0.5 hover:border-ink-soft"}`}
+                    className={`chip-in inline-flex items-center gap-1 rounded-full border px-3.5 py-2 text-[15px] shadow-[var(--shadow-card)] transition-all ${on ? "border-brand bg-brand text-white" : "border-rule bg-sheet hover:-translate-y-0.5 hover:border-ink-soft"}`}
                   >
                     {on && <Check size={14} />} {c.label}
                   </button>
@@ -267,7 +267,7 @@ function Advisor() {
               {chips.mode === "multi" && (
                 <button
                   onClick={() => void send(`needs:${multi.join(",")}`, multi.length ? chips.options.filter((o) => multi.includes(o.value)).map((o) => o.label).join(", ") : "Just internet")}
-                  className="rounded-full bg-marigold px-4 py-2 font-bold text-ink"
+                  className="rounded-full bg-brand px-4 py-2 font-bold text-white"
                 >
                   {multi.length ? `Done (${multi.length})` : "Just internet for now"}
                 </button>
@@ -308,7 +308,7 @@ function Advisor() {
                 onClick={() => (voice.listening ? voice.stopListening() : startListening())}
                 disabled={!voice.supported || busy}
                 aria-label={voice.listening ? "Stop listening" : "Speak"}
-                className={`grid h-16 w-16 place-items-center rounded-full bg-marigold text-ink disabled:opacity-40 ${voice.listening ? "mic-live" : ""}`}
+                className={`grid h-16 w-16 place-items-center rounded-full bg-brand text-white disabled:opacity-40 ${voice.listening ? "mic-live" : ""}`}
               >
                 {voice.listening ? <Square size={26} fill="currentColor" /> : <Mic size={30} />}
               </button>
@@ -336,7 +336,7 @@ function Advisor() {
                   <Mic size={20} />
                 </button>
               )}
-              <button disabled={busy || !input.trim()} className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-ink text-white disabled:opacity-40" aria-label="Send">
+              <button disabled={busy || !input.trim()} className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-brand text-white disabled:opacity-40" aria-label="Send">
                 <Send size={18} />
               </button>
             </form>

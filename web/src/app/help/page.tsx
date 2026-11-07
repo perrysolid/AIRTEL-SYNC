@@ -26,7 +26,7 @@ export default function HelpPage() {
           const I = Icon as typeof Headset;
           return (
             <Link key={href as string} href={href as string} className="card flex flex-col gap-1 p-5 transition-transform hover:-translate-y-0.5">
-              <I size={26} className="text-marigold-deep" /><div className="mt-1 font-bold">{title as string}</div><div className="text-sm text-ink-soft">{text as string}</div>
+              <I size={26} className="text-brand" /><div className="mt-1 font-bold">{title as string}</div><div className="text-sm text-ink-soft">{text as string}</div>
             </Link>
           );
         })}
@@ -39,16 +39,16 @@ export default function HelpPage() {
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search: GSTIN, install time, outage…" className="w-full rounded-xl border border-rule bg-paper py-3 pr-3 pl-10" />
         </label>
         <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Topic">
-          {CATS.map((c) => <button key={c} onClick={() => setCat(c)} aria-pressed={cat === c} className={`rounded-full border px-3.5 py-1.5 text-sm font-semibold ${cat === c ? "border-ink bg-ink text-white" : "border-rule bg-sheet text-ink-soft"}`}>{c}</button>)}
+          {CATS.map((c) => <button key={c} onClick={() => setCat(c)} aria-pressed={cat === c} className={`rounded-full border px-3.5 py-1.5 text-sm font-semibold ${cat === c ? "border-brand bg-brand text-white" : "border-rule bg-sheet text-ink-soft"}`}>{c}</button>)}
         </div>
       </div>
 
       <div className="mt-4 space-y-2.5">
         {rows.map((f) => (
-          <div key={f.q} className={`overflow-hidden rounded-2xl border-2 bg-sheet ${open === f.q ? "border-ink" : "border-rule"}`}>
+          <div key={f.q} className={`overflow-hidden rounded-2xl border-2 bg-sheet ${open === f.q ? "border-brand" : "border-rule"}`}>
             <button onClick={() => setOpen(open === f.q ? null : f.q)} aria-expanded={open === f.q} className="flex min-h-14 w-full items-center justify-between gap-4 px-5 py-3 text-left font-bold">
               <span><span className="mr-2 rounded-md bg-paper px-2 py-0.5 text-xs font-bold text-ink-soft">{f.cat}</span>{f.q}</span>
-              <span aria-hidden className="text-2xl font-normal text-marigold-deep">{open === f.q ? "–" : "+"}</span>
+              <span aria-hidden className="text-2xl font-normal text-brand">{open === f.q ? "–" : "+"}</span>
             </button>
             {open === f.q && <p className="px-5 pb-4 text-ink-soft">{f.a}</p>}
           </div>

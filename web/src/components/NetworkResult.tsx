@@ -12,7 +12,7 @@ function Signal({ q }: { q: number }) {
 
 /** What can be installed at an address: fibre, 5G AirFiber, leased line; the recommended one highlighted. */
 export function NetworkOptions({ r }: { r: NetworkResult }) {
-  const tone = r.recommended === "fibre" ? "border-ok bg-ok/10" : r.recommended === "airfiber" ? "border-signal bg-signal/10" : "border-marigold-deep bg-marigold/15";
+  const tone = r.recommended === "fibre" ? "border-ok bg-ok/10" : r.recommended === "airfiber" ? "border-signal bg-signal/10" : "border-warn bg-warn/15";
   return (
     <div>
       <div className={`flex gap-3 rounded-2xl border-2 p-4 ${tone}`}>

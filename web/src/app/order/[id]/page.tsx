@@ -46,14 +46,14 @@ export default function OrderPage() {
           <p className="mt-3 rounded-xl border border-rule bg-sheet p-3 text-sm">🏪 Branch of <Link href={`/order/${order.parentId}`} className="font-semibold underline underline-offset-2">{order.parentId}</Link>. Consent, KYC and agreement were reused from head office.</p>
         )}
         {order.pendingDocs.length > 0 && (
-          <p className="mt-3 rounded-xl border border-marigold-deep bg-marigold/15 p-3 text-sm"><b>Still needed:</b> {order.pendingDocs.join(", ")}.</p>
+          <p className="mt-3 rounded-xl border border-warn bg-warn/15 p-3 text-sm"><b>Still needed:</b> {order.pendingDocs.join(", ")}.</p>
         )}
         <ol className="mt-5 grid grid-cols-5 gap-1" aria-label="Progress">
           {order.steps.map((s, i) => {
             const current = order.steps.findIndex((x) => !x.done) === i;
             return (
               <li key={s.key} className="text-center" aria-current={current ? "step" : undefined}>
-                <div className={`h-1.5 rounded-full ${s.done ? "bg-ok" : current ? "bg-marigold" : "bg-rule"}`} />
+                <div className={`h-1.5 rounded-full ${s.done ? "bg-ok" : current ? "bg-brand" : "bg-rule"}`} />
                 <div className={`mt-1.5 text-[11px] leading-tight ${current ? "font-bold" : "text-ink-soft"}`}>{s.label}</div>
               </li>
             );

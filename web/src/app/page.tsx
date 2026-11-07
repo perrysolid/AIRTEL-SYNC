@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { MessageCircle, Mic, MessageSquareText, Search, Send } from "lucide-react";
 import { Shop3D, VISUAL_LABEL } from "@/components/shop/Shop3D";
 import { Logo } from "@/components/Brand";
+import { PromoBar } from "@/components/SiteNav";
 import { LANGUAGES } from "@/lib/advisor-types";
 
 const GREETING: Record<string, { line: string; sub: string; talk: string; type: string }> = {
@@ -52,6 +53,7 @@ export default function Home() {
 
   return (
     <div className="min-h-dvh">
+      <PromoBar />
       <header className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
         <Logo />
         <nav aria-label="Main" className="flex items-center gap-4 text-sm font-medium text-ink-soft">
@@ -82,7 +84,7 @@ export default function Home() {
                 key={l.code}
                 onClick={() => setLang(l.code)}
                 aria-pressed={lang === l.code}
-                className={`shrink-0 rounded-full border px-3.5 py-1.5 text-[15px] transition-all ${lang === l.code ? "border-ink bg-ink text-white shadow-[var(--shadow-card)]" : "border-rule bg-sheet text-ink hover:-translate-y-0.5 hover:border-ink-soft"}`}
+                className={`shrink-0 rounded-full border px-3.5 py-1.5 text-[15px] transition-all ${lang === l.code ? "border-brand bg-brand text-white shadow-[var(--shadow-card)]" : "border-rule bg-sheet text-ink hover:-translate-y-0.5 hover:border-ink-soft"}`}
               >
                 {l.native}
               </button>
@@ -99,9 +101,9 @@ export default function Home() {
           <div className="rise mt-8 flex flex-wrap items-center gap-4" style={{ ["--i" as string]: 3 }}>
             <button
               onClick={() => router.push(`/advisor?lang=${lang}&voice=1`)}
-              className="group inline-flex items-center gap-3 rounded-full bg-marigold py-3 pr-6 pl-3 text-lg font-extrabold text-ink shadow-[0_14px_30px_-12px_var(--marigold-deep)] transition-transform hover:-translate-y-0.5 active:scale-[0.97]"
+              className="group inline-flex items-center gap-3 rounded-full bg-brand py-3 pr-6 pl-3 text-lg font-extrabold text-white shadow-[0_14px_30px_-12px_var(--brand-deep)] transition-transform hover:-translate-y-0.5 active:scale-[0.97]"
             >
-              <span className="grid h-12 w-12 place-items-center rounded-full bg-ink text-marigold transition-transform group-hover:scale-105"><Mic size={24} strokeWidth={2.4} /></span>
+              <span className="grid h-12 w-12 place-items-center rounded-full bg-white text-brand transition-transform group-hover:scale-105"><Mic size={24} strokeWidth={2.4} /></span>
               <span lang={lang}>{g.talk}</span>
             </button>
             <Link href={`/advisor?lang=${lang}`} lang={lang} className="inline-flex items-center gap-2 rounded-full border border-rule bg-sheet px-5 py-3 font-semibold shadow-[var(--shadow-card)] transition-transform hover:-translate-y-0.5">
@@ -128,14 +130,15 @@ export default function Home() {
             <label htmlFor="track" className="text-sm font-semibold">Already ordered? Check your status</label>
             <div className="mt-2 flex gap-2">
               <input id="track" value={orderId} onChange={(e) => setOrderId(e.target.value)} placeholder="Order ID, e.g. ACC-3F9A2C71D0" className="min-w-0 flex-1 rounded-xl border border-rule bg-paper px-3 py-2.5 uppercase placeholder:normal-case" />
-              <button className="inline-flex items-center gap-1.5 rounded-xl bg-ink px-4 py-2 font-semibold text-white"><Search size={16} /> Track</button>
+              <button className="inline-flex items-center gap-1.5 rounded-xl bg-brand px-4 py-2 font-semibold text-white"><Search size={16} /> Track</button>
             </div>
           </form>
         </section>
       </main>
 
-      <section aria-labelledby="tools" className="border-t border-rule">
+      <section aria-labelledby="tools" className="border-y border-brand/15 bg-brand-soft">
         <div className="mx-auto max-w-6xl px-4 py-12">
+          <span aria-hidden className="mb-3 block h-1 w-12 rounded-full bg-brand" />
           <h2 id="tools" className="text-2xl font-extrabold tracking-tight">Beyond the sale: tools that keep your business running</h2>
           <p className="mt-1 max-w-2xl text-ink-soft">Free to try, no sign-up. They also work as commands in WhatsApp and Telegram.</p>
           <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -161,11 +164,12 @@ export default function Home() {
 
       <section aria-labelledby="how" className="border-t border-rule bg-sheet/70">
         <div className="mx-auto max-w-6xl px-4 py-12">
+          <span aria-hidden className="mb-3 block h-1 w-12 rounded-full bg-brand" />
           <h2 id="how" className="text-2xl font-extrabold tracking-tight">From hello to live, without a single follow-up call</h2>
           <ol className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {STEPS.map(([title, text], i) => (
               <li key={title} className="card p-5">
-                <div className="grid h-8 w-8 place-items-center rounded-full bg-ink text-sm font-bold text-marigold">{i + 1}</div>
+                <div className="grid h-8 w-8 place-items-center rounded-full bg-brand text-sm font-bold text-white">{i + 1}</div>
                 <h3 className="mt-3 text-lg font-bold">{title}</h3>
                 <p className="mt-1 text-ink-soft">{text}</p>
               </li>

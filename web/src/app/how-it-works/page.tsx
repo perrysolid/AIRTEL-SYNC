@@ -24,9 +24,9 @@ export default function HowItWorksPage() {
         {STAGES.map(([emoji, title, text, tags], i) => (
           <li key={title} className="relative grid grid-cols-[3.5rem_minmax(0,1fr)] gap-5 pb-8 last:pb-0">
             {i < STAGES.length - 1 && <span aria-hidden className="absolute top-14 bottom-0 left-7 w-0.5 bg-rule" />}
-            <div className="grid h-14 w-14 place-items-center rounded-2xl bg-ink text-2xl shadow-[var(--shadow-card)]" aria-hidden>{emoji}</div>
+            <div className="grid h-14 w-14 place-items-center rounded-2xl bg-brand text-2xl shadow-[var(--shadow-card)]" aria-hidden>{emoji}</div>
             <div>
-              <div className="text-xs font-bold tracking-wider text-marigold-deep uppercase">Stage {i + 1}</div>
+              <div className="text-xs font-bold tracking-wider text-brand uppercase">Stage {i + 1}</div>
               <h2 className="text-2xl font-extrabold">{title}</h2>
               <p className="mt-1 text-ink-soft">{text}</p>
               <div className="mt-2 flex flex-wrap gap-1.5">{tags.map((t) => <span key={t} className="rounded-md bg-paper px-2 py-1 text-xs font-bold">{t}</span>)}</div>
@@ -36,7 +36,7 @@ export default function HowItWorksPage() {
       </ol>
 
       <section className="card mt-10 p-6">
-        <div className="text-xs font-bold tracking-wider text-marigold-deep uppercase">Built from the data</div>
+        <div className="text-xs font-bold tracking-wider text-brand uppercase">Built from the data</div>
         <h2 className="text-2xl font-extrabold">Every drop-off has a fix</h2>
         <p className="mt-1 text-ink-soft">Only 7.4% of last quarter&apos;s leads activated. These are the reasons prospects gave for dropping out, and what the journey does about each.</p>
         <div className="mt-4 overflow-x-auto">
@@ -56,7 +56,7 @@ export default function HowItWorksPage() {
         <div className="card p-5"><h3 className="text-lg font-bold">Rules the AI cannot break</h3><p className="mt-1 text-ink-soft">The advisor understands free text and explains in your language, but eligibility, dependencies and prices always come from the catalogue rules. If a product needs a GSTIN or an internet plan, it is left out with the reason, never silently sold.</p></div>
         <div className="card p-5"><h3 className="text-lg font-bold">People stay in the loop</h3><p className="mt-1 text-ink-soft">When the advisor can&apos;t close a lead, or you ask for a person, a local partner gets the whole conversation. Dedicated links include a site-survey video call with a field engineer.</p></div>
       </section>
-      <div className="mt-8 text-center"><Link href="/advisor" className="inline-block rounded-full bg-marigold px-7 py-3.5 text-lg font-extrabold text-ink">Start with the advisor</Link></div>
+      <div className="mt-8 text-center"><Link href="/advisor" className="inline-block rounded-full bg-brand px-7 py-3.5 text-lg font-extrabold text-white">Start with the advisor</Link></div>
     </PageShell>
   );
 }

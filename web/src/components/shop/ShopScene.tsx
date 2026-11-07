@@ -21,19 +21,20 @@ export interface ShopSceneProps {
 }
 
 const C = {
-  plinth: "#e7eaf3",
-  floor: "#f4ead8",
-  wall: "#cdeeea",
-  wallSide: "#b9e3de",
+  plinth: "#efefef",
+  floor: "#f1f1f1",
+  wall: "#fbe9e9",
+  wallSide: "#f3d4d4",
   wood: "#c48a52",
   counter: "#ffffff",
-  ink: "#161a33",
+  ink: "#1f1f1f",
   marigold: "#f2a900",
-  signal: "#12a39a",
-  coral: "#e5484d",
+  signal: "#12a05e",
+  coral: "#e40000",
   white: "#ffffff",
-  device: "#f7f8fc",
+  device: "#f7f7f7",
   green: "#25d366",
+  brand: "#e40000",
 };
 
 const FIBRE = ["P01", "P02", "P03"];
@@ -99,7 +100,7 @@ function StatusRing({ live }: { live?: boolean }) {
 
 function Shop() {
   const packets = useMemo(() => {
-    const colors = ["#f2a900", "#e5484d", "#12a39a", "#5b6cff", "#ff8a3d", "#ffffff", "#9b5de5", "#2ec4b6"];
+    const colors = ["#e40000", "#ffffff", "#ff6b6b", "#ffffff", "#e40000", "#ffb3b3", "#ffffff", "#c20000"];
     const out: { p: [number, number, number]; s: [number, number, number]; c: string }[] = [];
     let k = 0;
     for (const y of [0.74, 1.24, 1.74]) {
@@ -141,12 +142,12 @@ function Shop() {
         </RoundedBox>
         <mesh position={[-0.62, 0, 0.04]} rotation-z={0}>
           <coneGeometry args={[0.15, 0.26, 3]} />
-          <meshStandardMaterial color={C.marigold} roughness={0.4} />
+          <meshStandardMaterial color={C.brand} roughness={0.4} />
         </mesh>
         {[0, 1, 2].map((i) => (
           <mesh key={i} position={[-0.2 + i * 0.36, 0, 0.04]}>
             <boxGeometry args={[0.28, 0.07, 0.01]} />
-            <meshStandardMaterial color={i === 0 ? C.marigold : "#c9cde0"} />
+            <meshStandardMaterial color={i === 0 ? C.brand : "#cfcfcf"} />
           </mesh>
         ))}
       </group>
@@ -155,7 +156,7 @@ function Shop() {
         {Array.from({ length: 9 }, (_, i) => (
           <mesh key={i} position={[-2.15 + i * 0.48 + 0.24, 0, 0]} castShadow>
             <boxGeometry args={[0.48, 0.05, 0.62]} />
-            <meshStandardMaterial color={i % 2 ? C.white : C.marigold} roughness={0.7} />
+            <meshStandardMaterial color={i % 2 ? C.white : C.brand} roughness={0.7} />
           </mesh>
         ))}
       </group>
@@ -213,7 +214,7 @@ function Tower() {
       </mesh>
       <mesh position={[0, 1.7, 0]} castShadow>
         <cylinderGeometry args={[0.05, 0.16, 3.3, 6]} />
-        <meshStandardMaterial color="#9aa1bd" metalness={0.3} roughness={0.5} />
+        <meshStandardMaterial color="#a3a3a3" metalness={0.3} roughness={0.5} />
       </mesh>
       {[2.6, 3.0].map((y, i) => (
         <group key={y} position={[0, y, 0]} rotation-y={i * 0.6}>
@@ -357,7 +358,7 @@ function Pos() {
         <meshStandardMaterial color={C.ink} />
       </mesh>
       <RoundedBox args={[0.14, 0.04, 0.22]} radius={0.015} position={[0.38, 0.02, 0.05]} castShadow>
-        <meshStandardMaterial color="#2b3050" />
+        <meshStandardMaterial color="#2b2b2b" />
       </RoundedBox>
     </group>
   );
@@ -374,7 +375,7 @@ function Cctv() {
     <group>
       <mesh position={[-0.08, 0, 0]} castShadow>
         <boxGeometry args={[0.16, 0.06, 0.06]} />
-        <meshStandardMaterial color="#d4d8e6" />
+        <meshStandardMaterial color="#dcdcdc" />
       </mesh>
       <group ref={ref} rotation-z={-0.35}>
         <RoundedBox args={[0.42, 0.16, 0.18]} radius={0.04} position={[0.2, 0, 0]} castShadow>
@@ -477,12 +478,12 @@ function Rack() {
   return (
     <group>
       <RoundedBox args={[0.55, 1.1, 0.5]} radius={0.03} position-y={0.55} castShadow>
-        <meshStandardMaterial color="#2b3050" roughness={0.4} />
+        <meshStandardMaterial color="#2b2b2b" roughness={0.4} />
       </RoundedBox>
       {[0, 1, 2, 3, 4].map((i) => (
         <mesh key={i} position={[0, 0.25 + i * 0.18, 0.252]}>
           <boxGeometry args={[0.44, 0.1, 0.01]} />
-          <meshStandardMaterial color="#3a4066" />
+          <meshStandardMaterial color="#3a3a3a" />
         </mesh>
       ))}
       {[0, 1, 2, 3, 4].map((i) => (
@@ -506,11 +507,11 @@ function IotSensor() {
   return (
     <group>
       <RoundedBox args={[0.7, 0.5, 0.5]} radius={0.05} position-y={0.25} castShadow>
-        <meshStandardMaterial color="#8a93b8" roughness={0.5} metalness={0.2} />
+        <meshStandardMaterial color="#9a9a9a" roughness={0.5} metalness={0.2} />
       </RoundedBox>
       <mesh position={[0.15, 0.34, 0.26]} rotation-x={Math.PI / 2}>
         <cylinderGeometry args={[0.1, 0.1, 0.03, 20]} />
-        <meshStandardMaterial color="#c9cde0" />
+        <meshStandardMaterial color="#d0d0d0" />
       </mesh>
       <mesh position={[0, 0.55, 0]}>
         <cylinderGeometry args={[0.09, 0.09, 0.06, 20]} />
@@ -541,7 +542,7 @@ function Scooter() {
       ].map((p, i) => (
         <mesh key={i} position={p as [number, number, number]} rotation-x={Math.PI / 2} castShadow>
           <cylinderGeometry args={[0.14, 0.14, 0.08, 16]} />
-          <meshStandardMaterial color="#2b3050" />
+          <meshStandardMaterial color="#2b2b2b" />
         </mesh>
       ))}
       <mesh position={[0, 0.82, 0]}>
@@ -655,7 +656,7 @@ export default function ShopScene({ items, live, className }: ShopSceneProps) {
   return (
     <div className={className} aria-hidden>
       <Canvas shadows dpr={[1, 2]} camera={{ fov: 30, near: 0.1, far: 100 }} gl={{ antialias: true, alpha: true }}>
-        <hemisphereLight args={["#ffffff", "#dfe3f0", 1.6]} />
+        <hemisphereLight args={["#ffffff", "#e6e6e6", 1.6]} />
         <directionalLight position={[5, 9, 6]} intensity={2.2} castShadow shadow-mapSize={[1024, 1024]} shadow-camera-left={-6} shadow-camera-right={6} shadow-camera-top={6} shadow-camera-bottom={-6} shadow-bias={-0.0004} />
         <directionalLight position={[-6, 4, -2]} intensity={0.5} color="#cfe8ff" />
         <Rig>

@@ -23,7 +23,7 @@ export default function SolutionsPage() {
         <nav aria-label="Segments" className="lg:sticky lg:top-24 lg:self-start">
           <ul className="flex gap-2 overflow-x-auto lg:flex-col">
             {keys.map((k) => <li key={k} className="shrink-0"><a href={`#${k}`} className="block rounded-xl px-3 py-2 font-semibold text-ink-soft hover:bg-sheet hover:text-ink">{SEGMENT_COPY[k].icon} {SEGMENT_LABELS[k]}</a></li>)}
-            <li className="shrink-0"><Link href="/products" className="block rounded-xl px-3 py-2 font-bold text-marigold-deep">All 25 products →</Link></li>
+            <li className="shrink-0"><Link href="/products" className="block rounded-xl px-3 py-2 font-bold text-brand">All 25 products →</Link></li>
           </ul>
         </nav>
 
@@ -39,7 +39,7 @@ export default function SolutionsPage() {
               <section key={k} id={k} className="card scroll-mt-24 p-6">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div><div className="text-4xl" aria-hidden>{c.icon}</div><h2 className="mt-1 text-3xl font-extrabold tracking-tight">{SEGMENT_LABELS[k]}</h2><p className="text-ink-soft">{c.who}</p></div>
-                  <span className="rounded-full bg-signal/15 px-3 py-1 text-sm font-bold text-signal">{c.share}</span>
+                  <span className="rounded-full bg-brand-soft px-3 py-1 text-sm font-bold text-brand">{c.share}</span>
                 </div>
                 <div className="mt-5 grid gap-6 sm:grid-cols-2">
                   <div><h3 className="font-bold">What they struggle with</h3><ul className="mt-2 list-disc space-y-1 pl-5 text-ink-soft">{c.pain.map((x) => <li key={x}>{x}</li>)}</ul></div>
@@ -54,11 +54,11 @@ export default function SolutionsPage() {
                 )}
                 <div className="mt-5 rounded-2xl border border-rule bg-paper p-4">
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
-                    <div><div className="text-xs font-bold tracking-wider text-marigold-deep uppercase">Example: {persona.name}</div><div className="text-sm text-ink-soft">{persona.blurb}</div></div>
+                    <div><div className="text-xs font-bold tracking-wider text-brand uppercase">Example: {persona.name}</div><div className="text-sm text-ink-soft">{persona.blurb}</div></div>
                     <div className="text-3xl font-extrabold tabular-nums">{inr(quote.monthlyWithGst)}<span className="text-sm font-semibold text-ink-soft"> /mo incl. GST</span></div>
                   </div>
                   <ul className="mt-3 divide-y divide-rule text-[15px]">{lines.map((l) => <li key={l.productId} className="flex justify-between py-1.5"><span>{l.name} × {l.qty}</span><span className="tabular-nums">{inr(l.monthly)}</span></li>)}</ul>
-                  <Link href="/advisor" className="mt-4 inline-block rounded-xl bg-marigold px-5 py-2.5 font-extrabold text-ink">Get a plan like this →</Link>
+                  <Link href="/advisor" className="mt-4 inline-block rounded-xl bg-brand px-5 py-2.5 font-extrabold text-white">Get a plan like this →</Link>
                 </div>
               </section>
             );

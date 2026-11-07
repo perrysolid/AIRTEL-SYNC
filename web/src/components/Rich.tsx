@@ -13,7 +13,7 @@ export function Rich({ text }: { text: string }) {
             <ul key={i} className="my-1.5 space-y-1">
               {lines.map((l, j) => (
                 <li key={j} className="flex gap-2">
-                  <span aria-hidden className="text-marigold-deep">•</span>
+                  <span aria-hidden className="text-brand">•</span>
                   <span>{inline(l.replace(/^\s*[•\-*]\s/, ""))}</span>
                 </li>
               ))}
@@ -25,7 +25,7 @@ export function Rich({ text }: { text: string }) {
             {lines.map((l, j) => (
               <Fragment key={j}>
                 {j > 0 && <br />}
-                {/^\s*[•\-]\s/.test(l) ? <span className="inline-flex gap-2"><span className="text-marigold-deep">•</span><span>{inline(l.replace(/^\s*[•\-]\s/, ""))}</span></span> : inline(l)}
+                {/^\s*[•\-]\s/.test(l) ? <span className="inline-flex gap-2"><span className="text-brand">•</span><span>{inline(l.replace(/^\s*[•\-]\s/, ""))}</span></span> : inline(l)}
               </Fragment>
             ))}
           </p>
