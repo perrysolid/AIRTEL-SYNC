@@ -1,0 +1,160 @@
+@import "tailwindcss";
+
+/*
+ * Accel Business — "the shop counter" system.
+ * Ledger-ink indigo on cool ledger paper, marigold for the one thing to press,
+ * stamp colours for verdicts. Mukta carries Latin + Devanagari in one voice;
+ * the bill uses a receipt-printer mono and nothing else does.
+ */
+:root {
+  color-scheme: light;
+  --ink: #161a33;
+  --ink-soft: #565b78;
+  --paper: #f5f6fa;
+  --sheet: #ffffff;
+  --rule: #e3e5ee;
+  --marigold: #f2a900;
+  --marigold-deep: #c98a00;
+  --signal: #12a39a;
+  --stamp-green: #1f8a5b;
+  --stamp-red: #d93d42;
+  --stamp-amber: #b0720f;
+  --wa: #0f7a5f;
+  --shadow-card: 0 1px 2px rgb(22 26 51 / 0.04), 0 8px 24px -12px rgb(22 26 51 / 0.12);
+  --shadow-lift: 0 2px 4px rgb(22 26 51 / 0.05), 0 22px 48px -20px rgb(22 26 51 / 0.25);
+}
+
+@theme inline {
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-paper: var(--paper);
+  --color-sheet: var(--sheet);
+  --color-rule: var(--rule);
+  --color-marigold: var(--marigold);
+  --color-marigold-deep: var(--marigold-deep);
+  --color-ok: var(--stamp-green);
+  --color-bad: var(--stamp-red);
+  --color-warn: var(--stamp-amber);
+  --color-wa: var(--wa);
+  --color-signal: var(--signal);
+  --shadow-card: var(--shadow-card);
+  --shadow-lift: var(--shadow-lift);
+  --font-sans: var(--font-mukta), system-ui, sans-serif;
+  --font-mono: var(--font-receipt), ui-monospace, monospace;
+}
+
+html,
+body {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+/* Soft daylight behind every page: a warm glow top-left, a cool one top-right. */
+body {
+  background-image:
+    radial-gradient(60rem 40rem at -10% -10%, rgb(242 169 0 / 0.1), transparent 60%),
+    radial-gradient(50rem 36rem at 110% -5%, rgb(18 163 154 / 0.1), transparent 60%);
+  background-attachment: fixed;
+  min-height: 100dvh;
+}
+
+body {
+  font-family: var(--font-mukta), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 3px solid var(--marigold);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* The bill: a printed receipt with a torn bottom edge. */
+.receipt {
+  background: var(--sheet);
+  font-family: var(--font-receipt), ui-monospace, monospace;
+  position: relative;
+  --tear: 10px;
+  mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / calc(var(--tear) * 2) var(--tear) repeat-x,
+    linear-gradient(#000 0 0) top / 100% calc(100% - var(--tear)) no-repeat;
+  padding-bottom: calc(var(--tear) + 20px);
+}
+
+.dotted-fill {
+  flex: 1;
+  border-bottom: 2px dotted var(--rule);
+  margin: 0 6px 5px;
+}
+
+/* Rubber stamp for KYC verdicts — the one theatrical moment. */
+.stamp {
+  display: inline-block;
+  border: 3px solid currentColor;
+  border-radius: 10px;
+  padding: 4px 14px;
+  font-weight: 800;
+  font-size: 1.35rem;
+  letter-spacing: 0.04em;
+  transform: rotate(-6deg);
+  mix-blend-mode: multiply;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .stamp-in {
+    animation: stamp-in 420ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
+  }
+  @keyframes stamp-in {
+    from {
+      transform: rotate(-14deg) scale(1.9);
+      opacity: 0;
+    }
+    to {
+      transform: rotate(-6deg) scale(1);
+      opacity: 1;
+    }
+  }
+  .mic-live {
+    animation: pulse 1.4s ease-out infinite;
+  }
+  @keyframes pulse {
+    0% {
+      box-shadow: 0 0 0 0 color-mix(in srgb, var(--marigold) 70%, transparent);
+    }
+    100% {
+      box-shadow: 0 0 0 22px transparent;
+    }
+  }
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* One orchestrated entrance per page: content rises in, staggered by --i. */
+@media (prefers-reduced-motion: no-preference) {
+  .rise {
+    animation: rise 640ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    animation-delay: calc(var(--i, 0) * 80ms);
+  }
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+  }
+  .chip-in {
+    animation: chip-in 380ms cubic-bezier(0.2, 1.3, 0.4, 1) both;
+  }
+  @keyframes chip-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px) scale(0.92);
+    }
+  }
+}
+
+.card {
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: 1.25rem;
+  box-shadow: var(--shadow-card);
+}

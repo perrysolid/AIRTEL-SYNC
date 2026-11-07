@@ -1,6 +1,11 @@
-node_modules/
-dist/
-__pycache__/
-*.pyc
+.DS_Store
+web/.data/
+*.traineddata
 .env
-backend/data/runtime_orders.json
+.env.local
+
+# nanki prototype (legacy) build output
+legacy/**/node_modules/
+legacy/**/dist/
+legacy/**/__pycache__/
+legacy/**/runtime_orders.json

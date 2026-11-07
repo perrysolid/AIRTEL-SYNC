@@ -1,0 +1,43 @@
+# Render Blueprint — backend: API routes, bots (Telegram + WhatsApp webhooks),
+# Smart KYC (Gemini vision + Tesseract) and the order store on a persistent disk.
+services:
+  - type: web
+    name: udyam-backend
+    runtime: node
+    region: singapore
+    plan: starter            # a persistent disk needs a paid plan; on "free" the store resets on each deploy/sleep
+    rootDir: web
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    disk:
+      name: udyam-store
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_OPTIONS
+        value: --dns-result-order=ipv4first
+      - key: STORE_DIR
+        value: /var/data
+      - key: PUBLIC_BASE_URL       # the Vercel URL — links in bot messages open the frontend
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_WEBHOOK_SECRET
+        generateValue: true
+      - key: WHATSAPP_TOKEN
+        sync: false
+      - key: WHATSAPP_PHONE_NUMBER_ID
+        sync: false
+      - key: WHATSAPP_VERIFY_TOKEN
+        sync: false
+      - key: WHATSAPP_APP_SECRET
+        sync: false

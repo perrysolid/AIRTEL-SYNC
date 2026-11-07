@@ -1,0 +1,75 @@
+import { NEED_LABELS, type Need } from "@/lib/profile";
+import { callList, leadSummary } from "@/lib/analytics";
+import { maskName, maskPhone } from "@/lib/privacy";
+import { store } from "@/lib/store";
+import { summarize } from "@/lib/advisor";
+import { liveDay } from "@/lib/tracker";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+/** Back-office data for field sales and channel partners. PII stays masked. */
+export async function GET() {
+  const sessions = store.listSessions().sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  const orders = store.listOrders().sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const unclosed = sessions
+    .filter((s) => s.status === "handoff" || (s.status === "quoted" && Date.now() - new Date(s.updatedAt).getTime() > 2 * 60_000) || (s.status === "open" && s.transcript.length > 2))
+    .slice(0, 40)
+    .map((s) => ({
+      id: s.id,
+      status: s.status,
+      channel: s.channel,
+      language: s.language,
+      updatedAt: s.updatedAt,
+      summary: s.handoff?.summary || summarize(s),
+      reason: s.handoff?.reason ?? (s.status === "quoted" ? "Got a quote but didn't order" : "Dropped mid-conversation"),
+      lastOwnerMessage: readable([...s.transcript].reverse().find((t) => t.role === "user" && t.text)?.text)?.slice(0, 140),
+      quoteMonthly: s.quote?.monthly,
+    }));
+
+  return Response.json({
+    summary: leadSummary(),
+    callList: callList(25).map(({ lead, score }) => ({
+      id: lead.lead_id,
+      business: lead.business_name,
+      type: lead.business_type,
+      city: lead.city,
+      segment: lead.segment,
+      language: lead.preferred_language,
+      contact: maskName(lead.contact_name),
+      stage: lead.stage_reached,
+      dropReason: lead.drop_reason,
+      source: lead.lead_source,
+      probability: score.probability,
+      band: score.band,
+      reasons: score.reasons,
+    })),
+    unclosed,
+    orders: orders.slice(0, 40).map((o) => ({
+      id: o.id,
+      createdAt: o.createdAt,
+      business: o.businessName,
+      city: o.city,
+      phone: maskPhone(o.phone),
+      channel: o.channel,
+      partnerCode: o.partnerCode,
+      monthly: o.quote.monthly,
+      kyc: o.kyc?.result.verdict ?? "pending",
+      kycIssues: o.kyc?.result.checks.filter((c) => c.status === "fail").map((c) => c.title) ?? [],
+      stage: o.payment ? (o.timeline.clockDay >= liveDay(o.timeline) ? "Live" : `Activating (day ${o.timeline.clockDay}/${liveDay(o.timeline)})`) : o.esign ? "Awaiting payment" : o.kyc?.result.verdict === "verified" ? "Awaiting e-sign" : "KYC",
+    })),
+    consents: { total: store.listConsents().length, ledgerHead: store.listConsents().at(-1)?.hash.slice(0, 16) },
+    audit: store.listAudit().slice(-25).reverse(),
+  });
+}
+
+/** Chip replies are stored as codes ("needs:cctv,email"); show them as the owner saw them. */
+function readable(text?: string) {
+  const m = text?.match(/^(type|city|emp|sites|gst|needs):(.*)$/);
+  if (!m) return text;
+  if (m[1] === "needs") return m[2].split(",").map((n) => NEED_LABELS[n as Need] ?? n).join(", ");
+  if (m[1] === "emp") return `${m[2]} people`;
+  if (m[1] === "sites") return `${m[2]} sites`;
+  if (m[1] === "gst") return m[2] === "yes" ? "Has GSTIN" : "No GSTIN";
+  return m[2];
+}
