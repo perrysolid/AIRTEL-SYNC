@@ -11,9 +11,9 @@ Airtel Sync hackathon prototype. A small-business owner talks (in their own lang
 
 ## What's in it
 
-- **Advisor (web voice, text, WhatsApp)** — Claude with tool use gathers facts and explains; a deterministic rules engine is the only thing that decides eligibility and price, so it cannot quote an ineligible product or invent a price. 10 Indian languages for voice; full offline bilingual (English/Hindi) guided mode when no API key or network. Numbered replies ("2") work on WhatsApp.
+- **Advisor (web voice, text, WhatsApp)** — Gemini with function calling (Claude as optional second provider) gathers facts and explains; a deterministic rules engine is the only thing that decides eligibility and price, so it cannot quote an ineligible product or invent a price. 10 Indian languages for voice; full offline bilingual (English/Hindi) guided mode when no API key or network. Numbered replies ("2") work on WhatsApp.
 - **Quote** — receipt-style bill, add-ons toggle on/off, quantities, 12/24/36-month terms, One Bill discount, GST, setup savings, what was excluded and *why*, with an alternative.
-- **Smart KYC** — DigiLocker fetch or phone photos → Claude vision (or Tesseract offline, auto-rotation) → cross-checks against the GST and Udyam registries: checksum, status, legal name, Udyam, address-proof age, signatory authority and expiry. Look-alike OCR repairs only accepted when they pass checksum *and* exist in the registry. **12/12 specimen applicants get the right verdict offline.**
+- **Smart KYC** — DigiLocker fetch or phone photos → Gemini vision (or Tesseract offline, auto-rotation) → cross-checks against the GST and Udyam registries: checksum, status, legal name, Udyam, address-proof age, signatory authority and expiry. Look-alike OCR repairs only accepted when they pass checksum *and* exist in the registry. **12/12 specimen applicants get the right verdict offline.**
 - **Order & tracker** — consent (DPDP, per purpose), e-sign by OTP, UPI AutoPay, per-service activation tracks, automatic fibre → 5G AirFiber fallback, WhatsApp notification feed, `STATUS` keyword.
 - **Partner console** — advisor hand-offs with full context, propensity-ranked call list (logistic regression, AUC 0.745, 2.4× lift in top decile), order pipeline, funnel/channel/churn insights, masked audit log, hash-chained consent ledger.
 - **Privacy** — images never stored (hash only), identifiers masked in UI and logs, export/withdraw/erase.
@@ -23,7 +23,7 @@ Airtel Sync hackathon prototype. A small-business owner talks (in their own lang
 ```bash
 cd web
 npm install
-cp .env.example .env.local     # optional: add ANTHROPIC_API_KEY etc.
+cp .env.example .env.local     # optional: add GEMINI_API_KEY etc.
 npm run dev                    # http://localhost:3000
 ```
 
@@ -42,10 +42,12 @@ In KYC, *Demo: load a specimen applicant* runs any of K01–K12 through the real
 ### Tests
 
 ```bash
-npm test                                   # 72 unit tests: rules, pricing, KYC, NLU, advisor flows
+npm test                                   # 74 unit tests: rules, pricing, KYC, NLU, advisor flows, Gemini tool loop
 OCR_IT=1 npx vitest run extract.ocr        # image → OCR → rules for all 12 applicants
 BASE=http://localhost:3000 node scripts/smoke.mjs   # end-to-end journey against a running server
 ```
+
+If a provider fails on billing, auth or quota, it is paused for 10 minutes and the app carries on with the next provider or the offline mode — the demo never breaks.
 
 ### WhatsApp (optional)
 

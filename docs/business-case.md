@@ -10,7 +10,7 @@ Most losses happen before a quote (no follow-up, wrong product pitched) and at d
 Speak in your language → correct bundle in about a minute → adjust the quote yourself → verify in 2 minutes (DigiLocker or photos) → e-sign and UPI AutoPay → watch services switch on, with WhatsApp updates.
 
 ## 4. Advisor that can't mis-sell
-Claude converses in 10 Indian languages by voice, text or WhatsApp; a rules engine decides eligibility and price. Out-of-tier products, GSTIN requirements, minimum employees and product dependencies are enforced and *explained*, with an alternative.
+Gemini converses in 10 Indian languages by voice, text or WhatsApp; a rules engine decides eligibility and price. Out-of-tier products, GSTIN requirements, minimum employees and product dependencies are enforced and *explained*, with an alternative.
 
 ## 5. Smart KYC
 Reads photos, auto-straightens rotated scans, checks GSTIN checksum and registry status, legal name, Udyam, address-proof age and signatory authority. **12/12 correct verdicts** on the specimen set, offline. Problems become plain-language fix-it actions, not rejections.

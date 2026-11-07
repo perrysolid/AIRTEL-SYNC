@@ -1,16 +1,18 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
-import { aiEnabled, anthropic, EXTRACT_MODEL } from "./ai";
+import { z } from "zod";
+import { aiProviders, anthropic, EXTRACT_MODEL, pauseProvider } from "./ai";
+import { GEMINI_EXTRACT_MODEL, GeminiError, generate, thinking } from "./gemini";
 import { ExtractedDocSchema, type DocType, type ExtractedDoc } from "./kyc-types";
 
 /**
  * Reads a KYC document image into structured fields.
- * Primary: Claude vision with a strict output schema (handles rotation, blur
+ * Primary: Gemini (or Claude) vision with a strict output schema (handles rotation, blur
  * detection and odd layouts). Fallback: on-device Tesseract OCR + label parsing.
  * Images are processed in memory and never written to disk.
  */
 
-export type ExtractEngine = "claude-vision" | "tesseract";
+export type ExtractEngine = "gemini-vision" | "claude-vision" | "tesseract";
 
 export interface ExtractionResult {
   doc: ExtractedDoc;
@@ -47,6 +49,21 @@ async function extractWithClaude(image: Buffer, mediaType: "image/png" | "image/
   });
   if (response.stop_reason === "refusal") return undefined;
   return response.parsed_output ?? undefined;
+}
+
+// Gemini takes plain JSON Schema; drop the draft marker.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const { $schema, ...EXTRACT_JSON_SCHEMA } = z.toJSONSchema(ExtractedDocSchema);
+
+async function extractWithGemini(image: Buffer, mediaType: string): Promise<ExtractedDoc | undefined> {
+  const res = await generate(GEMINI_EXTRACT_MODEL, {
+    contents: [{ role: "user", parts: [{ inlineData: { mimeType: mediaType, data: image.toString("base64") } }, { text: PROMPT }] }],
+    generationConfig: { responseMimeType: "application/json", responseJsonSchema: EXTRACT_JSON_SCHEMA, thinkingConfig: thinking(GEMINI_EXTRACT_MODEL), temperature: 0 },
+  });
+  const text = res.candidates?.[0]?.content?.parts?.filter((p) => p.text && !p.thought).map((p) => p.text).join("");
+  if (!text) return undefined;
+  const parsed = ExtractedDocSchema.safeParse(JSON.parse(text));
+  return parsed.success ? parsed.data : undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -141,14 +158,15 @@ async function extractWithTesseract(image: Buffer): Promise<ExtractedDoc> {
 
 export async function extractDocument(image: Buffer, mediaType: "image/png" | "image/jpeg" | "image/webp", hint?: DocType): Promise<ExtractionResult> {
   const t0 = Date.now();
-  if (aiEnabled()) {
+  for (const provider of aiProviders()) {
     try {
-      const doc = await extractWithClaude(image, mediaType);
-      if (doc) return { doc: withHint(doc, hint), engine: "claude-vision", ms: Date.now() - t0 };
+      const doc = provider === "gemini" ? await extractWithGemini(image, mediaType) : await extractWithClaude(image, mediaType);
+      if (doc) return { doc: withHint(doc, hint), engine: provider === "gemini" ? "gemini-vision" : "claude-vision", ms: Date.now() - t0 };
     } catch (err) {
-      // Fall through to on-device OCR so KYC never blocks on the model.
-      if (!(err instanceof Anthropic.APIError)) throw err;
-      console.warn(`[extract] Claude vision failed (${err.status}); using Tesseract`);
+      // Fall through to the next provider, then on-device OCR, so KYC never blocks on a model.
+      const status = err instanceof GeminiError || err instanceof Anthropic.APIError ? err.status : undefined;
+      if (status && [401, 402, 403, 429].includes(status)) pauseProvider(provider);
+      console.warn(`[extract] ${provider} vision failed (${status ?? (err as Error).message}); trying next engine`);
     }
   }
   const doc = await extractWithTesseract(image);

@@ -1,3 +1,4 @@
+import type { GeminiContent } from "./gemini";
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
@@ -25,8 +26,9 @@ export interface AdvisorSession {
   profile: Profile;
   requestedProducts: string[];
   declinedProducts: string[];
-  /** Full Claude transcript (AI mode) — kept server-side only. */
+  /** Full model transcripts (AI mode) — kept server-side only. */
   messages: Anthropic.Beta.BetaMessageParam[];
+  geminiContents?: GeminiContent[];
   /** Plain transcript for the UI and for partner hand-off summaries. */
   transcript: { role: "user" | "assistant"; text: string; at: string }[];
   recommendation?: Recommendation;

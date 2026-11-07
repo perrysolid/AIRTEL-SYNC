@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
-import { ADVISOR_MODEL, aiEnabled, anthropic } from "./ai";
+import { ADVISOR_MODEL, aiProvider, anthropic, pauseProvider, type AiProvider } from "./ai";
+import { GEMINI_MODEL, GeminiError, streamGenerate, thinking, type GeminiPart } from "./gemini";
 import { catalogue, product } from "./catalogue";
 import { buildQuote, type Term } from "./pricing";
 import { inferSegment, NEEDS, ProfileSchema, tierForCity } from "./profile";
@@ -13,7 +14,7 @@ import { newId, now, store, type AdvisorSession, type Channel } from "./store";
 import { redactText } from "./privacy";
 
 /**
- * GenAI advisor. Claude runs the conversation (any Indian language, voice or
+ * GenAI advisor. Gemini (or Claude) runs the conversation (any Indian language, voice or
  * text) and calls tools for every fact and number: registry lookups, the
  * deterministic eligibility engine and the pricing engine. It never invents
  * products or prices — the tools are the single source of truth.
@@ -208,10 +209,10 @@ function runTool(s: AdvisorSession, name: string, input: unknown, emit: (e: Advi
   return { result: `Unknown tool ${name}`, isError: true };
 }
 
-async function runAiTurn(s: AdvisorSession, userText: string, emit: (e: AdvisorEvent) => void) {
+async function runClaudeTurn(s: AdvisorSession, userText: string, emit: (e: AdvisorEvent) => void) {
   // Cheap pre-pass: obvious facts land in the profile before the model sees them.
   s.profile = mergeParsed(s.profile, parseUtterance(userText));
-  s.messages.push({ role: "user", content: userText || "(The owner just opened the advisor. Greet them in one line and ask what business they run, or invite them to share their GSTIN to skip questions.)" });
+  s.messages.push({ role: "user", content: userText || OPENING });
   let assistantText = "";
 
   for (let step = 0; step < 8; step++) {
@@ -265,6 +266,80 @@ async function runAiTurn(s: AdvisorSession, userText: string, emit: (e: AdvisorE
   if (assistantText.trim()) s.transcript.push({ role: "assistant", text: assistantText.trim(), at: now() });
 }
 
+const OPENING = "(The owner just opened the advisor. Greet them in one line and ask what business they run, or invite them to share their GSTIN to skip questions.)";
+
+const GEMINI_TOOLS = [{ functionDeclarations: TOOLS.map((t) => ({ name: t.name, description: t.description ?? "", parametersJsonSchema: t.input_schema })) }];
+
+async function runGeminiTurn(s: AdvisorSession, userText: string, emit: (e: AdvisorEvent) => void) {
+  s.profile = mergeParsed(s.profile, parseUtterance(userText));
+  const contents = (s.geminiContents ??= []);
+  contents.push({ role: "user", parts: [{ text: userText || OPENING }] });
+  let assistantText = "";
+
+  for (let step = 0; step < 8; step++) {
+    const parts: GeminiPart[] = [];
+    let finish: string | undefined;
+    let blocked: string | undefined;
+    for await (const chunk of streamGenerate(GEMINI_MODEL, {
+      systemInstruction: { parts: [{ text: SYSTEM + "\n\n" + channelRules(s.channel, s.language) + "\n\nCatalogue (for understanding requests only — prices and eligibility come from tools):\n" + CATALOGUE_BRIEF() }] },
+      contents,
+      tools: GEMINI_TOOLS,
+      generationConfig: { thinkingConfig: thinking(GEMINI_MODEL), maxOutputTokens: 4000 },
+    })) {
+      blocked ??= chunk.promptFeedback?.blockReason;
+      const c = chunk.candidates?.[0];
+      finish = c?.finishReason ?? finish;
+      for (const p of c?.content?.parts ?? []) {
+        if (p.text && !p.thought) {
+          assistantText += p.text;
+          emit({ type: "text", delta: p.text });
+        }
+        parts.push(p);
+      }
+    }
+    // Keep every part (incl. thought signatures) so the next call has full context.
+    if (parts.length) contents.push({ role: "model", parts });
+
+    if (blocked || finish === "SAFETY" || finish === "PROHIBITED_CONTENT") {
+      emit({ type: "text", delta: "\n\nSorry, I can't help with that here. A partner can call you — just ask." });
+      break;
+    }
+    const calls = parts.filter((p) => p.functionCall).map((p) => p.functionCall!);
+    if (calls.length === 0) break;
+
+    const responses: GeminiPart[] = [];
+    for (const fc of calls) {
+      emit({ type: "status", label: toolLabels[fc.name] ?? "Working…" });
+      const { result, isError } = runTool(s, fc.name, fc.args ?? {}, emit);
+      store.audit("advisor", `tool:${fc.name}`, s.id, redactText(JSON.stringify(fc.args ?? {})).slice(0, 200));
+      let response: Record<string, unknown>;
+      try {
+        response = isError ? { error: result } : { result: JSON.parse(result) };
+      } catch {
+        response = { result };
+      }
+      responses.push({ functionResponse: { id: fc.id, name: fc.name, response } });
+    }
+    contents.push({ role: "user", parts: responses });
+    if (assistantText && !assistantText.endsWith("\n")) {
+      emit({ type: "text", delta: "\n\n" });
+      assistantText += "\n\n";
+    }
+  }
+  if (assistantText.trim()) s.transcript.push({ role: "assistant", text: assistantText.trim(), at: now() });
+}
+
+/** Runs the turn on the preferred provider; a provider that fails for billing/auth/quota is paused. */
+async function runAiTurn(s: AdvisorSession, provider: AiProvider, userText: string, emit: (e: AdvisorEvent) => void) {
+  try {
+    if (provider === "gemini") await runGeminiTurn(s, userText, emit);
+    else await runClaudeTurn(s, userText, emit);
+  } catch (err) {
+    if ((err instanceof GeminiError && err.persistent) || (err instanceof Anthropic.APIError && [401, 402, 403, 429].includes(err.status ?? 0))) pauseProvider(provider);
+    throw err;
+  }
+}
+
 export function newSession(channel: Channel, language: string): AdvisorSession {
   return {
     id: newId("ses"),
@@ -287,7 +362,8 @@ export async function advisorTurn(opts: { sessionId?: string; message: string; c
   if (!s) s = newSession(opts.channel, opts.language);
   s.language = opts.language || s.language;
   s.channel = opts.channel;
-  const useAi = aiEnabled() && !opts.forceGuided && !s.guidedStep;
+  const provider = opts.forceGuided || s.guidedStep ? undefined : aiProvider();
+  const useAi = provider !== undefined;
   emit({ type: "session", sessionId: s.id, mode: useAi ? "ai" : "guided" });
   if (opts.message) s.transcript.push({ role: "user", text: opts.message, at: now() });
 
@@ -304,11 +380,12 @@ export async function advisorTurn(opts: { sessionId?: string; message: string; c
   };
 
   try {
-    if (useAi) await runAiTurn(s, message, emit);
+    if (provider) await runAiTurn(s, provider, message, emit);
     else runGuidedTurn(s, message, emit);
   } catch (err) {
     console.error("[advisor] AI turn failed, switching to guided mode", err);
     s.messages = [];
+    s.geminiContents = undefined;
     emit({ type: "status", label: "Switching to quick mode…" });
     runGuidedTurn(s, message, emit);
   }
