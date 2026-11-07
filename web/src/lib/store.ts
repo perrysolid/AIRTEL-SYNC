@@ -116,7 +116,8 @@ interface DB {
   audit: AuditEvent[];
 }
 
-const FILE = path.join(process.cwd(), ".data", "store.json");
+// STORE_DIR points at a persistent disk in production (Render mounts one).
+const FILE = path.join(process.env.STORE_DIR || path.join(process.cwd(), ".data"), "store.json");
 const g = globalThis as unknown as { __udyamStore?: DB };
 
 function load(): DB {

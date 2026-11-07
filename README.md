@@ -53,6 +53,10 @@ If a provider fails on billing, auth or quota, it is paused for 10 minutes and t
 
 Same advisor in chat, with native buttons, voice notes, one-tap ordering and order updates pushed to the chat. Telegram runs locally with `npm run telegram` (no public URL). Setup for both: [docs/bots-setup.md](docs/bots-setup.md).
 
+### Deploy
+
+Frontend on **Vercel**, backend on **Render**, from this one codebase: Vercel proxies `/api/*` to Render via `BACKEND_URL`. Render is configured by `render.yaml`. Steps: [docs/deploy.md](docs/deploy.md).
+
 ## Docs
 
 - [Architecture](docs/architecture.md)

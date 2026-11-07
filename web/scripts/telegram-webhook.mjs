@@ -1,6 +1,7 @@
 // Production mode: points Telegram at <PUBLIC_BASE_URL>/api/telegram.
 //   node --env-file=.env.local scripts/telegram-webhook.mjs
-const { TELEGRAM_BOT_TOKEN: TOKEN, PUBLIC_BASE_URL: URL_, TELEGRAM_WEBHOOK_SECRET: SECRET } = process.env;
+const { TELEGRAM_BOT_TOKEN: TOKEN, TELEGRAM_WEBHOOK_SECRET: SECRET } = process.env;
+const URL_ = process.env.BOT_WEBHOOK_BASE_URL ?? process.env.PUBLIC_BASE_URL;
 if (!TOKEN || !URL_?.startsWith("https://")) {
   console.error("Need TELEGRAM_BOT_TOKEN and an https PUBLIC_BASE_URL.");
   process.exit(1);
