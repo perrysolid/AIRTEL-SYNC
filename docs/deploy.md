@@ -17,13 +17,25 @@ flowchart LR
 
 ## 1. Backend on Render
 
-1. Render dashboard → **New → Blueprint** → connect `perrysolid/AIRTEL-SYNC`. Render reads `render.yaml`.
-2. Fill in the secret env vars it asks for (copy from `web/.env.local`):
-   `GEMINI_API_KEY`, `GROQ_API_KEY`, `TELEGRAM_BOT_TOKEN`, `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_APP_SECRET`, and optionally `ANTHROPIC_API_KEY`.
-   Leave `PUBLIC_BASE_URL` for step 3. `TELEGRAM_WEBHOOK_SECRET` is generated.
-3. Deploy. Check `https://<service>.onrender.com/api/health` shows `"ok": true`.
+**Free plan (New → Web Service):**
 
-The blueprint uses the **Starter** plan because the order store lives on a 1 GB persistent disk (`STORE_DIR=/var/data`). On the free plan, delete the `disk` block: it works, but orders reset on every deploy or sleep, and the first request after sleep takes ~50 s.
+| Field | Value |
+|---|---|
+| Repository / branch | `perrysolid/AIRTEL-SYNC`, `main` |
+| Root Directory | `web` |
+| Runtime | Node |
+| Build Command | `npm ci && npm run build` |
+| Start Command | `npm start` |
+| Instance Type | Free |
+| Health Check Path | `/api/health` |
+
+Environment variables: `NODE_VERSION=22`, `NODE_OPTIONS=--dns-result-order=ipv4first`, then copy from `web/.env.local`: `GEMINI_API_KEY`, `GROQ_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_APP_SECRET`. Add `PUBLIC_BASE_URL` in step 3.
+
+Free-plan limits: the service sleeps after 15 minutes idle (~50 s cold start; a free cron job hitting `/api/health` every 10 minutes keeps it awake), and the order store resets on every deploy or restart.
+
+**Paid plan (New → Blueprint):** Render reads `render.yaml`, which adds a 1 GB persistent disk (`STORE_DIR=/var/data`) so orders survive deploys. Fill in the secrets it asks for.
+
+Check `https://<service>.onrender.com/api/health` shows `"ok": true` and the providers you configured.
 
 **Telegram** needs no manual step: on boot the backend points the bot's webhook at `RENDER_EXTERNAL_URL/api/telegram`. Stop any local `npm run telegram` poller, which would otherwise remove the webhook.
 
@@ -31,10 +43,12 @@ The blueprint uses the **Starter** plan because the order store lives on a 1 GB 
 
 1. Vercel → **Add New → Project** → import `perrysolid/AIRTEL-SYNC`.
 2. **Root Directory:** `web`. Framework: Next.js (auto-detected).
-3. Env vars:
-   - `BACKEND_URL` = `https://<service>.onrender.com`
+3. Build and Output Settings: leave every override off (Next.js preset).
+4. Env vars (no API keys here):
+   - `BACKEND_URL` = `https://<service>.onrender.com` (no trailing slash)
    - `NEXT_PUBLIC_TELEGRAM_BOT` = `UdyamAdvisorBot`
-4. Deploy.
+5. Deploy. Settings → General → Node.js Version: 22.x. `BACKEND_URL` is read at build time, so redeploy after changing it.
+6. Check `https://<vercel-url>/api/health` returns the same JSON as Render's.
 
 ## 3. Connect them
 

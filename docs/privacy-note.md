@@ -19,9 +19,10 @@ Notice is itemised, plain-language, versioned (`2026-07-v1`) and shown **before*
 - **Masking everywhere.** GSTIN, Udyam, phone and ID numbers are masked in the console, order views and audit log (`maskGstin`, `maskPhone`, `redactText`). Partners never see documents.
 - **Tamper-evident consent.** Each consent and withdrawal is a hash-chained ledger entry (purpose, version, timestamp, previous hash).
 - **Data-principal rights.** `/privacy`: export, withdraw a purpose, erase — verified with order ID + last 4 of mobile. Erasure removes KYC fields and contact details while keeping the minimal consent/audit trail the law requires.
-- **AI safety.** The LLM never decides eligibility or price; tool inputs are schema-validated; document text is treated as data, not instructions; the advisor hands off to a human on request or low confidence. Use paid-tier Gemini/Claude APIs, whose data is not used for training.
+- **AI safety.** The LLM never decides eligibility or price; tool inputs are schema-validated; document text is treated as data, not instructions; the advisor hands off to a human on request or low confidence. Use paid-tier Gemini (primary), Groq and Claude APIs, whose data is not used for training; documents go only to the vision model, never to the chat model.
 - **Fair KYC.** Ambiguous or failed checks go to human review with the reason shown — never a silent rejection. OCR corrections are accepted only when they pass the GSTIN checksum and match the registry.
-- **Transport and access.** HTTPS only; Twilio webhook signatures verified; upload type/size limits (PNG/JPEG/WebP, 6 MB); secrets in environment variables, never in the client.
+- **Chat channels.** Bots never read documents in chat; they send the owner to the consent-first KYC page. A Telegram contact is accepted only if it is the sender's own number.
+- **Transport and access.** HTTPS only; WhatsApp (Meta `X-Hub-Signature-256`), Telegram (secret-token header) and Twilio webhook signatures verified; the public frontend holds no secrets and proxies to the backend; upload type/size limits (PNG/JPEG/WebP, 6 MB); secrets in environment variables, never in the client.
 
 ## Production hardening (next)
 
