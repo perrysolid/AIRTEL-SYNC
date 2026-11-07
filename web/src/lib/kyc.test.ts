@@ -36,6 +36,22 @@ describe("KYC answer key (K01-K12)", () => {
   });
 });
 
+describe("registry recovery", () => {
+  const detail = (k: string, id: string) => validateKyc(APPLICANTS[k]).checks.find((c) => c.id === id);
+  it("K04: finds the blurred GSTIN from business name + bill PIN", () => {
+    expect(detail("K04", "gstin_suggested")?.detail).toContain("27PZSXS1936O1ZH");
+  });
+  it("K05: finds the missing Udyam number from the GST record", () => {
+    expect(detail("K05", "udyam_suggested")?.detail).toContain("UDYAM-KL-00-5521886");
+  });
+  it("K01: does not suggest a same-name Udyam from another state", () => {
+    expect(detail("K01", "udyam_suggested")).toBeUndefined();
+  });
+  it("never suggests when the name is ambiguous at that location", () => {
+    expect(validateKyc({ address_proof: { ...APPLICANTS.K04.address_proof!, fields: { billedTo: "Saffron Dental Care", address: "Nagpur - 999999", billDate: "2026-06-01" } } }).checks.find((c) => c.id === "gstin_suggested")).toBeUndefined();
+  });
+});
+
 describe("name helpers", () => {
   it("splits proprietorship legal names", () => {
     expect(splitLegalName("Neha Kaur (Prop. Vindhya Tours & Travels)")).toEqual({ person: "Neha Kaur", firm: "Vindhya Tours & Travels" });

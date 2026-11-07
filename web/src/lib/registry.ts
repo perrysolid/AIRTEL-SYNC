@@ -97,3 +97,28 @@ export function profileFromGstin(raw: string): { lookup: GstinLookup; profile: P
   }
   return { lookup, profile, known };
 }
+
+const norm = (s?: string | null) => (s ?? "").toLowerCase().replace(/\(prop\.?[^)]*\)/g, " ").replace(/[^a-z0-9]+/g, " ").trim();
+const pinOf = (s?: string | null) => (s ?? "").replace(/\s+/g, "").match(/(\d{6})(?!.*\d)/)?.[1];
+
+/**
+ * Reverse lookup for when the number itself is unreadable or missing. Trade
+ * names repeat across the registry (hundreds of "Saffron Dental Care"s), so a
+ * name alone never decides: it must also match the location, and exactly one
+ * record may survive.
+ */
+export function findGstinByBusiness(names: (string | null | undefined)[], addressPin?: string): GstinRow | undefined {
+  const wanted = new Set(names.map(norm).filter(Boolean));
+  if (!wanted.size || !addressPin) return undefined;
+  const hits = [...datasets().gstin.values()].filter((r) => (wanted.has(norm(r.trade_name)) || wanted.has(norm(r.legal_name))) && pinOf(r.principal_place_of_business) === addressPin);
+  return hits.length === 1 ? hits[0] : undefined;
+}
+
+export function findUdyamByBusiness(names: (string | null | undefined)[], state?: string, city?: string): UdyamRow | undefined {
+  const wanted = new Set(names.map(norm).filter(Boolean));
+  if (!wanted.size || !state) return undefined;
+  const hits = [...datasets().udyam.values()].filter((r) => wanted.has(norm(r.enterprise_name)) && r.state === state && (!city || r.city === city));
+  return hits.length === 1 ? hits[0] : undefined;
+}
+
+export { pinOf };

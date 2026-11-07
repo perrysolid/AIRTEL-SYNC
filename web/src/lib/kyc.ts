@@ -1,5 +1,5 @@
 import { CASE_TODAY } from "./data";
-import { lookupGstin, lookupUdyam } from "./registry";
+import { findGstinByBusiness, findUdyamByBusiness, lookupGstin, lookupUdyam } from "./registry";
 import { DOC_LABELS, type DocType, type ExtractedDoc, type KycCheck, type KycResult } from "./kyc-types";
 
 /**
@@ -130,6 +130,25 @@ export function validateKyc(docs: KycDocs, today: Date = CASE_TODAY): KycResult 
           }
         }
       }
+    }
+  }
+
+  // --- Registry recovery: unreadable GSTIN / missing Udyam ----------------------
+  // The other documents usually name the business and its address, which is
+  // enough to find the registration ourselves and ask the owner to confirm it.
+  const otherNames = [ud?.fields.enterpriseName, addr?.fields.billedTo, sig?.fields.forBusiness];
+  if (!gstRecord && (!gst || !gst.legible || gst.confidence < 0.5 || !gst.fields.gstin)) {
+    const hit = findGstinByBusiness([gst?.fields.tradeName, gst?.fields.legalName, ...otherNames], pin(addr?.fields.address));
+    if (hit) {
+      add({ id: "gstin_suggested", doc: "gst_certificate", status: "warn", title: "We found your GSTIN in the registry", detail: `${hit.gstin} · ${hit.legal_name} · ${hit.status}, at the same PIN as your bill.`, fix: `Confirm ${hit.gstin} is yours and we'll finish the GST checks without a new photo` });
+    }
+  }
+  const udyamNumberKnown = !!ud?.fields.udyamNumber;
+  if (!udyamNumberKnown && gstRecord) {
+    const city = gstRecord.principal_place_of_business.split(",").at(-2)?.trim();
+    const hit = findUdyamByBusiness([gstRecord.trade_name, ud?.fields.enterpriseName, ...otherNames], gstRecord.state, city);
+    if (hit) {
+      add({ id: "udyam_suggested", doc: "udyam_certificate", status: "warn", title: "We found your Udyam registration", detail: `${hit.udyam_number} · ${hit.enterprise_name} · ${hit.enterprise_type} enterprise in ${hit.city}.`, fix: `Confirm ${hit.udyam_number} is yours to add it — no certificate upload needed` });
     }
   }
 
