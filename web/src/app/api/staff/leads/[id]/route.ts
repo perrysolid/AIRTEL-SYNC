@@ -1,9 +1,16 @@
 import { z } from "zod";
 import { activityFor, CALL_OUTCOMES, canSee, leadPhone, leadViews, listStaff, logActivity, outreachFor, STATUSES, type LeadStatus } from "@/lib/crm";
 import { leadRow, staffOr401 } from "@/lib/staff-api";
+
+/** smb_leads.csv has no phone numbers, so a win-back lead shows a stable made-up one, marked as such. */
+const sampleNumber = (id: string) => {
+  const n = Number(id.slice(1));
+  return `+91 9${String((n * 7919) % 1000).padStart(3, "0")}0 ${String((n * 104729) % 100000).padStart(5, "0")}`;
+};
 import { chatSummary } from "@/lib/chat-summary";
 import { store } from "@/lib/store";
 import { product } from "@/lib/catalogue";
+import { maskPhone } from "@/lib/privacy";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,7 +32,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const r = l.lead.row;
   return Response.json({
     ...leadRow(l.lead, names),
-    phone: leadPhone(l.lead),
+    // Only the people who call get the full number; the manager sees it masked.
+    phone: l.lead.origin === "winback" ? sampleNumber(l.lead.id) : l.staff.role === "admin" ? maskPhone(l.lead.phone) : leadPhone(l.lead),
+    sampleNumber: l.lead.origin === "winback",
     contact: r.contact_name,
     contactRole: r.contact_role,
     employees: Number(r.employee_count),

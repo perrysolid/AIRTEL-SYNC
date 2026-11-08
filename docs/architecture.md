@@ -4,9 +4,9 @@
 flowchart LR
   subgraph Channels
     W[Web PWA<br/>voice + text + 3D shop]
-    WA[WhatsApp<br/>Cloud API · Twilio]
+    WA[WhatsApp<br/>linked device on our number · Cloud API]
     TG[Telegram bot]
-    P[Partner console]
+    P[Staff portal<br/>salesman · supervisor · manager]
   end
 
   subgraph Next.js app
@@ -18,14 +18,15 @@ flowchart LR
     ORD[Orders & activation tracker]
     PRIV[Consent ledger · masking · rights]
     AN[Propensity model + funnel analytics]
+    CRM[Lead book from registrations<br/>call log · reports · chat summaries]
   end
 
   subgraph External
-    C[Gemini primary · Groq backup · Claude<br/>function calling, vision, voice]
+    C[Claude · DeepSeek · Gemini · Groq<br/>function calling, vision, summaries]
     T[Tesseract.js<br/>on-device OCR]
     REG[(GSTN / Udyam<br/>registries)]
     DL[DigiLocker]
-    S[Sarvam TTS]
+    S[Sarvam<br/>voice out + voice notes in]
   end
 
   W --> ADV
@@ -43,8 +44,11 @@ flowchart LR
   KYC --> PRIV
   RULES --> ORD
   ORD -- updates to the order's chat --> BOT
-  P --> AN
-  P --> ORD
+  P --> CRM
+  CRM --> AN
+  P -- order updates --> ORD
+  ORD -- WhatsApp update --> WA
+  BOT -. voice notes .-> S
   W -. speech .-> S
 ```
 
@@ -93,14 +97,17 @@ These reuse the existing rules engine, pricing, store, tracker and notification 
 ```mermaid
 flowchart LR
   B[Browser] --> V[Vercel: pages]
+  ST[Staff browser] --> SV[Vercel: staff portal]
+  SV -- /api/staff rewrite --> R
   V -- /api/* rewrite --> R[Render: API, bots, KYC, store]
   TG[Telegram] -- webhook --> R
-  WA[WhatsApp Cloud API] -- webhook --> R
-  R --> AI[Gemini · Groq · Claude]
+  WA[WhatsApp linked device] <-- socket from R --> R
+  R --> DB[(Neon Postgres)]
+  R --> AI[Claude · DeepSeek · Gemini · Groq · Sarvam]
 ```
 
 One codebase, two deployments. The frontend holds no secrets; see [deploy.md](deploy.md).
 
 ## Production path
 
-in-process demo clock → event-driven workflow (provisioning webhooks); mock DigiLocker/e-sign/UPI → real APIs; WhatsApp test number → verified business number with approved `order_update` templates for updates outside the 24-hour window.
+in-process demo clock → event-driven workflow (provisioning webhooks); mock DigiLocker/e-sign/UPI → real APIs; WhatsApp linked device → verified business number on the official Business API with approved `order_update` templates.

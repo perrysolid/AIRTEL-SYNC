@@ -43,6 +43,7 @@ export function leadRow(l: LeadView, names: Map<string, string>) {
     lastTouch: l.lastTouch ? { at: l.lastTouch.at, kind: l.lastTouch.kind, outcome: l.lastTouch.outcome ?? null } : null,
     nextAt: l.nextAt ?? null,
     touches: l.touches,
+    origin: l.origin,
   };
 }
 

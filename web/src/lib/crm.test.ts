@@ -17,8 +17,21 @@ describe("sales records", () => {
     const rahul = (await staffByEmail("SALESMAN@accel.demo"))!;
     expect(rahul.role).toBe("sales");
     expect(verifyPassword(demoPassword(), rahul.passwordHash)).toBe(true);
-    expect((await leadViews()).size).toBe(0);
+    const all = [...(await leadViews()).values()];
+    expect(all.filter((l) => l.origin === "registered")).toHaveLength(0);
     expect(await activitySince(new Date(0))).toHaveLength(0);
+  });
+
+  it("keeps last quarter's recoverable drops as a separate win-back list, ranked by the propensity model", async () => {
+    const { callQueue, visibleLeads } = await import("./crm");
+    const wb = await visibleLeads({ id: "st_salesman", role: "sales" }, "winback");
+    expect(wb.length).toBeGreaterThan(100);
+    expect(wb.every((l) => l.row.outcome === "Dropped" && l.owner === "st_salesman")).toBe(true);
+    const q = await callQueue({ id: "st_salesman", role: "sales" });
+    const p = q.winback.map((l) => l.score.probability);
+    expect(p.length).toBe(25);
+    expect(p).toEqual([...p].sort((a, b) => b - a));
+    expect(q.fresh.every((l) => l.origin === "registered")).toBe(true);
   });
 
   it("a call request becomes a lead for the salesman; only he and the supervisor can work it", async () => {
@@ -32,12 +45,12 @@ describe("sales records", () => {
     s.profile = { ...s.profile, businessType: "Clinic", city: "Pune" };
     store.saveSession(s);
 
-    const lead = [...(await leadViews()).values()][0];
+    const lead = [...(await leadViews()).values()].find((l) => l.origin === "registered")!;
     expect(lead.owner).toBe("st_salesman");
     expect(lead.status).toBe("to_call");
     expect(lead.phone).toBe("919876543210");
     expect(lead.score.band).toBe("hot");
-    expect(await visibleLeads({ id: "st_supervisor", role: "supervisor" })).toHaveLength(1);
+    expect(await visibleLeads({ id: "st_supervisor", role: "supervisor" }, "registered")).toHaveLength(1);
     expect(await visibleLeads({ id: "st_other", role: "sales" })).toHaveLength(0);
 
     const tomorrow = new Date(Date.now() + 86_400_000);
@@ -56,7 +69,7 @@ describe("sales records", () => {
     s.botChat = { channel: "whatsapp", chatId: "919876543210" };
     s.status = "handoff";
     store.saveSession(s);
-    const book = [...(await leadViews()).values()];
+    const book = [...(await leadViews()).values()].filter((l) => l.origin === "registered");
     expect(book).toHaveLength(1);
     expect(book[0].sessionIds).toContain(s.id);
   });

@@ -12,6 +12,7 @@ export function LeadCard({ l, showOwner }: { l: Lead; showOwner?: boolean }) {
         <div className="flex flex-wrap items-baseline gap-x-2">
           <span className="truncate font-bold">{l.business}</span>
           <span className="text-sm text-ink-soft">{l.type}, {l.city}</span>
+          {l.origin === "winback" && <span className="rounded-full bg-paper px-2 py-0.5 text-xs font-semibold text-ink-soft">Last quarter</span>}
         </div>
         <div className="mt-1 flex flex-wrap gap-1.5 text-xs">
           {l.reasons.slice(0, 3).map((r) => (

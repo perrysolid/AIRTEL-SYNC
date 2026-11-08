@@ -24,10 +24,14 @@ export interface Lead {
   lastTouch: { at: string; kind: string; outcome: string | null } | null;
   nextAt: string | null;
   touches: number;
+  /** "winback": a recoverable drop from last quarter (smb_leads.csv), ranked by the propensity model. */
+  origin: "registered" | "winback";
 }
 
 export interface LeadDetail extends Lead {
   phone: string;
+  /** The dataset has no numbers: this one is made up for the demo. */
+  sampleNumber?: boolean;
   contact: string;
   contactRole: string;
   employees: number;

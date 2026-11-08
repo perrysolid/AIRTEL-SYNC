@@ -9,7 +9,7 @@ Airtel SYNC hackathon, Track A ("Project Udyam Digital"). A small-business owner
 | ₹15,053 acquisition cost per activation | advisor + Smart KYC replace 2–3 field visits |
 | 3.0 status-chasing calls per customer (each one raises churn) | an update in the customer's own chat at every step |
 
-**Try it:** Telegram bot [@UdyamAdvisorBot](https://t.me/UdyamAdvisorBot) · WhatsApp test number +1 555 136 9092 (Meta test numbers only reply to approved recipients) · web app: see [Deploy](#deploy).
+**Try it:** web [airtel-sync.vercel.app](https://airtel-sync.vercel.app) · staff [airtel-sync-staff.vercel.app](https://airtel-sync-staff.vercel.app) · Telegram [@UdyamAdvisorBot](https://t.me/UdyamAdvisorBot) · WhatsApp: message the number shown on the site; anyone can chat with it.
 
 ## What's in it
 
@@ -28,12 +28,14 @@ Airtel SYNC hackathon, Track A ("Project Udyam Digital"). A small-business owner
   - **Budget fitting:** "keep it under ₹3,000" switches off the least essential services until the plan fits, and they stay one tap away. Today's spend ("Jio 399 pm") feeds a savings line.
   - **Stall reminders:** one card reminder for a saved plan nobody ordered, and one per waiting order step (KYC, e-sign, payment), only inside WhatsApp's 24-hour window.
   - **Referrals:** "everything is live" carries a *Refer a business* button with a personal share link; referred orders are tracked in the console.
-- **Sales portal (`/sales`).** A separate signed-in site for salespeople, channel partners and managers.
-  - **Sign-in and roles:** scrypt password hashes, a signed HTTP-only session cookie (12 hours) and a lockout after 8 failed attempts per IP. Salespeople see their region's book, partners see the leads they sourced and orders placed with their code, managers see everything and can reassign.
-  - **Who to call today:** promised follow-ups that are due first, then untouched open leads ranked by the propensity model (logistic regression, AUC 0.745, 2.4× lift in the top decile). Advisor chats waiting for a person sit on top.
-  - **Lead records:** 5,000 leads searchable and filterable by status, score band, source and owner. Each record shows why the model scored it, last quarter's journey, the self-serve WhatsApp/Telegram link, and a log of every call, WhatsApp link and note with the next follow-up. Records are stored in Neon (`staff`, `lead_activity`).
-  - **Charts:** calls per day, book status, score distribution, funnel, activation rate by source, and a team board (calls, connect rate, overdue follow-ups, quotes, wins).
-  - **Insights & win-back** (the earlier console) is now behind the same sign-in.
+- **Staff portal ([airtel-sync-staff.vercel.app](https://airtel-sync-staff.vercel.app), `staff/`).** A separate signed-in site for three roles.
+  - **Roles:** the *area salesman* calls leads and updates installations; the *supervisor* also calls and updates, moves leads, and sends an end-of-day report to the manager (drafted from the day's calls, orders and updates); the *manager* sees everything and reads the reports, without changing anything. scrypt password hashes, a signed HTTP-only session cookie (12 hours), a lockout after 8 failed attempts per IP.
+  - **Registered leads only:** the lead book is built from real sign-ups (signed-in owners, "Request a call", WhatsApp chats that got a plan or asked for a person), merged by phone number, scored on what they did (asked for a call, got a plan, signed in). Call logs live in Neon (`staff`, `lead_activity`).
+  - **Win-back from last quarter:** the recoverable drops in `smb_leads.csv` (no time, paperwork, slow install...) ranked by the propensity model (logistic regression, AUC 0.745, 2.4× lift in the top decile), on their own tab and at the bottom of *Who to call*, so they never mix with real registrations.
+  - **Order updates:** marking installation work done, switching to AirFiber, or writing a message reaches the owner on WhatsApp straight away.
+  - **Chat summaries and activity:** every advisor conversation is summarised (DeepSeek, with a rules fallback); one timeline shows calls, orders, updates and reports.
+  - **Insights:** last quarter's baseline from `smb_leads.csv` (funnel, drop reasons, activation by source), the four target metrics, and the same measures on the digital journey so far.
+  - Partners are credited through the partner code at checkout (`PTN-…`); their orders show as the partner channel.
 - **Privacy.** Document images are never stored (hash only), identifiers are masked in UI and logs, and owners can export, withdraw or erase their data.
 - **Beyond the sale (added on the `nanki` branch).**
   - **Scam Shield.** Paste, upload a screenshot, or just forward a suspicious message in chat. Transparent rules (look-alike links, OTP asks, fake KYC, "sent by mistake", digital-arrest, fake UPI screenshots) give a verdict, the reasons and the next step (Chakshu, 1930), in English and Hindi. It never says "safe", and never treats a screenshot as proof of payment. Text is analysed in memory, never stored.
@@ -98,17 +100,17 @@ All keys are optional and live in `web/.env.local` (git-ignored; the template is
 
 If a provider fails on billing or auth it is paused for 10 minutes (1 minute for a rate limit) and the app carries on with the next provider or the offline mode, so the demo never breaks.
 
-### Sales portal demo accounts
+### Staff portal accounts
 
-Seeded on first start (into Neon when `DATABASE_URL` is set). All use the password in `STAFF_DEMO_PASSWORD`.
+Created on start (in Neon when `DATABASE_URL` is set). All use the password in `STAFF_DEMO_PASSWORD` (default `Accel@2026`).
 
 | Email | Role |
 |---|---|
-| `manager@accel.demo` | Sales manager (everything, team board, reassign) |
-| `priya@accel.demo`, `rahul@accel.demo`, `arjun@accel.demo`, `ananya@accel.demo` | Salespeople for North, West, South, East |
-| `metro@partner.demo`, `shree@partner.demo`, `sai@partner.demo`, `eastern@partner.demo` | Channel partners (codes `PTN-METRO`, `PTN-SHREE`, `PTN-SAI`, `PTN-EAST`) |
+| `salesman@accel.demo` | Area salesman (Rahul): calls, order updates |
+| `supervisor@accel.demo` | Supervisor (Priya): calls, updates, moves leads, sends the daily report |
+| `manager@accel.demo` | Manager (Kavita): sees everything, reads reports, view-only |
 
-Two weeks of sample call history is generated with the accounts so the charts aren't empty; each entry's note says "Sample activity".
+There is no sample call history: everything on the portal comes from real use, except the clearly labelled win-back list and baseline from `smb_leads.csv`.
 
 ### Tests
 
@@ -123,7 +125,7 @@ npm run lint && npm run typecheck
 
 ### WhatsApp and Telegram bots
 
-Telegram runs locally with `npm run telegram` (no public URL needed). WhatsApp needs a Meta app and a public https URL. Step-by-step for both: [docs/bots-setup.md](docs/bots-setup.md).
+Telegram runs locally with `npm run telegram` (no public URL needed). WhatsApp runs as a linked device on our own number inside the backend (`WA_LINK=on`, `WA_LINK_NUMBER`; the pairing code is printed in the logs), so anyone can message it without a Meta business account; the Meta Cloud API path still works when its keys are set. Step-by-step for both: [docs/bots-setup.md](docs/bots-setup.md).
 
 ### Deploy
 

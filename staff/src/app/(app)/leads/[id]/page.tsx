@@ -41,7 +41,7 @@ export default function LeadPage({ params }: { params: Promise<{ id: string }> }
           <p className="text-ink-soft">{l.type} in {l.city} · {l.id} · {l.statusLabel}{me.role !== "sales" ? ` · ${l.ownerName}` : ""}</p>
         </div>
         <div className="flex items-center gap-2">
-          {l.phone && <a href={`tel:${l.phone.replace(/\s/g, "")}`} className="inline-flex items-center gap-2 rounded-full bg-brand px-4 py-2.5 font-extrabold text-white"><Phone size={17} /> Call {l.phone}</a>}
+          {l.phone && me.role !== "admin" && <a href={`tel:${l.phone.replace(/\s/g, "")}`} className="inline-flex items-center gap-2 rounded-full bg-brand px-4 py-2.5 font-extrabold text-white"><Phone size={17} /> Call {l.phone}{l.sampleNumber ? " (sample)" : ""}</a>}
         </div>
       </header>
 

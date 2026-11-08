@@ -24,13 +24,19 @@ export default function Leads() {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("open");
   const [band, setBand] = useState("");
+  const [book, setBook] = useState<"registered" | "winback">("registered");
   const dq = useDeferredValue(q);
-  const params = new URLSearchParams({ status, q: dq, ...(band ? { band } : {}) });
+  const params = new URLSearchParams({ book, status, q: dq, ...(band ? { band } : {}) });
   const { data } = useApi<{ total: number; leads: Lead[] }>(`/api/staff/leads?${params}`, 20_000);
   const chip = (on: boolean) => `whitespace-nowrap rounded-full border px-3 py-1.5 text-sm font-semibold ${on ? "border-ink bg-ink text-white" : "border-rule bg-sheet text-ink-soft hover:text-ink"}`;
   return (
     <>
-      <PageHead title={me.role === "sales" ? "My leads" : "All leads"} sub={data ? `${data.total.toLocaleString("en-IN")} leads, best chance to activate first` : undefined} />
+      <PageHead title={me.role === "sales" ? "My leads" : "All leads"} sub={data ? `${data.total.toLocaleString("en-IN")} ${book === "winback" ? "recoverable drops from last quarter, ranked by the propensity model" : "businesses that registered with us, most likely to buy first"}` : undefined} />
+      <div role="tablist" className="mb-4 inline-flex rounded-full border border-rule bg-sheet p-1">
+        {([["registered", "Registered"], ["winback", "Win-back (last quarter)"]] as const).map(([k, label]) => (
+          <button key={k} role="tab" aria-selected={book === k} onClick={() => setBook(k)} className={`rounded-full px-4 py-1.5 text-sm font-bold ${book === k ? "bg-ink text-white" : "text-ink-soft"}`}>{label}</button>
+        ))}
+      </div>
       <label className="relative block">
         <span className="sr-only">Search leads</span>
         <Search size={18} className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-ink-soft" />

@@ -36,7 +36,7 @@ export async function draftReport(now = new Date()): Promise<string> {
     `Installations: ${installing.length} in progress, ${wentLive.length} went fully live today. ${sent.length} update${sent.length === 1 ? "" : "s"} sent to owners on WhatsApp by the team.`,
   );
 
-  const open = (await visibleLeads({ id: "", role: "supervisor" })).filter((l) => OPEN_STATUSES.includes(l.status));
+  const open = (await visibleLeads({ id: "", role: "supervisor" }, "registered")).filter((l) => OPEN_STATUSES.includes(l.status));
   const waiting = open.filter((l) => !l.lastTouch);
   const handoffs = store.listSessions().filter((s) => s.status === "handoff");
   lines.push(`Still to do: ${open.length} open lead${open.length === 1 ? "" : "s"}, ${waiting.length} not called yet; ${handoffs.length} asked to talk to a person.`);

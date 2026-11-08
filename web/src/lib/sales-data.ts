@@ -27,7 +27,7 @@ const STAGES = ["Lead", "Contacted", "Needs assessed", "Quote accepted", "KYC co
 const dayKey = (d: Date) => d.toISOString().slice(0, 10);
 
 export async function dashboard(staff: SignedInStaff, now = new Date()) {
-  const leads = await visibleLeads(staff);
+  const leads = await visibleLeads(staff, "registered");
   const queue = await callQueue(staff, now);
   const since = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 13);
   const acts = (await activitySince(since)).filter((a) => a.kind === "call" && (staff.role === "admin" || staff.role === "supervisor" || a.staffId === staff.id));
@@ -87,7 +87,7 @@ export async function teamBoard(now = new Date()) {
   const staff = (await listStaff()).filter((s) => s.role !== "admin");
   const weekAgo = new Date(now.getTime() - 7 * 86_400_000);
   const acts = await activitySince(new Date(now.getTime() - 14 * 86_400_000));
-  const views = [...(await leadViews()).values()];
+  const views = [...(await leadViews()).values()].filter((l) => l.origin === "registered" || l.touches > 0);
   return staff.map((s) => {
     const mine = acts.filter((a) => a.staffId === s.id && a.kind === "call");
     const week = mine.filter((a) => new Date(a.at) >= weekAgo);

@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
-import type { Score } from "./analytics";
+import { scoreLead, type Score } from "./analytics";
 import { hashPassword, type Role } from "./auth";
-import type { LeadRow } from "./data";
+import { datasets, type LeadRow } from "./data";
 import { langName } from "./advisor-types";
 import type { Profile } from "./profile";
 import { allLive } from "./tracker";
@@ -179,6 +179,8 @@ export interface LeadBase {
   /** Their advisor conversations, newest first. */
   sessionIds: string[];
   orderIds: string[];
+  /** "registered": signed up with us. "winback": a recoverable drop from last quarter's smb_leads.csv. */
+  origin: "registered" | "winback";
 }
 
 const EMPTY_ROW: LeadRow = { lead_id: "", created_date: "", lead_source: "", business_name: "", business_type: "", segment: "", city: "", city_tier: "", state: "", preferred_language: "", employee_count: "", num_sites: "", annual_turnover_band: "", has_gstin: "", gstin: "", has_udyam: "", udyam_number: "", current_internet: "", current_provider: "", monthly_telecom_spend_inr: "", products_of_interest: "", contact_name: "", contact_role: "", stage_reached: "", outcome: "", drop_reason: "", contacted_date: "", needs_assessed_date: "", quote_accepted_date: "", kyc_complete_date: "", activated_date: "", days_lead_to_activation: "", customer_follow_up_calls: "", bundle_products: "", monthly_bundle_value_inr: "", one_time_setup_inr: "", contract_months: "", churned_within_6_months: "", nps_score: "", acquisition_cost_inr: "" };
@@ -289,9 +291,26 @@ export function leadBook(): Map<string, LeadBase> {
       phone: a.phone,
       sessionIds: a.sessions.map((s) => s.id),
       orderIds: a.orders.map((o) => o.id),
+      origin: "registered",
     });
   }
   return book;
+}
+
+const RECOVERABLE = /no time|not scheduled|took too long|too complex|decided to wait|paperwork|signatory|missing gst|unreachable/i;
+let winback: Map<string, LeadBase> | undefined;
+/**
+ * Last quarter's leads that dropped for a reason a call can fix (no time, paperwork, slow install...), ranked by the
+ * propensity model trained on smb_leads.csv. Kept apart from the registered book; scored once per process.
+ */
+export function winbackBook(): Map<string, LeadBase> {
+  if (winback) return winback;
+  winback = new Map();
+  for (const row of datasets().leads) {
+    if (row.outcome !== "Dropped" || !RECOVERABLE.test(row.drop_reason)) continue;
+    winback.set(row.lead_id, { id: row.lead_id, row, region: regionOf(row.state), score: scoreLead(row), defaultOwner: AREA_SALESMAN, defaultStatus: "to_call", sessionIds: [], orderIds: [], origin: "winback" });
+  }
+  return winback;
 }
 
 export interface LeadView extends LeadBase {
@@ -306,7 +325,7 @@ export interface LeadView extends LeadBase {
 export async function leadViews(): Promise<Map<string, LeadView>> {
   const { activity } = await crm();
   const out = new Map<string, LeadView>();
-  for (const b of leadBook().values()) out.set(b.id, { ...b, owner: b.defaultOwner, status: b.defaultStatus, touches: 0 });
+  for (const b of [...leadBook().values(), ...winbackBook().values()]) out.set(b.id, { ...b, owner: b.defaultOwner, status: b.defaultStatus, touches: 0 });
   for (const a of activity) {
     const v = out.get(a.leadId);
     if (!v) continue;
@@ -325,25 +344,33 @@ export function canSee(staff: Pick<Staff, "id" | "role">, lead: LeadView) {
   return staff.role === "admin" || staff.role === "supervisor" || lead.owner === staff.id;
 }
 
-export async function visibleLeads(staff: Pick<Staff, "id" | "role">) {
-  return [...(await leadViews()).values()].filter((l) => canSee(staff, l));
+export async function visibleLeads(staff: Pick<Staff, "id" | "role">, origin?: LeadBase["origin"]) {
+  return [...(await leadViews()).values()].filter((l) => canSee(staff, l) && (!origin || l.origin === origin));
 }
 
 const endOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59).getTime();
 
 /**
- * Who to call today: follow-ups that are due first (oldest first), then open
- * leads nobody has touched in two days, best chance to activate first.
+ * Who to call today: follow-ups that are due first (oldest first), then registered leads nobody has touched in two
+ * days (most likely to buy first), then last quarter's recoverable drops ranked by the propensity model.
  */
 export async function callQueue(staff: Pick<Staff, "id" | "role">, now = new Date(), limit = 60) {
   const eod = endOfDay(now);
   const twoDays = now.getTime() - 2 * 86_400_000;
   const open = (await visibleLeads(staff)).filter((l) => OPEN_STATUSES.includes(l.status));
   const due = open.filter((l) => l.nextAt && new Date(l.nextAt).getTime() <= eod).sort((a, b) => a.nextAt!.localeCompare(b.nextAt!));
-  const fresh = open
-    .filter((l) => !l.nextAt && (!l.lastTouch || new Date(l.lastTouch.at).getTime() < twoDays))
-    .sort((a, b) => b.score.probability - a.score.probability);
-  return { due, fresh: fresh.slice(0, Math.max(0, limit - due.length)), openTotal: open.length };
+  const untouched = (l: LeadView) => !l.nextAt && (!l.lastTouch || new Date(l.lastTouch.at).getTime() < twoDays);
+  const byChance = (a: LeadView, b: LeadView) => b.score.probability - a.score.probability;
+  const fresh = open.filter((l) => l.origin === "registered" && untouched(l)).sort(byChance);
+  const winbackOpen = open.filter((l) => l.origin === "winback");
+  const wb = winbackOpen.filter(untouched).sort(byChance);
+  return {
+    due,
+    fresh: fresh.slice(0, Math.max(0, limit - due.length)),
+    winback: wb.slice(0, 25),
+    openTotal: open.length - winbackOpen.length,
+    winbackTotal: winbackOpen.length,
+  };
 }
 
 // ---------------------------------------------------------------------------
