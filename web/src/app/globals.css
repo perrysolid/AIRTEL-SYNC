@@ -270,18 +270,20 @@ body {
 /* ------------------------------------------------------------------------------------------------
  * Landing scroll zoom. The runway holds the landing page, then the "come alive" section, then a spacer.
  * Small screens: plain order (landing page, then the section). Wide screens (same query as ZOOM_QUERY in
- * page.tsx): the section is pinned at the top of the runway, under the scrolling landing page's place, and
- * opens out of the centre phone as it flies in; two snap stops make it two swipes.
+ * page.tsx): the section is pinned while the landing page scrolls away, opens out of the centre phone as it
+ * flies in, and comes to rest in the spacer right below the landing page; two snap stops make it two swipes.
  * ------------------------------------------------------------------------------------------------ */
 .zoom-runway { display: flex; flex-direction: column; }
 .zoom-hero { order: 1; }
-.zoom-overlay { order: 2; }
+.zoom-track { order: 2; }
 .zoom-spacer, .zoom-snap { display: none; }
 @media (min-width: 1024px) and (min-height: 640px) and (prefers-reduced-motion: no-preference) {
   html { scroll-snap-type: y proximity; }
   .zoom-snap { display: block; position: absolute; left: 0; height: 1px; width: 1px; scroll-snap-align: start; }
   .zoom-hero { height: 100dvh; min-height: 0; }
-  .zoom-overlay { order: 0; position: sticky; top: 0; height: 100dvh; margin-bottom: -100dvh; z-index: 30; pointer-events: none; }
+  /* the track spans the runway (landing page + the section's screen); the pinned layer can't travel past its end */
+  .zoom-track { position: absolute; inset: 0; z-index: 30; pointer-events: none; }
+  .zoom-overlay { position: sticky; top: 0; height: 100dvh; }
   .zoom-spacer { display: block; order: 3; height: 100dvh; }
   .zoom-fly { transform-origin: center; }
   .zoom-reveal { position: absolute; inset: 0; z-index: 20; display: flex; align-items: center; opacity: 0; pointer-events: auto; will-change: clip-path, opacity; }
@@ -320,3 +322,7 @@ body {
   @keyframes st-light { 0%, 25% { fill: #f1f1f4; } 40%, 85% { fill: #c9f2dd; } 100% { fill: #f1f1f4; } }
   .st-paused * { animation-play-state: paused !important; }
 }
+
+/* Top announcement bar: each message slides up into place. */
+.promo-slide { transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.6s ease; }
+@media (prefers-reduced-motion: reduce) { .promo-slide { transition: none; } }

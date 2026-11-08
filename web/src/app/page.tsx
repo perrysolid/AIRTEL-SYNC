@@ -9,6 +9,7 @@ import { Logo } from "@/components/Brand";
 import { HeroMenu } from "@/components/HeroMenu";
 import { NetworkBackdrop } from "@/components/NetworkBackdrop";
 import { Reveal } from "@/components/Reveal";
+import { NewsFlashes } from "@/components/NewsFlashes";
 import { StepsCarousel } from "@/components/StepsCarousel";
 import { ToolsStage } from "@/components/ToolsStage";
 import { PhoneMock } from "@/components/PhoneMock";
@@ -253,6 +254,7 @@ export default function Home() {
           {/* ---------------------------------------------------------------- the 3D shop that builds itself, the ways in, and order tracking.
               It sits right below the landing page. On wide screens it is pinned while it opens out of the centre phone's
               screen, and the phone flies here from its place in the landing page; elsewhere it simply follows the hero. */}
+          <div className="zoom-track">
           <div ref={z.overlay} className="zoom-overlay">
             {z.enhanced && (
               <div ref={z.fly} aria-hidden className="zoom-fly pointer-events-none absolute top-0 left-0 z-10">
@@ -323,6 +325,8 @@ export default function Home() {
             </div>
           </section>
           </div>
+          </div>
+          {/* holds the section's own screen of the page, right under the landing page, so nothing below is covered */}
           <div aria-hidden className="zoom-spacer" />
       </div>
 
@@ -344,6 +348,8 @@ export default function Home() {
           </p>
         </div>
       </section>
+
+      <NewsFlashes />
 
       <SiteFooter />
     </div>

@@ -2,17 +2,58 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowUp, Menu, X } from "lucide-react";
 import { Logo } from "./Brand";
 
-/** Slim red campaign strip across the very top, the way telecom brands announce what's new. */
+const PROMOS: { icon: string; text: string; cta: string; href: string }[] = [
+  { icon: "🛡️", text: "New: Scam Shield. Check any suspicious message, link or screenshot, free.", cta: "Check now", href: "/shield" },
+  { icon: "📡", text: "Will it work at your address? See fibre or 5G AirFiber for your pincode before you pay.", cta: "Check pincode", href: "/network" },
+  { icon: "🏪", text: "Opening a second shop? Branch-in-a-Box copies your setup and reuses your KYC.", cta: "See how", href: "/solutions" },
+  { icon: "💬", text: "Type SHIELD, NETWORK or STATUS on WhatsApp or Telegram. No app to install.", cta: "Open chat", href: "/whatsapp" },
+];
+
+/**
+ * Slim red campaign strip across the very top, the way telecom brands announce what's new. It rolls through the
+ * announcements every few seconds, pauses while hovered or focused, and holds still for reduced motion.
+ */
 export function PromoBar() {
+  const [k, setK] = useState(0);
+  const [paused, setPaused] = useState(false);
+  useEffect(() => {
+    if (paused || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const t = setTimeout(() => setK((i) => (i + 1) % PROMOS.length), 4000);
+    return () => clearTimeout(t);
+  }, [k, paused]);
+
   return (
-    <div className="bg-brand text-white">
-      <Link href="/shield" className="mx-auto flex max-w-6xl items-center justify-center gap-2 px-4 py-1.5 text-center text-[13px] font-semibold hover:underline">
-        <span aria-hidden>🛡️</span> New: Scam Shield. Check any suspicious message, link or screenshot, free. <span className="hidden underline underline-offset-2 sm:inline">Check now →</span>
-      </Link>
+    <div
+      className="relative h-8 overflow-hidden bg-brand text-white"
+      role="region"
+      aria-roledescription="carousel"
+      aria-label="Announcements"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocus={() => setPaused(true)}
+      onBlur={() => setPaused(false)}
+    >
+      {PROMOS.map((p, i) => (
+        <Link
+          key={p.href}
+          href={p.href}
+          aria-hidden={i !== k}
+          tabIndex={i === k ? 0 : -1}
+          className="promo-slide absolute inset-0 mx-auto flex max-w-6xl items-center justify-center gap-2 px-4 text-center text-[13px] font-semibold hover:underline"
+          style={{ transform: `translateY(${(i - k) * 100}%)`, opacity: i === k ? 1 : 0 }}
+        >
+          <span aria-hidden>{p.icon}</span>
+          <span className="truncate">{p.text}</span>
+          <span className="hidden shrink-0 underline underline-offset-2 sm:inline">{p.cta} →</span>
+        </Link>
+      ))}
+      <div className="absolute top-1/2 right-3 hidden -translate-y-1/2 gap-1 md:flex" aria-hidden>
+        {PROMOS.map((p, i) => <span key={p.href} className={`h-1.5 rounded-full bg-white transition-all ${i === k ? "w-4 opacity-100" : "w-1.5 opacity-50"}`} />)}
+      </div>
     </div>
   );
 }

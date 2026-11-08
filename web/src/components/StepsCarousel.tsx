@@ -136,38 +136,106 @@ function StepArt({ art }: { art: Art }) {
 
 /**
  * "From hello to live": the six steps on a slowly turning 3D ring. The front card faces you; its neighbours bend
- * back on the curve. It pauses while you hover or focus it, has arrows and dots, and holds still for reduced motion.
+ * back on the curve. It turns by itself every few seconds, and you can turn it yourself: a sideways two-finger swipe
+ * on a trackpad, a mouse or touch drag, the arrow keys, or the arrows and dots. The ring follows your fingers and
+ * snaps to the nearest step when you let go; the timer starts over after you touch it. Reduced motion: no timer.
  */
 export function StepsCarousel() {
   const [idx, setIdx] = useState(0);
-  const [paused, setPaused] = useState(false);
+  const [drag, setDrag] = useState(0); // live extra rotation (degrees) while a swipe or drag is in progress
   const [still, setStill] = useState(false);
   const n = STEPS.length;
+  const STEP = 360 / n;
   const active = ((idx % n) + n) % n;
-  const timer = useRef<ReturnType<typeof setInterval>>(undefined);
+  const view = useRef<HTMLDivElement>(null);
+  const dragRef = useRef(0);
+  const settle = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const pointer = useRef<{ id: number; x: number } | null>(null);
 
   useEffect(() => setStill(window.matchMedia("(prefers-reduced-motion: reduce)").matches), []);
+
+  // automatic turn; restarts whenever the ring moves (so a manual turn gets a full pause before the next one)
   useEffect(() => {
-    if (paused || still) return;
-    timer.current = setInterval(() => setIdx((i) => i + 1), 4200);
-    return () => clearInterval(timer.current);
-  }, [paused, still]);
+    if (still || drag !== 0) return;
+    const t = setTimeout(() => setIdx((i) => i + 1), 4200);
+    return () => clearTimeout(t);
+  }, [idx, still, drag]);
+
+  const setLive = (deg: number) => {
+    const clamped = Math.max(-STEP * 2.5, Math.min(STEP * 2.5, deg));
+    dragRef.current = clamped;
+    setDrag(clamped);
+  };
+  /** Let go: land on the nearest step (any real movement counts as at least one step). */
+  const release = () => {
+    const d = dragRef.current;
+    const k = Math.abs(d) < STEP * 0.15 ? 0 : Math.sign(d) * Math.max(1, Math.round(Math.abs(d) / STEP));
+    dragRef.current = 0;
+    setDrag(0);
+    if (k) setIdx((i) => i - k);
+  };
+
+  // sideways trackpad swipes (and shift+wheel) turn the ring; plain vertical scrolling still scrolls the page
+  useEffect(() => {
+    const el = view.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      const dx = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.shiftKey ? e.deltaY : 0;
+      if (!dx) return;
+      e.preventDefault();
+      setLive(dragRef.current - dx * 0.35);
+      clearTimeout(settle.current);
+      settle.current = setTimeout(release, 140);
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => {
+      el.removeEventListener("wheel", onWheel);
+      clearTimeout(settle.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const go = (d: number) => setIdx((i) => i + d);
   const goTo = (k: number) => setIdx((i) => i + (((k - active + n + n / 2) % n) - n / 2));
+  const dragging = drag !== 0;
 
   return (
-    <div
-      className="relative"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      onFocus={() => setPaused(true)}
-      onBlur={() => setPaused(false)}
-    >
-      <div className="steps-viewport relative mx-auto h-[26rem] sm:h-[25rem]" style={{ ["--cw" as string]: "min(42rem, 86vw)" }}>
+    <div className="relative">
+      <div
+        ref={view}
+        tabIndex={0}
+        role="region"
+        aria-roledescription="carousel"
+        aria-label="How it works, step by step. Swipe sideways or use the arrow keys to turn."
+        onKeyDown={(e) => {
+          if (e.key === "ArrowRight") go(1);
+          else if (e.key === "ArrowLeft") go(-1);
+        }}
+        onPointerDown={(e) => {
+          if (e.pointerType === "mouse" && e.button !== 0) return;
+          pointer.current = { id: e.pointerId, x: e.clientX };
+          (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+        }}
+        onPointerMove={(e) => {
+          const p = pointer.current;
+          if (!p || p.id !== e.pointerId) return;
+          setLive((e.clientX - p.x) * 0.22);
+        }}
+        onPointerUp={() => {
+          if (!pointer.current) return;
+          pointer.current = null;
+          release();
+        }}
+        onPointerCancel={() => {
+          pointer.current = null;
+          release();
+        }}
+        className={`steps-viewport relative mx-auto h-[26rem] touch-pan-y select-none sm:h-[25rem] ${dragging ? "cursor-grabbing" : "cursor-grab"} rounded-[2rem] focus-visible:outline-offset-8`}
+        style={{ ["--cw" as string]: "min(42rem, 86vw)" }}
+      >
         <ol
           className="steps-ring absolute inset-0"
-          style={{ transform: `translateZ(calc(var(--R) * -1)) rotateY(${-idx * (360 / n)}deg)`, transitionDuration: still ? "0ms" : undefined }}
+          style={{ transform: `translateZ(calc(var(--R) * -1)) rotateY(${-idx * STEP + drag}deg)`, transitionDuration: still || dragging ? "0ms" : undefined }}
           aria-live="polite"
         >
           {STEPS.map((s, i) => {
