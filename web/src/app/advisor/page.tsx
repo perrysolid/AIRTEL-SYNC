@@ -36,13 +36,14 @@ function profileFacts(p?: Profile): string[] {
   ].filter(Boolean) as string[];
 }
 
-async function* sse(res: Response): AsyncGenerator<AdvisorEvent> {
+async function* sse(res: Response, onData: () => void): AsyncGenerator<AdvisorEvent> {
   const reader = res.body!.getReader();
   const dec = new TextDecoder();
   let buf = "";
   for (;;) {
     const { value, done } = await reader.read();
     if (done) break;
+    onData();
     buf += dec.decode(value, { stream: true });
     let i;
     while ((i = buf.indexOf("\n\n")) >= 0) {
@@ -88,13 +89,22 @@ function Advisor() {
       if (message) setMsgs((m) => [...m.map((x) => (x.kind === "bot" ? { ...x, chips: undefined } : x)), { kind: "user", text: display ?? message }]);
       let spoken = "";
       let botIndex = -1;
+      // A connection that goes silent (a dropped proxy hop, a server restart) is
+      // abandoned after 45 s instead of leaving the chat stuck on "busy".
+      const ctrl = new AbortController();
+      let watchdog = setTimeout(() => ctrl.abort(), 45_000);
+      const alive = () => {
+        clearTimeout(watchdog);
+        watchdog = setTimeout(() => ctrl.abort(), 45_000);
+      };
       try {
         const res = await fetch("/api/advisor", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ sessionId: sessionRef.current, message, language: lang, channel: voiceRef.current ? "voice" : "web" }),
+          signal: ctrl.signal,
         });
-        for await (const e of sse(res)) {
+        for await (const e of sse(res, alive)) {
           switch (e.type) {
             case "session":
               sessionRef.current = e.sessionId;
@@ -148,8 +158,9 @@ function Advisor() {
           }
         }
       } catch {
-        setMsgs((m) => [...m, { kind: "bot", text: "Connection lost. Check your internet and try again." }]);
+        setMsgs((m) => [...m, { kind: "bot", text: "The connection dropped before I could finish. Tap to send that again.", chips: { mode: "single", options: [{ label: "Try again", value: message }] } }]);
       } finally {
+        clearTimeout(watchdog);
         setBusy(false);
         setStatus("");
       }
