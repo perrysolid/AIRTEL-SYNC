@@ -29,7 +29,7 @@ const nextConfig: NextConfig = {
     // Fonts and chunks loaded cross-origin (Vercel page, Render assets) need CORS.
     return renderUrl ? [{ source: "/_next/static/:path*", headers: [{ key: "Access-Control-Allow-Origin", value: "*" }] }] : [];
   },
-  outputFileTracingIncludes: { "/api/**": ["./data/**"], "/api/card/**": ["./src/assets/fonts/**"] },
+  outputFileTracingIncludes: { "/api/**": ["./data/**"], "/api/card/**": ["./src/assets/fonts/**", "./public/photos/**"] },
   async rewrites() {
     // beforeFiles: must win over the local app/api routes.
     return backend ? {

@@ -6,6 +6,7 @@ import { liveDay, stepStatus, type Track } from "./tracker";
 import { publicUrl } from "./bots/types";
 import { product } from "./catalogue";
 import { ONE_BILL_DISCOUNT, unitPrice } from "./pricing";
+import { inferSegment, type Profile } from "./profile";
 
 /**
  * Chat cards: PNGs that WhatsApp and Telegram fetch by URL and show above the
@@ -67,6 +68,26 @@ function Header({ right }: { right: string }) {
   );
 }
 
+// Real photos (public/photos, Unsplash licence), embedded so chat apps get one self-contained image.
+const photos = new Map<string, string>();
+function photoUri(name: string) {
+  if (!photos.has(name)) photos.set(name, `data:image/jpeg;base64,${fs.readFileSync(path.join(process.cwd(), "public", "photos", `${name}.jpg`)).toString("base64")}`);
+  return photos.get(name)!;
+}
+const PHOTO_H = 300;
+/** Full-width photo banner inside a card (864 px is the card's inner width). */
+function Photo({ name }: { name: string }) {
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={photoUri(name)} width={864} height={PHOTO_H} alt="" style={{ objectFit: "cover", borderRadius: 28, marginTop: 32 }} />;
+}
+/** The photo that looks like this kind of business. */
+export function businessPhoto(p: Profile) {
+  const t = p.businessType ?? "";
+  if (/restaurant|caf[eé]|dhaba|hotel|salon|parlour|bakery/i.test(t)) return "cafe";
+  const seg = inferSegment(p);
+  return seg === "multi" ? "group" : seg === "mfg" ? "factory" : seg === "prof" ? "office" : "kirana";
+}
+
 function Frame({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", width: "100%", height: "100%", background: `linear-gradient(160deg, ${C.paper} 0%, ${C.brandSoft} 100%)`, padding: 56, fontFamily: "Mukta" }}>
@@ -111,11 +132,14 @@ export function orderCard(o: Order) {
   ] as const;
   const current = stages.findIndex(([, done]) => !done);
   const { title, sub } = orderHeadline(o);
+  // Installing: a technician at work. Live: paying at the counter. Before that: a business like theirs.
+  const photo = allLive ? "payment" : o.esign ? "install" : businessPhoto(o.profile);
 
   return new ImageResponse(
     (
       <Frame>
         <Header right={o.id} />
+        <Photo name={photo} />
         <div style={{ display: "flex", flexDirection: "column", marginTop: 36 }}>
           <div style={{ display: "flex", fontSize: 68, fontWeight: 800, color: C.ink, lineHeight: 1.05 }}>{title}</div>
           <div style={{ display: "flex", fontSize: 30, color: C.soft, marginTop: 8 }}>{sub}</div>
@@ -177,7 +201,7 @@ export function orderCard(o: Order) {
         </div>
       </Frame>
     ),
-    { width: SIZE.width, height: 770 + Math.min(t.tracks.length, 4) * 108, fonts: loadFonts() },
+    { width: SIZE.width, height: 770 + PHOTO_H + 32 + Math.min(t.tracks.length, 4) * 108, fonts: loadFonts() },
   );
 }
 
@@ -223,12 +247,13 @@ export function quoteCard(s: AdvisorSession) {
   ];
   if (q.savingsVsToday && q.savingsVsToday > 0) pills.unshift([`Save ${inr(q.savingsVsToday)}/month vs today`, "#dcf3e6"]);
   // Height follows the content, so a one-line plan isn't a mostly blank card.
-  const height = 700 + shown.length * 122 + (lines.length > shown.length ? 44 : 0) + (pills.length > 3 ? 70 : 0);
+  const height = 700 + PHOTO_H + 32 + shown.length * 122 + (lines.length > shown.length ? 44 : 0) + (pills.length > 3 ? 70 : 0);
 
   return new ImageResponse(
     (
       <Frame>
         <Header right={`${q.term}-month plan`} />
+        <Photo name={businessPhoto(s.profile)} />
         <div style={{ display: "flex", flexDirection: "column", marginTop: 36 }}>
           <div style={{ display: "flex", fontSize: 30, color: C.soft }}>{who ? `Your plan for ${who}` : "Your plan"}</div>
           <div style={{ display: "flex", alignItems: "baseline", marginTop: 4 }}>
@@ -289,7 +314,7 @@ export const STARTER_PLANS = [
   return { ...p, from: Math.round(sum * (categories >= 3 ? 1 - ONE_BILL_DISCOUNT : 1)) };
 });
 
-export const welcomeCardUrl = () => publicUrl("/api/card/welcome?v=1");
+export const welcomeCardUrl = () => publicUrl("/api/card/welcome?v=2");
 
 export function welcomeCard() {
   const offers = [`${Math.round(ONE_BILL_DISCOUNT * 100)}% off with 3+ services on one bill`, "No setup fee on 36-month plans", "Pay only after everything is live"];
@@ -297,7 +322,8 @@ export function welcomeCard() {
     (
       <Frame>
         <Header right="For small business" />
-        <div style={{ display: "flex", flexDirection: "column", marginTop: 40 }}>
+        <Photo name="kirana" />
+        <div style={{ display: "flex", flexDirection: "column", marginTop: 36 }}>
           <div style={{ display: "flex", fontSize: 64, fontWeight: 800, color: C.ink, lineHeight: 1.08, letterSpacing: -1 }}>Internet, phones & apps.</div>
           <div style={{ display: "flex", fontSize: 64, fontWeight: 800, color: C.brand, lineHeight: 1.08, letterSpacing: -1 }}>One monthly bill.</div>
         </div>
@@ -329,6 +355,6 @@ export function welcomeCard() {
         <div style={{ display: "flex", fontSize: 24, color: C.soft, marginTop: "auto", paddingTop: 24 }}>Prices per month + GST on a 36-month plan. Your exact plan depends on your business and city.</div>
       </Frame>
     ),
-    { width: SIZE.width, height: 1300, fonts: loadFonts() },
+    { width: SIZE.width, height: 1300 + PHOTO_H + 28, fonts: loadFonts() },
   );
 }

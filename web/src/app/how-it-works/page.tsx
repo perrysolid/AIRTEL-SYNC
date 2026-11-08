@@ -1,17 +1,18 @@
 import Link from "next/link";
+import { Activity, BadgeCheck, CalendarCheck, IndianRupee, MessageCircle, Sprout } from "lucide-react";
 import { PageHero, PageShell } from "@/components/SiteNav";
 import { leadSummary } from "@/lib/analytics";
 import { DROP_FIXES } from "@/lib/site-content";
 
 export const metadata = { title: "How it works — Accel Business", description: "From “I need internet” to live, in one sitting: six stages, each designed to remove a delay we can see in the data." };
 
-const STAGES: [string, string, string, string[]][] = [
-  ["💬", "Discover", "Chat or speak to the advisor in your language. It asks about your business, size, location and current setup, then recommends a bundle from the catalogue and explains why. Eligibility rules (city, size, GSTIN, dependencies) are applied by code, so you are never shown something we can't sell.", ["AI Business Advisor", "Voice in 10 languages", "Web, WhatsApp or Telegram"]],
-  ["💰", "Price", "One transparent monthly price with GST. Switch add-ons on and off, choose 12, 24 or 36 months, and check your pincode. If fibre has not reached you, the bundle switches to 5G AirFiber automatically.", ["Instant quote", "Network Reality Check", "Savings vs list price"]],
-  ["🪪", "Verify", "Consent first, then DigiLocker or photos, registry checks and cross-document checks. You see exactly what passed and what needs a fix. Sign with an OTP and set up auto-pay.", ["Smart KYC", "DPDP consent", "e-Sign"]],
-  ["📅", "Activate", "Pick your own installation slot. SIM and cloud products activate immediately while hardware ships. Everything shows on a live tracker and arrives in your chat.", ["Slot scheduler", "Live tracker", "Day-0 activation"]],
-  ["💓", "Operate", "Service health, outage alerts, tickets with an SLA, a backup link and a troubleshooter in chat. Scam Shield checks anything suspicious you receive.", ["Health & backup", "Scam Shield", "Troubleshooter"]],
-  ["🌱", "Grow", "Open a new branch by copying your setup. Upgrades are suggested as you grow, and your documents stay in one place.", ["Branch-in-a-Box", "Next best offer", "One bill"]],
+const STAGES: [typeof MessageCircle, string, string, string[]][] = [
+  [MessageCircle, "Discover", "Chat or speak to the advisor in your language. It asks about your business, size, location and current setup, then suggests a bundle from the catalogue and explains why. Products that don't fit your city, size or GST status are never offered.", ["Business advisor", "Voice in 10 languages", "Web, WhatsApp or Telegram"]],
+  [IndianRupee, "Price", "One transparent monthly price with GST. Switch add-ons on and off, choose 12, 24 or 36 months, and check your pincode. If fibre has not reached you, the bundle switches to 5G AirFiber automatically.", ["Instant quote", "Coverage check", "Savings vs list price"]],
+  [BadgeCheck, "Verify", "Consent first, then DigiLocker or photos, registry checks and cross-document checks. You see exactly what passed and what needs a fix, then sign the agreement on your phone.", ["Quick KYC", "Clear consent", "e-Sign"]],
+  [CalendarCheck, "Activate", "Pick your own installation slot. SIM and cloud services start right away while hardware ships. Every step shows on a live tracker and arrives in your chat, and you pay only once everything is live.", ["Slot booking", "Live tracker", "Pay after install"]],
+  [Activity, "Operate", "Service health, outage alerts, tickets with an SLA, a backup link and a troubleshooter in chat. Scam Shield checks anything suspicious you receive.", ["Health & backup", "Scam Shield", "Troubleshooter"]],
+  [Sprout, "Grow", "Open a new branch by copying your setup. Upgrades are suggested as you grow, and your documents stay in one place.", ["New branch in a day", "Upgrades as you grow", "One bill"]],
 ];
 
 export default function HowItWorksPage() {
@@ -21,10 +22,10 @@ export default function HowItWorksPage() {
     <PageShell>
       <PageHero eyebrow="How it works" title="From “I need internet” to live, in one sitting" sub="Six stages, each designed to remove a delay we can see in the data." />
       <ol className="mt-8 space-y-0">
-        {STAGES.map(([emoji, title, text, tags], i) => (
+        {STAGES.map(([Icon, title, text, tags], i) => (
           <li key={title} className="relative grid grid-cols-[3.5rem_minmax(0,1fr)] gap-5 pb-8 last:pb-0">
             {i < STAGES.length - 1 && <span aria-hidden className="absolute top-14 bottom-0 left-7 w-0.5 bg-rule" />}
-            <div className="grid h-14 w-14 place-items-center rounded-2xl bg-brand text-2xl shadow-[var(--shadow-card)]" aria-hidden>{emoji}</div>
+            <div className="grid h-14 w-14 place-items-center rounded-2xl bg-brand text-white shadow-[var(--shadow-card)]" aria-hidden><Icon size={24} strokeWidth={2} /></div>
             <div>
               <div className="text-xs font-bold tracking-wider text-brand uppercase">Stage {i + 1}</div>
               <h2 className="text-2xl font-extrabold">{title}</h2>

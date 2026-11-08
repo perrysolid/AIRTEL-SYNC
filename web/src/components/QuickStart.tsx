@@ -2,15 +2,15 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Calculator, GraduationCap, Scissors, Stethoscope, Store, Utensils } from "lucide-react";
 
-const STARTERS: [string, string][] = [
-  ["🛒 Kirana / retail", "I run a kirana store"],
-  ["🩺 Clinic", "I run a clinic"],
-  ["💇 Salon", "I run a salon"],
-  ["📊 CA firm", "I run a CA firm"],
-  ["🍽️ Restaurant", "I run a restaurant"],
-  ["🎓 Coaching", "I run a coaching centre"],
+const STARTERS: [typeof Store, string, string][] = [
+  [Store, "Kirana & retail", "I run a kirana store"],
+  [Stethoscope, "Clinic", "I run a clinic"],
+  [Scissors, "Salon", "I run a salon"],
+  [Calculator, "CA firm", "I run a CA firm"],
+  [Utensils, "Restaurant", "I run a restaurant"],
+  [GraduationCap, "Coaching", "I run a coaching centre"],
 ];
 
 /** GSTIN shape: 2 digits, 5 letters, 4 digits, letter, 1-9/letter, Z, checksum. Full check happens in the advisor. */
@@ -28,10 +28,11 @@ export function QuickStart({ lang }: { lang: string }) {
 
   return (
     <div className="mt-6 max-w-xl">
-      <div className="text-xs font-bold tracking-[0.14em] text-ink-soft uppercase">Start in one tap</div>
-      <div className="mt-2 flex flex-wrap gap-2">
-        {STARTERS.map(([label, q]) => (
-          <button key={label} onClick={() => start(q)} className="rounded-full border border-rule bg-white px-3 py-1.5 text-[14px] font-semibold transition-colors hover:border-brand hover:text-brand">
+      <p className="text-sm font-semibold text-ink-soft">Or start with your business</p>
+      <div className="mt-2.5 flex flex-wrap gap-2">
+        {STARTERS.map(([Icon, label, q]) => (
+          <button key={label} onClick={() => start(q)} className="group inline-flex items-center gap-2 rounded-full border border-rule bg-white py-1.5 pr-3.5 pl-2.5 text-[14px] font-semibold transition-colors hover:border-brand hover:text-brand">
+            <Icon size={16} strokeWidth={2} className="text-ink-soft transition-colors group-hover:text-brand" aria-hidden />
             {label}
           </button>
         ))}
