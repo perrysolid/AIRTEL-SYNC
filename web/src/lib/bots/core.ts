@@ -167,10 +167,10 @@ Enter it on the website. It works for 10 minutes. Never share it with anyone, no
 
   // A new conversation that opens with hello: introduce Accel properly (offers card, voice notes, website), then the
   // advisor asks its first question without greeting a second time.
-  if (!resumeNote && !code.referral && (!s || ["start", "new", "restart"].includes(cmd)) && GREETING.test(raw)) {
+  const welcomed = !resumeNote && !code.referral && (!s || ["start", "new", "restart"].includes(cmd)) && GREETING.test(raw);
+  if (welcomed) {
     prefix.push(welcome());
-    const lang = /[ऀ-ॿ]/.test(raw) ? "Hindi in Devanagari" : /namaste|namaskar/i.test(raw) ? "Hinglish" : "English";
-    resumeNote = `(The owner said hello and has already been sent our welcome: who we are, the offers, the website and that voice notes work. Don't greet or introduce yourself again. In one short line in ${lang}, ask what business they run, with an example.)`;
+    s = undefined;
   }
   let message = resumeNote || raw;
   if (!resumeNote && (["start", "new", "restart"].includes(cmd) || code.referral)) message = "";
@@ -182,10 +182,10 @@ Enter it on the website. It works for 10 minutes. Never share it with anyone, no
   let chips: BotMessage | undefined;
   let quoted = false;
   // A win-back lead is answered in the language the CRM says they prefer.
-  const language = resumeNote && s ? s.language : input.language && /^(hi|mr|ta|te|bn|gu|kn|ml|pa|en)$/.test(input.language) ? input.language : /[ऀ-ॿ]/.test(message + raw) ? "hi" : (s?.language ?? "en");
+  const language = resumeNote && s ? s.language : input.language && /^(hi|mr|ta|te|bn|gu|kn|ml|pa|en)$/.test(input.language) ? input.language : /[ऀ-ॿ]/.test(message) ? "hi" : (s?.language ?? "en");
 
   const customerId = customerForChat(input.chat)?.id;
-  const session = await advisorTurn({ sessionId: s?.id, message, channel: input.chat.channel, language, customerId }, (e: AdvisorEvent) => {
+  const session = await advisorTurn({ sessionId: s?.id, message, channel: input.chat.channel, language, customerId, welcomed }, (e: AdvisorEvent) => {
     if (e.type === "text") text += e.delta;
     if (e.type === "chips") chips = { text: "", options: e.options, multi: e.mode === "multi" };
     if (e.type === "bundle") quoted = true;

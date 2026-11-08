@@ -16,14 +16,16 @@ const id = (k: string) => `${k}-${RUN}`;
 const chat = (k: string): BotChat => ({ channel: "telegram", chatId: id(k) });
 
 async function walk(c: BotChat, steps: string[]) {
-  let last = await botTurn({ chat: c, text: "/start", firstName: "Sunita" });
+  let last = (await botTurn({ chat: c, text: "/start", firstName: "Sunita" })).slice(1);
   for (const text of steps) last = await botTurn({ chat: c, text, firstName: "Sunita" });
   return last;
 }
 
 describe("chat bot core", () => {
   it("greets with tappable options on /start", async () => {
-    const [m] = await botTurn({ chat: chat("t1"), text: "/start" });
+    const [welcome, m] = await botTurn({ chat: chat("t1"), text: "/start" });
+    expect(welcome.image).toContain("/api/card/welcome");
+    expect(welcome.text).toMatch(/voice note/);
     expect(m.options?.length).toBeGreaterThan(3);
     expect(m.options?.[0].value).toMatch(/^type:/);
   });

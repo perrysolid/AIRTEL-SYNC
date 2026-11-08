@@ -71,6 +71,8 @@ export interface AdvisorSession {
   customerId?: string;
   /** What we remembered about the customer when the conversation began (fixed for the session, so the prompt cache holds). */
   memoryBrief?: string;
+  /** A chat app already sent the welcome card, so the advisor's first line skips the greeting. */
+  welcomed?: boolean;
   /** Staff-facing summary of the conversation, refreshed when new messages arrive (see chat-summary.ts). */
   summary?: ChatSummary;
 }

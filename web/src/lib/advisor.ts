@@ -319,7 +319,10 @@ async function runClaudeTurn(s: AdvisorSession, userText: string, emit: (e: Advi
 }
 
 /** The first turn when the owner only said hello: the language is stated, or WhatsApp openings drift into Hinglish. */
-const opening = (s: AdvisorSession) => `(The owner just opened the advisor. Greet them in one line in ${langName(s.language)} and ask what business they run, or invite them to share their GSTIN to skip questions.)`;
+const opening = (s: AdvisorSession) =>
+  s.welcomed
+    ? `(The owner said hello and the chat app has already sent our welcome: who we are, the offers, the website and that voice notes work. Don't greet or introduce yourself again. In one short line in ${langName(s.language)}, ask what business they run, with an example.)`
+    : `(The owner just opened the advisor. Greet them in one line in ${langName(s.language)} and ask what business they run, or invite them to share their GSTIN to skip questions.)`;
 
 const GEMINI_TOOLS = [{ functionDeclarations: TOOLS.map((t) => ({ name: t.name, description: t.description ?? "", parametersJsonSchema: t.input_schema })) }];
 
@@ -496,12 +499,13 @@ export function newSession(channel: Channel, language: string): AdvisorSession {
 }
 
 /** One owner turn. Emits events as they happen; persists the session at the end. */
-export async function advisorTurn(opts: { sessionId?: string; message: string; channel: Channel; language: string; forceGuided?: boolean; customerId?: string }, emit: (e: AdvisorEvent) => void) {
+export async function advisorTurn(opts: { sessionId?: string; message: string; channel: Channel; language: string; forceGuided?: boolean; customerId?: string; welcomed?: boolean }, emit: (e: AdvisorEvent) => void) {
   let s = opts.sessionId ? store.getSession(opts.sessionId) : undefined;
   if (s && opts.customerId && s.customerId && s.customerId !== opts.customerId) s = undefined; // someone else's conversation
   const customer = opts.customerId ? store.getCustomer(opts.customerId) : undefined;
   if (!s) {
     s = newSession(opts.channel, opts.language);
+    if (opts.welcomed) s.welcomed = true;
     // A signed-in owner starts from everything we already know about them.
     if (customer) {
       s.customerId = customer.id;
