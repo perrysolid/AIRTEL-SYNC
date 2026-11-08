@@ -30,8 +30,9 @@ describe("chat bot core", () => {
 
   it("reaches a bundle, asks for a number on Order, then creates an order linked to the chat", async () => {
     const c = chat("t2");
-    const [bundle] = await walk(c, ["c:type:Kirana store", "c:city:Jaipur", "c:emp:2", "c:gst:no", "needs:pos_billing,cctv"]);
-    expect(bundle.buttons?.map((b) => b.action ?? b.url)).toEqual([expect.stringContaining("/quote/"), "a:order"]);
+    const [bundle] = await walk(c, ["c:type:Kirana store", "c:city:Jaipur", "c:emp:2", "c:gst:no", "c:cur:Mobile hotspot", "needs:pos_billing,cctv"]);
+    expect(bundle.buttons?.map((b) => b.action ?? b.url)).toEqual(["a:order", expect.stringContaining("/quote/"), "human"]);
+    expect(bundle.image).toContain("/api/card/quote/");
 
     const [ask] = await botTurn({ chat: c, text: "a:order", firstName: "Sunita" });
     expect(ask.askContact).toBe(true);
@@ -48,14 +49,34 @@ describe("chat bot core", () => {
 
   it("WhatsApp uses the sender's number, so Order needs no extra step", async () => {
     const c: BotChat = { channel: "whatsapp", chatId: `9198765${String(Date.now()).slice(-5)}` };
-    await walk(c, ["I have a dental clinic in Pune with 8 staff, we have GST", "needs:email"]);
+    const [plan] = await walk(c, ["I have a dental clinic in Pune with 8 staff, we have GST", "c:cur:Home broadband", "needs:email"]);
+    // WhatsApp reply buttons can't open links: "Adjust plan" answers with a link button instead.
+    expect(plan.buttons?.map((b) => b.action)).toEqual(["a:order", "a:adjust", "human"]);
+    const [adjust] = await botTurn({ chat: c, text: "a:adjust" });
+    expect(adjust.buttons?.[0].url).toContain("/quote/");
     const [m] = await botTurn({ chat: c, text: "a:order", phone: c.chatId, firstName: "Asha" });
     expect(m.text).toMatch(/Order ACC-/);
   });
 
+  it("a win-back link resumes the lead from the CRM; a referral link records who referred", async () => {
+    const c = chat("wb");
+    const [welcome, next] = await botTurn({ chat: c, text: "/start L00001" });
+    expect(welcome.text).toContain("Welcome back, Balaji Dental Care LLP");
+    expect(next.text).toBeTruthy();
+    const s = store.listSessions().find((x) => x.botChat?.chatId === id("wb"))!;
+    expect(s.leadId).toBe("L00001");
+    expect(s.language).toBe("ml");
+    expect(s.profile).toMatchObject({ city: "Kochi", employees: 20, hasGstin: true });
+
+    const r = chat("ref");
+    const [invited] = await botTurn({ chat: r, text: "Hi Udyam, I was referred REF-ACC-0123456789" });
+    expect(invited.text).toContain("invited you");
+    expect(store.listSessions().find((x) => x.botChat?.chatId === id("ref"))?.referredBy).toBe("ACC-0123456789");
+  });
+
   it("accepts '1,3' for multi-select on text channels", async () => {
     const c: BotChat = { channel: "whatsapp", chatId: `9187654${String(Date.now()).slice(-5)}` };
-    const [needs] = await walk(c, ["c:type:Kirana store", "c:city:Jaipur", "c:emp:2", "c:gst:no"]);
+    const [needs] = await walk(c, ["c:type:Kirana store", "c:city:Jaipur", "c:emp:2", "c:gst:no", "c:cur:Mobile hotspot"]);
     expect(needs.multi).toBe(true);
     const [bundle] = await botTurn({ chat: c, text: "1,2", phone: c.chatId });
     expect(bundle.buttons?.some((b) => b.action === "a:order")).toBe(true);
@@ -75,6 +96,25 @@ describe("chat bot core", () => {
     expect(calls[0].body).toMatchObject({ chat_id: id("t2") });
     delete process.env.TELEGRAM_BOT_TOKEN;
   });
+
+  it("with a public URL, each update arrives as the live status card with the text as caption", async () => {
+    process.env.TELEGRAM_BOT_TOKEN = "123:abc";
+    process.env.PUBLIC_BASE_URL = "https://demo.example.com";
+    const calls: { url: string; body: Record<string, unknown> }[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (url: string, init: RequestInit) => {
+      calls.push({ url, body: JSON.parse(init.body as string) });
+      return Response.json({ ok: true, result: { message_id: 1 } });
+    }));
+    const order = store.listOrders().find((o) => o.botChat?.chatId === id("t2"))!;
+    notifyOrder(order, ["💳 Payment received", "✅ Mobile lines live"]);
+    await vi.waitFor(() => expect(calls).toHaveLength(1));
+    expect(calls[0].url).toContain("/sendPhoto");
+    expect(calls[0].body.photo).toMatch(/^https:\/\/demo\.example\.com\/api\/card\/order\/ACC-/);
+    expect(calls[0].body.caption).toBe("💳 Payment received\n✅ Mobile lines live");
+    expect(JSON.stringify(calls[0].body.reply_markup)).toContain(`/order/${order.id}`);
+    delete process.env.TELEGRAM_BOT_TOKEN;
+    delete process.env.PUBLIC_BASE_URL;
+  });
 });
 
 describe("channel rendering", () => {
@@ -92,6 +132,23 @@ describe("channel rendering", () => {
   it("WhatsApp: long text is sent before the interactive prompt", () => {
     const out = payloads({ text: "x".repeat(1500), buttons: [{ label: "Order", action: "a:order" }] });
     expect(out.map((p) => p.type)).toEqual(["text", "interactive"]);
+  });
+
+  it("WhatsApp: card, text and buttons arrive as one message (image header)", () => {
+    process.env.PUBLIC_BASE_URL = "https://demo.example.com";
+    const link = payloads({ text: "**Day 1 of 5**", image: "https://demo.example.com/api/card/order/ACC-1", buttons: [{ label: "Open live tracker", url: "https://demo.example.com/order/ACC-1" }] });
+    expect(link).toHaveLength(1);
+    expect(link[0]).toMatchObject({ type: "interactive", interactive: { type: "cta_url", header: { type: "image", image: { link: "https://demo.example.com/api/card/order/ACC-1" } }, body: { text: "*Day 1 of 5*" } } });
+    // An uploaded card (media id) with reply buttons: still one message.
+    const quote = payloads({ text: "Your plan", image: "x", buttons: [{ label: "Order this plan", action: "a:order" }] }, { id: "123" });
+    expect(quote).toEqual([expect.objectContaining({ interactive: expect.objectContaining({ type: "button", header: { type: "image", image: { id: "123" } } }) })]);
+    // Lists can't carry an image header: card (with caption) first, then the list.
+    const list = payloads({ text: "Pick", image: "x", options: Array.from({ length: 5 }, (_, i) => ({ label: `o${i}`, value: `v${i}` })) }, { id: "9" });
+    expect(list.map((p) => p.type)).toEqual(["image", "interactive"]);
+    // Without a public URL or upload, Meta can't fetch the card: plain text with the link inline.
+    delete process.env.PUBLIC_BASE_URL;
+    const local = payloads({ text: "Day 1", image: "http://localhost/x.png", buttons: [{ label: "Tracker", url: "http://localhost/order/1" }] });
+    expect(local.map((p) => p.type)).toEqual(["text"]);
   });
 
   it("Telegram: bold, ticks and contact keyboard", () => {

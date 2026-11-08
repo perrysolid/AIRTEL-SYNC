@@ -29,7 +29,9 @@ flowchart LR
 | Instance Type | Free |
 | Health Check Path | `/api/health` |
 
-Environment variables: `NODE_VERSION=22`, `NODE_OPTIONS=--dns-result-order=ipv4first`, then copy from `web/.env.local`: `GEMINI_API_KEY`, `GROQ_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_APP_SECRET`. Add `PUBLIC_BASE_URL` in step 3.
+Environment variables: `NODE_VERSION=22`, `NODE_OPTIONS=--dns-result-order=ipv4first`, then copy from `web/.env.local`: `GEMINI_API_KEY`, `GROQ_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_APP_SECRET`, and the Neon block: `DATABASE_URL`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_ENDPOINT_URL_S3`, `AWS_REGION` (Render's *Add from .env* takes them in one paste). Add `PUBLIC_BASE_URL` in step 3.
+
+**Neon (database + storage).** With `DATABASE_URL` set, orders, sessions, consents and the audit log live in Neon Postgres and survive Render's free-plan restarts (the schema in `web/db/schema.sql` is applied at boot). Chat status cards are uploaded to Neon Object Storage and to WhatsApp, so the chat apps never wait on a sleeping server. Set up once with `cd web && neon init … && neon deploy`, which writes these variables into `.env.local`. Optional: point a free uptime monitor at `https://<render-url>/api/cron/nudges` with header `Authorization: Bearer $CRON_SECRET` every 10 minutes; it sends due reminders and keeps the instance awake.
 
 Free-plan limits: the service sleeps after 15 minutes idle (~50 s cold start; a free cron job hitting `/api/health` every 10 minutes keeps it awake), and the order store resets on every deploy or restart.
 

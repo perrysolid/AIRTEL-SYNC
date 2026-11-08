@@ -18,6 +18,7 @@ Notice is itemised, plain-language, versioned (`2026-07-v1`) and shown **before*
 
 ## Controls
 
+- **Where data lives.** Orders, sessions, consents and the audit log are stored in Neon Postgres (TLS, `verify-full`). Chat status cards contain no name, phone or registration number; they sit in a private bucket and are shared only through signed links that expire in 7 days.
 - **Data minimisation.** Document images are processed in memory and discarded. We store only the fields needed for activation plus a SHA-256 fingerprint of each file as evidence. Advisor transcripts store profile facts, not raw audio.
 - **Masking everywhere.** GSTIN, Udyam, phone and ID numbers are masked in the console, order views and audit log (`maskGstin`, `maskPhone`, `redactText`). Partners never see documents.
 - **Tamper-evident consent.** Each consent and withdrawal is a hash-chained ledger entry (purpose, version, timestamp, previous hash).

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Loader2, PhoneCall, RefreshCw } from "lucide-react";
+import { Check, Copy, Loader2, MessageCircle, PhoneCall, RefreshCw, Send } from "lucide-react";
 import { Logo } from "@/components/Brand";
 import { inr } from "@/lib/format";
 
@@ -13,12 +13,22 @@ const pct = (x: number | null | undefined, d = 1) => (x === null || x === undefi
 
 export default function ConsolePage() {
   const [data, setData] = useState<ConsoleData>();
-  const [tab, setTab] = useState<"queue" | "calls" | "orders" | "service" | "insights">("queue");
+  const [tab, setTab] = useState<"queue" | "winback" | "calls" | "orders" | "service" | "insights">("queue");
   const [nudged, setNudged] = useState<Record<string, string>>({});
   const nudge = async (id: string) => {
     const r = await fetch("/api/console/nudge", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sessionId: id }) });
     const j = await r.json();
     setNudged((n) => ({ ...n, [id]: r.ok ? "Nudge sent ✓" : j.error }));
+  };
+  const [copied, setCopied] = useState<string>();
+  const copy = async (key: string, text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(key);
+      setTimeout(() => setCopied((c) => (c === key ? undefined : c)), 1500);
+    } catch {
+      window.prompt("Copy this:", text);
+    }
   };
   const load = async () => setData(await (await fetch("/api/console", { cache: "no-store" })).json());
   useEffect(() => {
@@ -54,6 +64,7 @@ export default function ConsolePage() {
         <nav className="mt-8 flex gap-1 border-b border-rule" aria-label="Console sections">
           {([
             ["queue", `Advisor hand-offs (${data.unclosed.length})`],
+            ["winback", `Win back leads (${data.winback.total.toLocaleString("en-IN")})`],
             ["calls", "Who to call today"],
             ["orders", `Orders (${data.orders.length})`],
             ["service", `Service health (${data.service.tickets.filter((t: any) => t.status === "Open").length} open)`],
@@ -121,6 +132,51 @@ export default function ConsolePage() {
                 </table>
               </div>
             )}
+          </section>
+        )}
+
+        {tab === "winback" && (
+          <section className="mt-4">
+            <p className="text-ink-soft">
+              Leads lost before anyone advised them: unreachable, no time for a visit, or a slow or confusing quote. Send each their personal link (SMS, or an approved WhatsApp template). It opens our bot with their details already filled in, in their language, so they see a priced plan in a minute without a call or a visit.
+            </p>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+              {data.winback.byReason.map((r: any) => (
+                <div key={r.reason} className="rounded-xl border border-rule bg-sheet p-3">
+                  <div className="text-2xl font-extrabold tabular-nums">{r.count.toLocaleString("en-IN")}</div>
+                  <div className="text-sm text-ink-soft">{r.reason}</div>
+                </div>
+              ))}
+            </div>
+            <p className="mt-3 text-sm">
+              <span className="font-semibold">Results so far:</span> {data.winback.results.resumed} chats resumed · {data.winback.results.quoted} saw a plan · {data.winback.results.ordered} ordered · {data.winback.results.referred} orders from referrals
+            </p>
+            <div className="mt-3 overflow-x-auto rounded-xl border border-rule bg-sheet">
+              <table className="w-full min-w-[820px] text-left text-sm">
+                <thead className="border-b border-rule text-ink-soft">
+                  <tr><th className="p-3">Business</th><th className="p-3">Why we lost them</th><th className="p-3">Language</th><th className="p-3">Send</th></tr>
+                </thead>
+                <tbody>
+                  {data.winback.leads.map((l: any) => (
+                    <tr key={l.leadId} className="border-b border-rule align-top last:border-0">
+                      <td className="p-3"><div className="font-semibold">{l.businessName}</div><div className="text-ink-soft">{l.businessType} · {l.city} · <span className="font-mono text-xs">{l.leadId}</span></div></td>
+                      <td className="p-3">{l.dropReason}<div className="text-ink-soft">at {l.stage}</div></td>
+                      <td className="p-3">{l.language}</td>
+                      <td className="p-3">
+                        <div className="flex flex-wrap gap-2">
+                          <button onClick={() => copy(l.leadId + "m", l.message)} className="inline-flex items-center gap-1.5 rounded-lg bg-ink px-3 py-1.5 font-semibold text-white">
+                            {copied === l.leadId + "m" ? <Check size={14} /> : <Copy size={14} />} {copied === l.leadId + "m" ? "Copied" : "Copy message"}
+                          </button>
+                          <a href={l.links.whatsapp} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-rule px-3 py-1.5 font-semibold"><MessageCircle size={14} /> Try on WhatsApp</a>
+                          <a href={l.links.telegram} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-rule px-3 py-1.5 font-semibold"><Send size={14} /> Telegram</a>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-3 text-sm text-ink-soft">Showing the 30 largest of {data.winback.total.toLocaleString("en-IN")} (by people × sites). In production the links go out automatically as an approved WhatsApp utility template.</p>
           </section>
         )}
 

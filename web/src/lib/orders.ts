@@ -26,6 +26,8 @@ export function createOrder(s: AdvisorSession, contact: { contactName: string; p
     timeline: buildTimeline(active.map((l) => l.productId)),
     notifications: [],
     botChat: contact.botChat ?? s.botChat,
+    leadId: s.leadId,
+    referredBy: s.referredBy,
   };
   // The bot that took the order already confirms it in its own reply.
   if (contact.botChat) order.notifications.push({ at: now(), channel: contact.botChat.channel, text: `Order ${id} created.` });

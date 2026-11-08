@@ -7,6 +7,8 @@ import path from "node:path";
 const storeDir = fs.mkdtempSync(path.join(os.tmpdir(), "sync-vitest-"));
 
 export default defineConfig({
+  // Match Next.js: JSX (chat cards) compiles with the automatic runtime.
+  esbuild: { jsx: "automatic" },
   resolve: { alias: { "@": path.resolve(__dirname, "src") } },
   test: { env: { STORE_DIR: storeDir }, environment: "node", include: ["src/**/*.test.ts"], testTimeout: 20000 },
 });

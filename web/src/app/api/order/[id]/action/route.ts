@@ -40,13 +40,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       const amount = o.quote.monthlyWithGst + o.quote.setupTotal;
       o.payment = { at: now(), method: body.data.method, amount, ref: `UPI${crypto.randomInt(1e9, 9e9)}` };
       o.timeline.clockDay = 0;
-      notify(`💳 Payment of ₹${amount.toLocaleString("en-IN")} received. Activation has started — your mobile lines go live today.`);
-      advance(o.timeline, 0).forEach(notify);
+      // One chat message per event: payment + whatever goes live today.
+      notifyOrder(o, [`💳 Payment of ₹${amount.toLocaleString("en-IN")} received. Activation has started — your mobile lines go live today.`, ...advance(o.timeline, 0)]);
       break;
     }
     case "next_day": {
       if (o.timeline.clockDay < 0) return Response.json({ error: "Activation hasn't started" }, { status: 409 });
-      advance(o.timeline, 1).forEach(notify);
+      notifyOrder(o, advance(o.timeline, 1));
       break;
     }
     case "fibre_not_feasible": {

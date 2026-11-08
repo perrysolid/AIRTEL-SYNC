@@ -21,7 +21,7 @@ export async function POST(req: Request) {
   if (!s.botChat || !s.quote) return Response.json({ error: "This lead has no chat to nudge, or no quote yet. Call them from the list instead." }, { status: 409 });
   const name = s.profile.businessName ?? s.profile.businessType ?? "your business";
   const text = `Hi 👋 your plan for ${name} is saved: ${inr(s.quote.monthlyWithGst)}/month incl. GST for ${s.quote.lines.filter((l) => l.active).length} services.\nYou're one step away: verification takes about 2 minutes, right on our secure page. Reply ORDER to continue, or NEW to start over.`;
-  await deliver(s.botChat, text);
+  await deliver(s.botChat, { text });
   store.audit("partner", "lead:nudge", s.id, s.botChat.channel);
   return Response.json({ ok: true, sent: text });
 }

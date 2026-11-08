@@ -16,7 +16,7 @@ const all = (ms: { text: string }[]) => ms.map((m) => m.text).join("\n");
 async function paidOrder(k: string): Promise<{ c: BotChat; order: Order }> {
   const c = chatOf(k);
   await say(c, "/start");
-  for (const t of ["c:type:Dental clinic", "c:city:Kochi", "c:emp:15", "c:gst:no", "needs:email"]) await say(c, t);
+  for (const t of ["c:type:Dental clinic", "c:city:Kochi", "c:emp:15", "c:gst:no", "c:cur:Home broadband", "needs:email"]) await say(c, t);
   await botTurn({ chat: c, text: "a:order", firstName: "Asha", phone: "+91 98111 22233" });
   const order = store.listOrders().find((o) => o.botChat?.chatId === c.chatId)!;
   order.timeline.clockDay = 0;
@@ -60,7 +60,7 @@ describe("chat features: Network Reality Check", () => {
   it("re-prices an open quote when fibre isn't available", async () => {
     const c = chatOf("net4");
     await say(c, "/start");
-    for (const t of ["c:type:Dental clinic", "c:city:Pune", "c:emp:15", "c:gst:no", "needs:email"]) await say(c, t);
+    for (const t of ["c:type:Dental clinic", "c:city:Pune", "c:emp:15", "c:gst:no", "c:cur:Home broadband", "needs:email"]) await say(c, t);
     const before = store.listSessions().find((s) => s.botChat?.chatId === c.chatId)!;
     expect(before.quote?.lines.some((l) => ["P01", "P02"].includes(l.productId))).toBe(true);
     const out = all(await say(c, "network 411016"));

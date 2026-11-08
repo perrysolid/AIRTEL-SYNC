@@ -4,6 +4,7 @@ import { maskName, maskPhone } from "@/lib/privacy";
 import { store } from "@/lib/store";
 import { summarize } from "@/lib/advisor";
 import { liveDay } from "@/lib/tracker";
+import { winbackSummary } from "@/lib/winback";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -28,7 +29,17 @@ export async function GET() {
       canNudge: !!s.botChat && !!s.quote && s.status !== "handoff",
     }));
 
+  const wb = winbackSummary(30);
   return Response.json({
+    winback: {
+      ...wb,
+      results: {
+        resumed: sessions.filter((s) => s.leadId).length,
+        quoted: sessions.filter((s) => s.leadId && s.quote).length,
+        ordered: orders.filter((o) => o.leadId).length,
+        referred: orders.filter((o) => o.referredBy).length,
+      },
+    },
     summary: leadSummary(),
     callList: callList(25).map(({ lead, score }) => ({
       id: lead.lead_id,

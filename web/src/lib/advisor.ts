@@ -1,3 +1,4 @@
+import { fitToBudget } from "./budget";
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { ADVISOR_MODEL, aiProvider, anthropic, pauseProvider, type AiProvider } from "./ai";
@@ -27,7 +28,7 @@ You help small business owners — kirana stores, clinics, CA firms, restaurant 
 How to run the conversation:
 - Be warm, brief and concrete. Use the simple words a busy shop owner uses. One question at a time; never more than two short sentences before a question.
 - If the owner shares a GSTIN, call lookup_business first — it pre-fills most facts, so skip questions it answers.
-- You need, at minimum: business type, city, number of people, number of locations (only if more than one is likely), whether they have GST, and what they want to achieve. Infer what you can from context instead of asking.
+- You need, at minimum: business type, city, number of people, number of locations (only if more than one is likely), whether they have GST, what they use today (internet, phone, billing; and roughly what they pay, if they'll say), and what they want to achieve. Infer what you can from context instead of asking.
 - Translate what they say into needs (e.g. "customers should pay by UPI" → pos_billing; "net goes off" → backup_internet; "patients want wifi" → guest_wifi) and record facts with update_profile as you learn them.
 - As soon as you have enough, call recommend_bundle. Then explain the bundle in 3-5 short bullets: what each item does for *their* business, the single monthly price (GST shown separately), and what was not included and why (with the alternative). Mention that they can toggle add-ons and choose 12/24/36 months on the quote screen.
 - If the owner asks for a specific product, pass it in requested_products; if they decline something, pass it in declined_products and re-run recommend_bundle.
@@ -44,8 +45,16 @@ function channelRules(channel: Channel, language: string): string {
   const lang = `Reply in ${langName(language)}. If the owner writes in another language or in Hinglish (Hindi in Latin script), mirror the language and script they use.`;
   if (channel === "voice")
     return `${lang}\nThis is a VOICE conversation: your text is read aloud. Keep each reply under 50 words, no markdown, no bullets, no emojis, say prices in words a person would say (for example "two thousand nine hundred rupees a month").`;
-  if (channel === "whatsapp")
-    return `${lang}\nThis is WhatsApp: short messages, *single asterisks* for bold, no tables or headings, at most one emoji per message.`;
+  if (channel === "whatsapp" || channel === "telegram") {
+    const bold = channel === "whatsapp" ? "*single asterisks*" : "**double asterisks**";
+    return `${lang}
+This is ${channel === "whatsapp" ? "WhatsApp" : "Telegram"} on the owner's phone. Write like a sharp, warm local business advisor, not a brochure:
+- Short lines and a blank line between blocks. ${bold} for product names and prices. No tables or headings.
+- Use emojis as visual bullets, one per line and relevant: 📶 internet, 📱 mobile lines, 💳 billing/POS, 📹 CCTV, 💬 WhatsApp Business, 🛡️ security, ☁️ cloud apps, ⚡ speed, 💰 savings, 🗓️ timelines. At most 6 per message.
+- Questions: one at a time, friendly, with an example answer.
+- Presenting a plan: a one-line hook naming their business and the main benefit; then one line per product: emoji ${bold.includes("single") ? "*Name*" : "**Name**"} ₹price — why it helps THEM (under 10 words); then one value line (one bill, live in N days, savings vs today when known). End with the next step, e.g. "Tap ✅ Order this plan, or tell me what to change." A picture card with the full price breakdown is sent with your message, so don't repeat GST maths. Keep the whole reply under 800 characters.
+- Use only prices and products from tools. Never invent offers, discounts or launch dates.`;
+  }
   return `${lang}\nThis is a chat on a phone screen: short paragraphs, **bold** for product names and prices, bullets for the bundle.`;
 }
 
@@ -74,6 +83,7 @@ const TOOLS: Anthropic.Beta.BetaTool[] = [
         fibreAvailable: { type: "boolean", description: "false if the owner says fibre/broadband cabling isn't available at their site" },
         currentInternet: { type: "string" },
         monthlySpend: { type: "number", description: "What they pay today for all telecom, INR/month" },
+        budget: { type: "number", description: "Most they want to pay per month incl. GST, INR, if they named one ('under 3000'). The plan is trimmed to fit." },
         needs: { type: "array", items: { type: "string", enum: [...NEEDS] } },
         mobileLines: { type: "integer", minimum: 0 },
         emailUsers: { type: "integer", minimum: 0 },
@@ -164,8 +174,10 @@ function runTool(s: AdvisorSession, name: string, input: unknown, emit: (e: Advi
       s.requestedProducts = [...new Set([...s.requestedProducts, ...valid(args.data.requested_products)])];
       s.declinedProducts = [...new Set([...s.declinedProducts, ...valid(args.data.declined_products)])];
       s.requestedProducts = s.requestedProducts.filter((x) => !s.declinedProducts.includes(x));
-      const rec = recommend({ profile: s.profile, requestedProducts: s.requestedProducts, declinedProducts: s.declinedProducts });
-      const quote = buildQuote({ lines: rec.lines, term: args.data.term_months as Term | undefined, currentMonthlySpend: s.profile.monthlySpend });
+      const term = args.data.term_months as Term | undefined;
+      let rec = recommend({ profile: s.profile, requestedProducts: s.requestedProducts, declinedProducts: s.declinedProducts });
+      if (s.profile.budget) rec = fitToBudget(rec, s.profile.budget, term);
+      const quote = buildQuote({ lines: rec.lines, term, currentMonthlySpend: s.profile.monthlySpend });
       s.recommendation = rec;
       s.quote = quote;
       s.status = "quoted";

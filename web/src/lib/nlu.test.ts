@@ -42,3 +42,13 @@ describe("bilingual slot extraction", () => {
     expect(parseUtterance("नहीं").no).toBe(true);
   });
 });
+
+describe("money", () => {
+  it("reads a budget and today's spend", () => {
+    expect(parseUtterance("keep it under ₹3,000 a month").budget).toBe(3000);
+    expect(parseUtterance("budget is 5k").budget).toBe(5000);
+    expect(parseUtterance("Comes with data plan of jio 399 pm").monthlySpend).toBe(399);
+    expect(parseUtterance("we pay around 2,500 per month for broadband").monthlySpend).toBe(2500);
+    expect(parseUtterance("I have 5 staff").budget).toBeUndefined();
+  });
+});

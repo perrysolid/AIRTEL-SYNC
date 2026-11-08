@@ -39,6 +39,9 @@ export function checkEligibility(p: Product, profile: Profile, bundleIds: string
   const reasons: string[] = [];
   if (profile.cityTier && !p.tiers.includes(profile.cityTier)) {
     reasons.push(`${p.name} is only sold in tier ${p.tiers.join("/")} cities`);
+  } else if (profile.city && !profile.cityTier) {
+    // Never price a product for a city Accel doesn't serve yet.
+    reasons.push(`Accel Business isn't live in ${profile.city} yet`);
   }
   if ((profile.employees ?? 1) < p.minEmployees) {
     reasons.push(`${p.name} needs at least ${p.minEmployees} employees`);
