@@ -1,8 +1,12 @@
+import Link from "next/link";
 import { CheckCircle2 } from "lucide-react";
 import { WhatsAppLogo } from "@/components/BrandIcons";
 import type { PublicOrder } from "@/lib/order-view";
 
 const NUMBER = (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "15551369092").replace(/\D/g, "");
+// Meta's test number replies only to numbers on its allowed list. Set NEXT_PUBLIC_WHATSAPP_TEST_MODE=0 once a real
+// business number is connected and the note goes away.
+const TEST_MODE = process.env.NEXT_PUBLIC_WHATSAPP_TEST_MODE !== "0";
 
 /**
  * WhatsApp lets a business message someone only after they have written to it. One "hi" from the owner links this
@@ -30,6 +34,11 @@ export function WhatsAppLink({ order }: { order: PublicOrder }) {
       >
         Say hi on WhatsApp
       </a>
+      {TEST_MODE && (
+        <p className="basis-full text-xs text-ink-soft">
+          Our WhatsApp is in Meta&apos;s test mode for now and replies only to registered numbers. No reply? <Link href="/account" className="font-semibold underline">Get updates on Telegram</Link> instead.
+        </p>
+      )}
     </div>
   );
 }
