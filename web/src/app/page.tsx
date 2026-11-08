@@ -3,25 +3,25 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { MessageCircle, Mic, MessageSquareText, Search, Send } from "lucide-react";
+import { Mic, MessageSquareText, Search } from "lucide-react";
 import { Shop3D, VISUAL_LABEL } from "@/components/shop/Shop3D";
 import { Logo } from "@/components/Brand";
-import { HeroScene } from "@/components/HeroScene";
+import { HeroMenu } from "@/components/HeroMenu";
+import { NetworkBackdrop } from "@/components/NetworkBackdrop";
 import { PhoneMock } from "@/components/PhoneMock";
 import { PromoBar } from "@/components/SiteNav";
-import { LANGUAGES } from "@/lib/advisor-types";
 
 const GREETING: Record<string, { line: string; sub: string; talk: string; type: string }> = {
-  en: { line: "Tell me about your shop. I'll set up the rest.", sub: "Internet, business numbers, WhatsApp, billing, CCTV — one plan, one bill, live in days.", talk: "Talk to the advisor", type: "Type instead" },
-  hi: { line: "अपनी दुकान के बारे में बताइए। बाकी हम सेट कर देंगे।", sub: "इंटरनेट, बिज़नेस नंबर, WhatsApp, बिलिंग, CCTV — एक प्लान, एक बिल, कुछ ही दिनों में चालू।", talk: "सलाहकार से बात करें", type: "लिखकर बताएँ" },
-  mr: { line: "तुमच्या व्यवसायाबद्दल सांगा. बाकी आम्ही करू.", sub: "इंटरनेट, बिझनेस नंबर, WhatsApp, बिलिंग, CCTV — एक प्लॅन, एक बिल.", talk: "सल्लागाराशी बोला", type: "टाइप करा" },
-  ta: { line: "உங்கள் கடையைப் பற்றி சொல்லுங்கள். மீதியை நாங்கள் அமைக்கிறோம்.", sub: "இணையம், வணிக எண்கள், WhatsApp, பில்லிங், CCTV — ஒரே திட்டம், ஒரே பில்.", talk: "ஆலோசகரிடம் பேசுங்கள்", type: "தட்டச்சு செய்யுங்கள்" },
-  te: { line: "మీ వ్యాపారం గురించి చెప్పండి. మిగతాది మేము చూసుకుంటాం.", sub: "ఇంటర్నెట్, బిజినెస్ నంబర్లు, WhatsApp, బిల్లింగ్, CCTV — ఒకే ప్లాన్, ఒకే బిల్.", talk: "సలహాదారుతో మాట్లాడండి", type: "టైప్ చేయండి" },
-  kn: { line: "ನಿಮ್ಮ ವ್ಯಾಪಾರದ ಬಗ್ಗೆ ಹೇಳಿ. ಉಳಿದದ್ದು ನಾವು ಮಾಡುತ್ತೇವೆ.", sub: "ಇಂಟರ್ನೆಟ್, ಬಿಸಿನೆಸ್ ನಂಬರ್, WhatsApp, ಬಿಲ್ಲಿಂಗ್, CCTV — ಒಂದೇ ಪ್ಲಾನ್, ಒಂದೇ ಬಿಲ್.", talk: "ಸಲಹೆಗಾರರೊಂದಿಗೆ ಮಾತನಾಡಿ", type: "ಟೈಪ್ ಮಾಡಿ" },
-  gu: { line: "તમારા વ્યવસાય વિશે કહો. બાકીનું અમે ગોઠવીશું.", sub: "ઇન્ટરનેટ, બિઝનેસ નંબર, WhatsApp, બિલિંગ, CCTV — એક પ્લાન, એક બિલ.", talk: "સલાહકાર સાથે વાત કરો", type: "ટાઇપ કરો" },
-  bn: { line: "আপনার ব্যবসার কথা বলুন। বাকিটা আমরা করে দেব।", sub: "ইন্টারনেট, বিজনেস নম্বর, WhatsApp, বিলিং, CCTV — এক প্ল্যান, এক বিল।", talk: "পরামর্শদাতার সাথে কথা বলুন", type: "টাইপ করুন" },
-  ml: { line: "നിങ്ങളുടെ ബിസിനസിനെക്കുറിച്ച് പറയൂ. ബാക്കി ഞങ്ങൾ ചെയ്യാം.", sub: "ഇന്റർനെറ്റ്, ബിസിനസ് നമ്പർ, WhatsApp, ബില്ലിംഗ്, CCTV — ഒരു പ്ലാൻ, ഒരു ബിൽ.", talk: "ഉപദേഷ്ടാവിനോട് സംസാരിക്കൂ", type: "ടൈപ്പ് ചെയ്യൂ" },
-  pa: { line: "ਆਪਣੇ ਕਾਰੋਬਾਰ ਬਾਰੇ ਦੱਸੋ। ਬਾਕੀ ਅਸੀਂ ਕਰ ਦਿਆਂਗੇ।", sub: "ਇੰਟਰਨੈੱਟ, ਬਿਜ਼ਨਸ ਨੰਬਰ, WhatsApp, ਬਿਲਿੰਗ, CCTV — ਇੱਕ ਪਲਾਨ, ਇੱਕ ਬਿੱਲ।", talk: "ਸਲਾਹਕਾਰ ਨਾਲ ਗੱਲ ਕਰੋ", type: "ਟਾਈਪ ਕਰੋ" },
+  en: { line: "Keep the payment beep coming.", sub: "Internet, business numbers, billing and CCTV for your shop, in one plan and one bill. Set up by chat, in your language, live in days.", talk: "Talk to the advisor", type: "Type instead" },
+  hi: { line: "बजती रहे, पेमेंट की आवाज़।", sub: "दुकान के लिए इंटरनेट, बिज़नेस नंबर, बिलिंग और CCTV — एक प्लान, एक बिल। अपनी भाषा में चैट से सेटअप, कुछ ही दिनों में चालू।", talk: "सलाहकार से बात करें", type: "लिखकर बताएँ" },
+  mr: { line: "पेमेंटचा आवाज येत राहो.", sub: "दुकानासाठी इंटरनेट, बिझनेस नंबर, बिलिंग आणि CCTV — एक प्लॅन, एक बिल. तुमच्या भाषेत चॅटवरून सेटअप.", talk: "सल्लागाराशी बोला", type: "टाइप करा" },
+  ta: { line: "பணம் வந்த ஒலி நிற்காமல் ஒலிக்கட்டும்.", sub: "உங்கள் கடைக்கு இணையம், வணிக எண்கள், பில்லிங், CCTV — ஒரே திட்டம், ஒரே பில். உங்கள் மொழியில் சாட் மூலம் அமைப்பு.", talk: "ஆலோசகரிடம் பேசுங்கள்", type: "தட்டச்சு செய்யுங்கள்" },
+  te: { line: "పేమెంట్ శబ్దం ఆగకుండా వినిపించాలి.", sub: "మీ షాపు కోసం ఇంటర్నెట్, బిజినెస్ నంబర్లు, బిల్లింగ్, CCTV — ఒకే ప్లాన్, ఒకే బిల్. మీ భాషలో చాట్ ద్వారా సెటప్.", talk: "సలహాదారుతో మాట్లాడండి", type: "టైప్ చేయండి" },
+  kn: { line: "ಪೇಮೆಂಟ್ ಸದ್ದು ನಿಲ್ಲದೆ ಕೇಳಿಸುತ್ತಿರಲಿ.", sub: "ನಿಮ್ಮ ಅಂಗಡಿಗೆ ಇಂಟರ್ನೆಟ್, ಬಿಸಿನೆಸ್ ನಂಬರ್, ಬಿಲ್ಲಿಂಗ್, CCTV — ಒಂದೇ ಪ್ಲಾನ್, ಒಂದೇ ಬಿಲ್. ನಿಮ್ಮ ಭಾಷೆಯಲ್ಲಿ ಚಾಟ್ ಮೂಲಕ ಸೆಟಪ್.", talk: "ಸಲಹೆಗಾರರೊಂದಿಗೆ ಮಾತನಾಡಿ", type: "ಟೈಪ್ ಮಾಡಿ" },
+  gu: { line: "પેમેન્ટનો અવાજ સતત આવતો રહે.", sub: "તમારી દુકાન માટે ઇન્ટરનેટ, બિઝનેસ નંબર, બિલિંગ અને CCTV — એક પ્લાન, એક બિલ. તમારી ભાષામાં ચેટથી સેટઅપ.", talk: "સલાહકાર સાથે વાત કરો", type: "ટાઇપ કરો" },
+  bn: { line: "পেমেন্টের আওয়াজ চলতেই থাকুক।", sub: "আপনার দোকানের জন্য ইন্টারনেট, বিজনেস নম্বর, বিলিং ও CCTV — এক প্ল্যান, এক বিল। নিজের ভাষায় চ্যাটে সেটআপ।", talk: "পরামর্শদাতার সাথে কথা বলুন", type: "টাইপ করুন" },
+  ml: { line: "പേയ്‌മെന്റ് ശബ്ദം നിലയ്ക്കാതിരിക്കട്ടെ.", sub: "നിങ്ങളുടെ കടയ്ക്ക് ഇന്റർനെറ്റ്, ബിസിനസ് നമ്പർ, ബില്ലിംഗ്, CCTV — ഒരു പ്ലാൻ, ഒരു ബിൽ. നിങ്ങളുടെ ഭാഷയിൽ ചാറ്റ് വഴി സെറ്റപ്പ്.", talk: "ഉപദേഷ്ടാവിനോട് സംസാരിക്കൂ", type: "ടൈപ്പ് ചെയ്യൂ" },
+  pa: { line: "ਪੇਮੈਂਟ ਦੀ ਆਵਾਜ਼ ਵੱਜਦੀ ਰਹੇ।", sub: "ਤੁਹਾਡੀ ਦੁਕਾਨ ਲਈ ਇੰਟਰਨੈੱਟ, ਬਿਜ਼ਨਸ ਨੰਬਰ, ਬਿਲਿੰਗ ਅਤੇ CCTV — ਇੱਕ ਪਲਾਨ, ਇੱਕ ਬਿੱਲ। ਆਪਣੀ ਭਾਸ਼ਾ ਵਿੱਚ ਚੈਟ ਰਾਹੀਂ ਸੈੱਟਅੱਪ।", talk: "ਸਲਾਹਕਾਰ ਨਾਲ ਗੱਲ ਕਰੋ", type: "ਟਾਈਪ ਕਰੋ" },
 };
 
 const SHOWCASE = ["P01", "P19", "P07", "P23", "P15", "P22", "P16", "P17"];
@@ -54,10 +54,8 @@ const TOOLS: [string, string, string, string][] = [
   ["💬", "Everything in chat", "SHIELD, NETWORK, SCHEDULE, TROUBLE, BRANCH and BACKUP work in WhatsApp and Telegram.", "/whatsapp"],
 ];
 
-const NAV: [string, string][] = [["Solutions", "/solutions"], ["Products", "/products"], ["How it works", "/how-it-works"], ["Scam Shield", "/shield"], ["Help", "/help"]];
-
 export default function Home() {
-  const [lang, setLang] = useState("hi");
+  const [lang, setLang] = useState("en");
   const [orderId, setOrderId] = useState("");
   const router = useRouter();
   const g = GREETING[lang] ?? GREETING.en;
@@ -68,73 +66,61 @@ export default function Home() {
     <div className="min-h-dvh">
       <PromoBar />
 
-      {/* ------------------------------------------------------------------ hero: a connected city at night */}
-      <section className="relative isolate flex min-h-[calc(100dvh-2rem)] flex-col overflow-hidden bg-[#060914] text-white">
-        <HeroScene className="absolute inset-0 -z-20 h-full w-full" />
-        <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-b from-[#060914]/80 via-[#060914]/35 to-[#060914]/80" />
-        <div aria-hidden className="absolute inset-0 -z-10 bg-[radial-gradient(60rem_26rem_at_50%_38%,rgb(6_9_20/0.72),transparent_70%)]" />
+      {/* ------------------------------------------------------------------ hero: a live network, one line, three phones on a stage */}
+      <section className="relative isolate flex min-h-[calc(100dvh-2rem)] flex-col overflow-hidden bg-[#050a1c] text-white">
+        <NetworkBackdrop className="absolute inset-0 -z-20" />
+        <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-b from-[#050a1c]/70 via-[#050a1c]/20 to-[#050a1c]/80" />
+        <div aria-hidden className="absolute inset-0 -z-10 bg-[radial-gradient(48rem_20rem_at_50%_52%,rgb(5_10_28/0.8),transparent_72%)]" />
 
-        <header className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4">
+        {/* the two corners: brand on the left, menu on the right, on the same baseline and the same inset */}
+        <header className="flex h-[4.5rem] w-full items-center justify-between px-[clamp(1rem,3vw,2.75rem)]">
           <Logo onDark />
-          <nav aria-label="Main" className="flex items-center gap-5 text-sm font-semibold text-white/80">
-            {NAV.map(([l, h]) => <Link key={h} href={h} className="hidden hover:text-white lg:inline">{l}</Link>)}
-            <a href="#track" className="hidden hover:text-white sm:inline">Track order</a>
-            <Link href="/console" className="rounded-full border border-white/30 px-3.5 py-1.5 hover:bg-white/10">Partner console</Link>
-          </nav>
+          <HeroMenu lang={lang} onLang={setLang} telegram={TELEGRAM} />
         </header>
 
-        <div className="mx-auto w-full max-w-4xl flex-none px-4 pt-3 text-center sm:pt-[2.6dvh]">
-          <nav aria-label="Language" className="rise no-scrollbar -mx-4 flex justify-start gap-2 overflow-x-auto px-4 py-1 sm:justify-center sm:overflow-visible sm:flex-wrap">
-            {LANGUAGES.map((l) => (
-              <button
-                key={l.code}
-                onClick={() => setLang(l.code)}
-                aria-pressed={lang === l.code}
-                className={`shrink-0 rounded-full border px-3.5 py-1 text-[15px] backdrop-blur transition-all ${lang === l.code ? "border-brand bg-brand text-white shadow-[0_10px_24px_-10px_var(--brand)]" : "border-white/20 bg-white/10 text-white/90 hover:bg-white/20"}`}
-              >
-                {l.native}
-              </button>
-            ))}
-          </nav>
-
-          <h1 key={lang} lang={lang} className="rise mt-[2.4dvh] text-[clamp(1.75rem,5.4dvh,3.4rem)] leading-[1.1] font-extrabold tracking-tight text-balance [text-shadow:0_2px_30px_rgb(0_0_0/0.6)]" style={{ ["--i" as string]: 1 }}>
+        {/* the message sits in the middle, just above the stage; the background does the rest of the talking */}
+        <div className="flex flex-1 flex-col items-center justify-end px-4 pb-[clamp(1.25rem,4.5dvh,3rem)] text-center">
+          <h1 key={lang} lang={lang} className="rise max-w-[22ch] text-[clamp(1.9rem,5.2vw,3.6rem)] leading-[1.08] font-extrabold tracking-tight text-balance [text-shadow:0_2px_30px_rgb(0_0_0/0.7)]" style={{ ["--i" as string]: 1 }}>
             {g.line}
           </h1>
-          <p lang={lang} className="rise mx-auto mt-[1.6dvh] max-w-2xl text-[clamp(0.95rem,2.3dvh,1.15rem)] leading-snug text-white/85 [text-shadow:0_1px_18px_rgb(0_0_0/0.6)]" style={{ ["--i" as string]: 2 }}>
+          <p lang={lang} className="rise mt-[clamp(0.6rem,1.6dvh,1rem)] max-w-[34rem] text-[clamp(0.9rem,1.9dvh,1.05rem)] leading-snug text-white/80 [text-shadow:0_1px_18px_rgb(0_0_0/0.7)]" style={{ ["--i" as string]: 2 }}>
             {g.sub}
           </p>
-
-          <div className="rise mt-[2.8dvh] flex flex-wrap items-center justify-center gap-3" style={{ ["--i" as string]: 3 }}>
+          <div className="rise mt-[clamp(1rem,2.6dvh,1.6rem)] flex flex-wrap items-center justify-center gap-3" style={{ ["--i" as string]: 3 }}>
             <button
               onClick={() => router.push(`/advisor?lang=${lang}&voice=1`)}
-              className="group inline-flex items-center gap-3 rounded-full bg-brand py-2 pr-5 pl-2 text-base font-extrabold text-white shadow-[0_16px_36px_-12px_var(--brand)] transition-transform hover:-translate-y-0.5 active:scale-[0.97]"
+              className="group inline-flex items-center gap-2.5 rounded-full bg-brand py-1.5 pr-5 pl-1.5 text-[15px] font-extrabold text-white shadow-[0_14px_32px_-12px_var(--brand)] transition-transform hover:-translate-y-0.5 active:scale-[0.97]"
             >
-              <span className="grid h-10 w-10 place-items-center rounded-full bg-white text-brand transition-transform group-hover:scale-105"><Mic size={20} strokeWidth={2.4} /></span>
+              <span className="grid h-9 w-9 place-items-center rounded-full bg-white text-brand transition-transform group-hover:scale-105"><Mic size={18} strokeWidth={2.4} /></span>
               <span lang={lang}>{g.talk}</span>
             </button>
-            <Link href={`/advisor?lang=${lang}`} lang={lang} className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-2.5 text-[15px] font-semibold text-white backdrop-blur transition-transform hover:-translate-y-0.5 hover:bg-white/20">
-              <MessageSquareText size={18} /> {g.type}
+            <Link href={`/advisor?lang=${lang}`} lang={lang} className="inline-flex h-[2.9rem] items-center gap-2 rounded-full border border-white/30 bg-white/10 px-5 text-[15px] font-semibold text-white backdrop-blur transition-transform hover:-translate-y-0.5 hover:bg-white/20">
+              <MessageSquareText size={17} /> {g.type}
             </Link>
-          </div>
-          <div className="rise mt-[1.8dvh] flex flex-wrap justify-center gap-x-6 gap-y-1 text-sm font-semibold" style={{ ["--i" as string]: 4 }}>
-            <Link href={`/whatsapp?lang=${lang}`} className="inline-flex items-center gap-1.5 text-[#7be0b4] underline-offset-4 hover:underline"><MessageCircle size={16} /> Continue on WhatsApp</Link>
-            <a href={`https://t.me/${TELEGRAM}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-[#8fd3ff] underline-offset-4 hover:underline"><Send size={16} /> Chat on Telegram</a>
           </div>
         </div>
 
-        {/* ----------------------------------------------- the stage: a semicircle with three phones standing on its border */}
-        <div role="group" aria-label="The product on a phone" className="relative mt-auto h-[clamp(215px,38dvh,400px)] w-full flex-none">
-          <div aria-hidden className="absolute top-[calc(38%-18px)] left-1/2 aspect-square w-[calc(min(135vw,1500px)+36px)] -translate-x-1/2 rounded-full border border-white/40 shadow-[0_0_70px_rgb(228_0_0/0.45)]" />
-          <div aria-hidden className="absolute top-[38%] left-1/2 aspect-square w-[min(135vw,1500px)] -translate-x-1/2 rounded-full bg-white" />
-          <div className="absolute inset-x-0 bottom-[7%] flex items-end justify-center gap-[clamp(8px,2.4vw,30px)]">
-            <div className="phone-in w-[min(25vw,clamp(86px,12.6dvh,128px))] translate-y-[7%]" style={{ ["--i" as string]: 1, ["--r" as string]: "-8deg", rotate: "-8deg" }}>
-              <PhoneMock src="/screens/advisor.png" alt="The advisor recommends a bundle with a clear monthly price" />
+        {/* ----------------------------------------------- the stage: a low white arc, three phones standing on it, sized from one number */}
+        <div
+          role="group"
+          aria-label="The product on a phone"
+          className="relative mx-auto w-full flex-none"
+          style={{ ["--ph" as string]: "min(40dvh, 62vw, 400px)", height: "calc(var(--ph) * 0.86)" }}
+        >
+          <div
+            aria-hidden
+            className="absolute bottom-0 left-1/2 -translate-x-1/2 bg-white shadow-[0_0_0_1px_rgb(255_255_255/0.55),0_-8px_60px_rgb(228_0_0/0.35)]"
+            style={{ width: "min(92vw, calc(var(--ph) * 3.1))", height: "calc(var(--ph) * 0.33)", borderRadius: "50% 50% 0 0 / 100% 100% 0 0" }}
+          />
+          <div className="absolute inset-x-0 flex items-end justify-center" style={{ bottom: "calc(var(--ph) * -0.14)", gap: "calc(var(--ph) * 0.07)" }}>
+            <div className="phone-in" style={{ ["--i" as string]: 1, ["--r" as string]: "-7deg", rotate: "-7deg", height: "calc(var(--ph) * 0.8)", transform: "translateY(calc(var(--ph) * 0.02))" }}>
+              <PhoneMock className="h-full" src="/screens/advisor.png" alt="The advisor recommends a bundle with a clear monthly price" />
             </div>
-            <div className="phone-in z-10 w-[min(29vw,clamp(100px,15dvh,150px))]" style={{ ["--i" as string]: 0 }}>
-              <PhoneMock src="/screens/quote.png" alt="The quote: a live 3D shop, the plan and one monthly price" />
+            <div className="phone-in z-10" style={{ ["--i" as string]: 0, height: "var(--ph)" }}>
+              <PhoneMock className="h-full" src="/screens/quote.png" alt="The quote: a live 3D shop, the plan and one monthly price" />
             </div>
-            <div className="phone-in w-[min(25vw,clamp(86px,12.6dvh,128px))] translate-y-[7%]" style={{ ["--i" as string]: 2, ["--r" as string]: "8deg", rotate: "8deg" }}>
-              <PhoneMock src="/screens/shield.png" alt="Scam Shield flags a fake KYC message and says what to do" />
+            <div className="phone-in" style={{ ["--i" as string]: 2, ["--r" as string]: "7deg", rotate: "7deg", height: "calc(var(--ph) * 0.8)", transform: "translateY(calc(var(--ph) * 0.02))" }}>
+              <PhoneMock className="h-full" src="/screens/shield.png" alt="Scam Shield flags a fake KYC message and says what to do" />
             </div>
           </div>
         </div>
