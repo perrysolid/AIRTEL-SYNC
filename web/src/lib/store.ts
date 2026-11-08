@@ -134,7 +134,7 @@ export interface Order {
   quote: Quote;
   consentId?: string;
   kyc?: { result: KycResult; docs: KycDocRecord[]; at: string; registryLookups: { gstin?: string; udyam?: string } };
-  esign?: { at: string; method: "aadhaar-otp-mock"; docHash: string };
+  esign?: { at: string; method: "aadhaar-otp-mock" | "verified-mobile"; docHash: string };
   payment?: { at: string; method: string; amount: number; ref: string };
   timeline: OrderTimeline;
   notifications: { at: string; channel: "whatsapp" | "telegram" | "sms"; text: string }[];

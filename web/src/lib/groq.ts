@@ -59,14 +59,14 @@ export class GroqError extends Error {
   }
 }
 
-async function call(path: string, init: { json?: unknown; form?: FormData }, ep = GROQ) {
+async function call(path: string, init: { json?: unknown; form?: FormData }, ep = GROQ, signal?: AbortSignal) {
   const key = process.env[ep.keyVar];
   if (!key) throw new GroqError(401, `${ep.keyVar} not set`, ep.name);
   const r = await fetch(`${ep.base}${path}`, {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, ...(init.json ? { "Content-Type": "application/json" } : {}) },
     body: init.form ?? JSON.stringify(init.json),
-    signal: AbortSignal.timeout(60_000),
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(60_000)]) : AbortSignal.timeout(60_000),
   });
   if (!r.ok) {
     let message = r.statusText;
@@ -90,8 +90,8 @@ export interface GroqStreamResult {
 }
 
 /** Streams text deltas to onText and assembles tool calls from their fragments. */
-export async function streamChat(req: GroqChatRequest, onText: (delta: string) => void, ep = GROQ): Promise<GroqStreamResult> {
-  const r = await call("/chat/completions", { json: { ...req, stream: true } }, ep);
+export async function streamChat(req: GroqChatRequest, onText: (delta: string) => void, ep = GROQ, signal?: AbortSignal): Promise<GroqStreamResult> {
+  const r = await call("/chat/completions", { json: { ...req, stream: true } }, ep, signal);
   const reader = r.body!.getReader();
   const decoder = new TextDecoder();
   const out: GroqStreamResult = { content: "", toolCalls: [] };

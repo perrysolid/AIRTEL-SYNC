@@ -7,12 +7,14 @@ import { advance, fallbackToAirFiber } from "@/lib/tracker";
 import { sha256 } from "@/lib/privacy";
 import { unitPrice } from "@/lib/pricing";
 import { product } from "@/lib/catalogue";
+import { currentCustomer } from "@/lib/customer-session";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const Body = z.discriminatedUnion("action", [
-  z.object({ action: z.literal("esign"), otp: z.string().regex(/^\d{6}$/, "Enter the 6-digit OTP") }),
+  /** Without an OTP, the owner signs as their signed-in account: they proved this number at sign-in. */
+  z.object({ action: z.literal("esign"), otp: z.string().regex(/^\d{6}$/, "Enter the 6-digit OTP").optional() }),
   z.object({ action: z.literal("pay"), method: z.enum(["upi_autopay", "card", "netbanking"]) }),
   z.object({ action: z.literal("next_day") }),
   z.object({ action: z.literal("fibre_not_feasible") }),
@@ -29,9 +31,18 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   switch (body.data.action) {
     case "esign": {
       if (o.kyc?.result.verdict !== "verified") return Response.json({ error: "Verify your business first" }, { status: 409 });
-      // Mock Aadhaar OTP e-sign: we sign a hash of the agreement, never the Aadhaar number.
+      // Signed in with this order's number (or the order is on their account): no second OTP. Otherwise a mock
+      // Aadhaar OTP e-sign. Either way we sign a hash of the agreement, never the Aadhaar number.
+      let method: "aadhaar-otp-mock" | "verified-mobile" = "aadhaar-otp-mock";
+      if (!body.data.otp) {
+        const c = await currentCustomer();
+        const owns = !!c && (c.orderIds.includes(o.id) || (!!o.phone && c.phone === `91${o.phone}`) || (!!c.demo && !o.phone));
+        if (!owns) return Response.json({ error: "Enter the 6-digit OTP" }, { status: 403 });
+        method = "verified-mobile";
+        store.audit("customer", "order:esign-signed-in", o.id, c!.id);
+      }
       const agreement = JSON.stringify({ order: o.id, lines: o.lines.map((l) => [l.productId, l.qty, l.unitPrice]), term: o.term, monthly: o.quote.monthly });
-      o.esign = { at: now(), method: "aadhaar-otp-mock", docHash: sha256(agreement) };
+      o.esign = { at: now(), method, docHash: sha256(agreement) };
       notify("✍️ Agreement e-signed. A copy is in your email. Next: set up UPI AutoPay for the first bill.");
       break;
     }

@@ -261,7 +261,7 @@ function runTool(s: AdvisorSession, name: string, input: unknown, emit: (e: Advi
   return { result: `Unknown tool ${name}`, isError: true };
 }
 
-async function runClaudeTurn(s: AdvisorSession, userText: string, emit: (e: AdvisorEvent) => void) {
+async function runClaudeTurn(s: AdvisorSession, userText: string, emit: (e: AdvisorEvent) => void, signal?: AbortSignal) {
   // Cheap pre-pass: obvious facts land in the profile before the model sees them.
   s.profile = mergeParsed(s.profile, parseUtterance(userText));
   s.messages.push({ role: "user", content: userText || OPENING });
@@ -280,7 +280,7 @@ async function runClaudeTurn(s: AdvisorSession, userText: string, emit: (e: Advi
       ],
       tools: TOOLS,
       messages: s.messages,
-    });
+    }, { signal });
     stream.on("text", (delta) => {
       assistantText += delta;
       emit({ type: "text", delta });
@@ -290,7 +290,7 @@ async function runClaudeTurn(s: AdvisorSession, userText: string, emit: (e: Advi
     try {
       message = await stream.finalMessage();
     } catch (err) {
-      if (err instanceof Anthropic.APIError) throw err;
+      if (err instanceof Anthropic.APIError || signal?.aborted) throw err;
       continue; // unparseable eager tool input: re-issue the turn
     }
     s.messages.push({ role: "assistant", content: message.content as Anthropic.Beta.BetaContentBlockParam[] });
@@ -322,7 +322,7 @@ const OPENING = "(The owner just opened the advisor. Greet them in one line and 
 
 const GEMINI_TOOLS = [{ functionDeclarations: TOOLS.map((t) => ({ name: t.name, description: t.description ?? "", parametersJsonSchema: t.input_schema })) }];
 
-async function runGeminiTurn(s: AdvisorSession, userText: string, emit: (e: AdvisorEvent) => void) {
+async function runGeminiTurn(s: AdvisorSession, userText: string, emit: (e: AdvisorEvent) => void, signal?: AbortSignal) {
   s.profile = mergeParsed(s.profile, parseUtterance(userText));
   const contents = (s.geminiContents ??= []);
   contents.push({ role: "user", parts: [{ text: userText || OPENING }] });
@@ -337,7 +337,7 @@ async function runGeminiTurn(s: AdvisorSession, userText: string, emit: (e: Advi
       contents,
       tools: GEMINI_TOOLS,
       generationConfig: { thinkingConfig: thinking(GEMINI_MODEL), maxOutputTokens: 4000 },
-    })) {
+    }, signal)) {
       blocked ??= chunk.promptFeedback?.blockReason;
       const c = chunk.candidates?.[0];
       finish = c?.finishReason ?? finish;
@@ -384,7 +384,7 @@ async function runGeminiTurn(s: AdvisorSession, userText: string, emit: (e: Advi
 const GROQ_TOOLS: GroqTool[] = TOOLS.map((t) => ({ type: "function", function: { name: t.name, description: t.description ?? "", parameters: t.input_schema } }));
 
 /** Groq and DeepSeek share the OpenAI-style chat format, so one loop runs both. */
-async function runGroqTurn(s: AdvisorSession, userText: string, emit: (e: AdvisorEvent) => void, ep: ChatEndpoint = GROQ) {
+async function runGroqTurn(s: AdvisorSession, userText: string, emit: (e: AdvisorEvent) => void, ep: ChatEndpoint = GROQ, signal?: AbortSignal) {
   const model = ep === DEEPSEEK ? DEEPSEEK_MODEL : GROQ_MODEL;
   s.profile = mergeParsed(s.profile, parseUtterance(userText));
   const history = (s.groqMessages ??= []);
@@ -400,6 +400,7 @@ async function runGroqTurn(s: AdvisorSession, userText: string, emit: (e: Adviso
         emit({ type: "text", delta });
       },
       ep,
+      signal,
     );
     history.push({ role: "assistant", content: res.content || null, ...(res.toolCalls.length ? { tool_calls: res.toolCalls } : {}) });
     if (res.toolCalls.length === 0) break;
@@ -426,12 +427,12 @@ async function runGroqTurn(s: AdvisorSession, userText: string, emit: (e: Adviso
 }
 
 /** Runs the turn on the preferred provider; a provider that fails for billing/auth/quota is paused. */
-async function runAiTurn(s: AdvisorSession, provider: AiProvider, userText: string, emit: (e: AdvisorEvent) => void) {
+async function runAiTurn(s: AdvisorSession, provider: AiProvider, userText: string, emit: (e: AdvisorEvent) => void, signal: AbortSignal) {
   try {
-    if (provider === "deepseek") await runGroqTurn(s, userText, emit, DEEPSEEK);
-    else if (provider === "groq") await runGroqTurn(s, userText, emit);
-    else if (provider === "gemini") await runGeminiTurn(s, userText, emit);
-    else await runClaudeTurn(s, userText, emit);
+    if (provider === "deepseek") await runGroqTurn(s, userText, emit, DEEPSEEK, signal);
+    else if (provider === "groq") await runGroqTurn(s, userText, emit, GROQ, signal);
+    else if (provider === "gemini") await runGeminiTurn(s, userText, emit, signal);
+    else await runClaudeTurn(s, userText, emit, signal);
   } catch (err) {
     if ((err instanceof GeminiError || err instanceof GroqError) && err.persistent) pauseProvider(provider, err.status);
     else if (err instanceof Anthropic.APIError && [401, 402, 403, 429].includes(err.status ?? 0)) pauseProvider(provider, err.status);
@@ -439,25 +440,40 @@ async function runAiTurn(s: AdvisorSession, provider: AiProvider, userText: stri
   }
 }
 
-/** Tries each configured provider in turn; one that fails before replying hands the turn to the next. */
+/** How long a provider may stay silent: before its first word, and between words once it has started. */
+export const STALL_MS = { first: 12_000, gap: 25_000 };
+
+/**
+ * Tries each configured provider in turn. One that fails, or goes quiet before replying, hands the turn to the next,
+ * so a slow or stuck model never leaves the owner waiting; they never have to press "try again".
+ */
 async function runAiChain(s: AdvisorSession, userText: string, emit: (e: AdvisorEvent) => void) {
   const providers = aiProviders();
   for (const [i, provider] of providers.entries()) {
-    const saved = { messages: s.messages.length, gemini: s.geminiContents?.length, groq: s.groqMessages?.length };
+    const saved = { messages: s.messages.length, gemini: s.geminiContents?.length, groq: s.groqMessages?.length, transcript: s.transcript.length };
     let replied = false;
+    const ctrl = new AbortController();
+    let timer = setTimeout(() => ctrl.abort(new Error(`${provider} gave no reply in ${STALL_MS.first / 1000}s`)), STALL_MS.first);
     try {
       await runAiTurn(s, provider, userText, (e) => {
+        if (ctrl.signal.aborted) return; // a stalled provider that wakes up late must not talk over the next one
         if (e.type === "text" || e.type === "bundle") replied = true;
+        clearTimeout(timer);
+        timer = setTimeout(() => ctrl.abort(new Error(`${provider} went quiet`)), replied ? STALL_MS.gap : STALL_MS.first);
         emit(e);
-      });
+      }, ctrl.signal);
       return;
     } catch (err) {
-      if (replied || i === providers.length - 1) throw err;
-      console.warn(`[advisor] ${provider} failed before replying (${(err as Error).message}); trying ${providers[i + 1]}`);
+      const reason = ctrl.signal.aborted ? String((ctrl.signal.reason as Error)?.message ?? "stalled") : (err as Error).message;
+      if (replied || i === providers.length - 1) throw new Error(reason);
+      console.warn(`[advisor] ${provider} failed before replying (${reason}); trying ${providers[i + 1]}`);
       // Drop the failed attempt's half-turn so the next provider sees a clean history.
       s.messages = s.messages.slice(0, saved.messages);
       s.geminiContents = saved.gemini === undefined ? undefined : s.geminiContents?.slice(0, saved.gemini);
       s.groqMessages = saved.groq === undefined ? undefined : s.groqMessages?.slice(0, saved.groq);
+      s.transcript = s.transcript.slice(0, saved.transcript);
+    } finally {
+      clearTimeout(timer);
     }
   }
 }

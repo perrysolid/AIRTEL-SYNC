@@ -76,8 +76,8 @@ export async function generate(model: string, body: GeminiRequest): Promise<Gemi
   return (await call(model, "generateContent", body)).json();
 }
 
-export async function* streamGenerate(model: string, body: GeminiRequest): AsyncGenerator<GeminiResponse> {
-  const r = await call(model, "streamGenerateContent?alt=sse", body);
+export async function* streamGenerate(model: string, body: GeminiRequest, signal?: AbortSignal): AsyncGenerator<GeminiResponse> {
+  const r = await call(model, "streamGenerateContent?alt=sse", body, signal);
   const reader = r.body!.getReader();
   const decoder = new TextDecoder();
   let buf = "";

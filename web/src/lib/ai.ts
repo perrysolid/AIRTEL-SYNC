@@ -52,6 +52,7 @@ export function pauseProvider(p: AiProvider, status?: number) {
 }
 
 export function anthropic(): Anthropic {
-  if (!client) client = new Anthropic();
+  // A hung request must fail fast so the advisor can hand the turn to the next provider.
+  if (!client) client = new Anthropic({ timeout: 45_000, maxRetries: 1 });
   return client;
 }

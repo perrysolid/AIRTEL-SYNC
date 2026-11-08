@@ -74,81 +74,92 @@ function Advisor() {
       if (message) setMsgs((m) => [...m.map((x) => (x.kind === "bot" ? { ...x, chips: undefined } : x)), { kind: "user", text: display ?? message }]);
       let spoken = "";
       let botIndex = -1;
-      // A connection that goes silent (a dropped proxy hop, a server restart) is
-      // abandoned after 45 s instead of leaving the chat stuck on "busy".
-      const ctrl = new AbortController();
-      let watchdog = setTimeout(() => ctrl.abort(), 45_000);
-      const alive = () => {
-        clearTimeout(watchdog);
+      // A connection that goes silent (a dropped proxy hop, a server restart) is abandoned after 45 s. If nothing
+      // had arrived yet, it is retried once on its own; only a second failure asks the owner to tap.
+      let watchdog: ReturnType<typeof setTimeout> | undefined;
+      let replied = false;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const ctrl = new AbortController();
         watchdog = setTimeout(() => ctrl.abort(), 45_000);
-      };
-      try {
-        const res = await fetch("/api/advisor", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sessionId: sessionRef.current, message, language: lang, channel: voiceRef.current ? "voice" : "web" }),
-          signal: ctrl.signal,
-        });
-        for await (const e of sse(res, alive)) {
-          switch (e.type) {
-            case "session":
-              sessionRef.current = e.sessionId;
-              setMode(e.mode);
-              break;
-            case "text":
-              spoken += e.delta;
-              setStatus("");
-              setMsgs((m) => {
-                const copy = [...m];
-                if (botIndex >= 0 && copy[botIndex]?.kind === "bot") {
-                  const b = copy[botIndex] as Extract<Msg, { kind: "bot" }>;
-                  copy[botIndex] = { ...b, text: b.text + e.delta };
-                } else {
-                  copy.push({ kind: "bot", text: e.delta });
-                  botIndex = copy.length - 1;
-                }
-                return copy;
-              });
-              break;
-            case "status":
-              setStatus(e.label);
-              break;
-            case "profile":
-              setProfile(e.profile);
-              break;
-            case "chips":
-              setMsgs((m) => {
-                const copy = [...m];
-                const idx = botIndex >= 0 ? botIndex : copy.length - 1;
-                const b = copy[idx];
-                if (b?.kind === "bot") copy[idx] = { ...b, chips: { mode: e.mode, options: e.options } };
-                return copy;
-              });
-              break;
-            case "bundle":
-              setMsgs((m) => [...m, { kind: "bundle", quote: e.quote, recommendation: e.recommendation }]);
-              // Remember the plan on this device so the landing page can offer "continue" instead of starting over.
-              try {
-                if (sessionRef.current) localStorage.setItem("accel:plan", JSON.stringify({ id: sessionRef.current, monthly: e.quote?.monthlyWithGst, at: Date.now() }));
-              } catch {}
-              botIndex = -1; // text after the bill starts a new bubble
-              break;
-            case "handoff":
-              setMsgs((m) => [...m, { kind: "handoff", reason: e.reason }]);
-              botIndex = -1;
-              break;
-            case "error":
-              setMsgs((m) => [...m, { kind: "bot", text: e.message }]);
-              break;
+        const alive = () => {
+          clearTimeout(watchdog);
+          watchdog = setTimeout(() => ctrl.abort(), 45_000);
+        };
+        try {
+          const res = await fetch("/api/advisor", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sessionId: sessionRef.current, message, language: lang, channel: voiceRef.current ? "voice" : "web" }),
+            signal: ctrl.signal,
+          });
+          for await (const e of sse(res, alive)) {
+            switch (e.type) {
+              case "session":
+                sessionRef.current = e.sessionId;
+                setMode(e.mode);
+                break;
+              case "text":
+                replied = true;
+                spoken += e.delta;
+                setStatus("");
+                setMsgs((m) => {
+                  const copy = [...m];
+                  if (botIndex >= 0 && copy[botIndex]?.kind === "bot") {
+                    const b = copy[botIndex] as Extract<Msg, { kind: "bot" }>;
+                    copy[botIndex] = { ...b, text: b.text + e.delta };
+                  } else {
+                    copy.push({ kind: "bot", text: e.delta });
+                    botIndex = copy.length - 1;
+                  }
+                  return copy;
+                });
+                break;
+              case "status":
+                setStatus(e.label);
+                break;
+              case "profile":
+                setProfile(e.profile);
+                break;
+              case "chips":
+                setMsgs((m) => {
+                  const copy = [...m];
+                  const idx = botIndex >= 0 ? botIndex : copy.length - 1;
+                  const b = copy[idx];
+                  if (b?.kind === "bot") copy[idx] = { ...b, chips: { mode: e.mode, options: e.options } };
+                  return copy;
+                });
+                break;
+              case "bundle":
+                replied = true;
+                setMsgs((m) => [...m, { kind: "bundle", quote: e.quote, recommendation: e.recommendation }]);
+                // Remember the plan on this device so the landing page can offer "continue" instead of starting over.
+                try {
+                  if (sessionRef.current) localStorage.setItem("accel:plan", JSON.stringify({ id: sessionRef.current, monthly: e.quote?.monthlyWithGst, at: Date.now() }));
+                } catch {}
+                botIndex = -1; // text after the bill starts a new bubble
+                break;
+              case "handoff":
+                setMsgs((m) => [...m, { kind: "handoff", reason: e.reason }]);
+                botIndex = -1;
+                break;
+              case "error":
+                setMsgs((m) => [...m, { kind: "bot", text: e.message }]);
+                break;
+            }
           }
+          break;
+        } catch {
+          clearTimeout(watchdog);
+          if (!replied && attempt === 0) {
+            setStatus("Reconnecting…");
+            continue;
+          }
+          setMsgs((m) => [...m, { kind: "bot", text: "The connection dropped before I could finish. Tap to send that again.", chips: { mode: "single", options: [{ label: "Try again", value: message }] } }]);
         }
-      } catch {
-        setMsgs((m) => [...m, { kind: "bot", text: "The connection dropped before I could finish. Tap to send that again.", chips: { mode: "single", options: [{ label: "Try again", value: message }] } }]);
-      } finally {
-        clearTimeout(watchdog);
-        setBusy(false);
-        setStatus("");
       }
+      clearTimeout(watchdog);
+      setBusy(false);
+      setStatus("");
       // Hands-free: speak the reply, then listen for the answer.
       if (voiceRef.current && spoken.trim()) {
         await voice.speak(spoken);
