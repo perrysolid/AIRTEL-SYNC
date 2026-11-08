@@ -91,7 +91,18 @@ async function authState(b: Baileys) {
 
 // --- Connection
 
-export async function startWaLink() {
+/** Starts (or restarts) the link. A failed start, e.g. the database unreachable for a moment, is retried, never dropped. */
+export async function startWaLink(): Promise<void> {
+  try {
+    await connect();
+  } catch (err) {
+    console.warn(`[wa-link] could not start (${(err as Error).message}); retrying in 30 s`);
+    set({ state: "starting", error: (err as Error).message });
+    setTimeout(() => void startWaLink(), 30_000);
+  }
+}
+
+async function connect() {
   if (!waLinkEnabled() || link.stopped) return;
   const b = await import("@whiskeysockets/baileys");
   const { state, saveCreds } = await authState(b);
@@ -152,7 +163,7 @@ export async function startWaLink() {
         return;
       }
       // An unanswered pairing code expires with the connection; start the next one from a clean login.
-      if (!state.creds.registered) await kv.clear();
+      if (!state.creds.registered) await kv.clear().catch(() => {});
       else console.warn(`[wa-link] connection closed (${code ?? "network"}), reconnecting`);
       setTimeout(() => void startWaLink(), code === b.DisconnectReason.restartRequired ? 0 : 3_000);
     }
