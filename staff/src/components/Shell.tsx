@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Activity, BarChart3, ClipboardList, LogOut, MessagesSquare, PhoneCall, Smartphone, Sun, Users } from "lucide-react";
+import { Activity, BarChart3, ClipboardList, LogOut, MessagesSquare, PhoneCall, Sun, Users } from "lucide-react";
 import { createContext, useContext } from "react";
 import { send, useApi } from "@/lib/api";
 import type { Me } from "@/lib/types";
@@ -20,7 +20,6 @@ const NAV: Nav[] = [
   { href: "/chats", label: "Advisor chats", icon: MessagesSquare, roles: ["admin", "sales"] },
   { href: "/orders", label: "Orders", icon: ClipboardList },
   { href: "/team", label: "Team", icon: BarChart3, roles: ["admin"] },
-  { href: "/whatsapp", label: "WhatsApp", icon: Smartphone, roles: ["admin"] },
 ];
 
 const ROLE: Record<Me["role"], string> = { admin: "Manager", sales: "Field sales", partner: "Channel partner" };

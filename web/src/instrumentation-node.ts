@@ -27,6 +27,10 @@ export async function registerNode() {
   if (process.env.WA_LINK === "on") {
     const { startWaLink } = await import("./lib/bots/wa-link");
     void startWaLink().catch((e) => console.warn(`[wa-link] ${(e as Error).message}`));
+    // Render's free plan sleeps after 15 minutes without incoming requests, which would drop the link.
+    // Calling our own public URL counts as one; an outside cron (cron-job.org) also wakes it if it ever slept.
+    const self = process.env.RENDER_EXTERNAL_URL;
+    if (self) setInterval(() => void fetch(`${self}/api/health`).catch(() => {}), 10 * 60_000).unref();
   }
 
   const base = process.env.BOT_WEBHOOK_BASE_URL ?? process.env.RENDER_EXTERNAL_URL;

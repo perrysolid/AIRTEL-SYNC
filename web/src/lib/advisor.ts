@@ -264,7 +264,7 @@ function runTool(s: AdvisorSession, name: string, input: unknown, emit: (e: Advi
 async function runClaudeTurn(s: AdvisorSession, userText: string, emit: (e: AdvisorEvent) => void, signal?: AbortSignal) {
   // Cheap pre-pass: obvious facts land in the profile before the model sees them.
   s.profile = mergeParsed(s.profile, parseUtterance(userText));
-  s.messages.push({ role: "user", content: userText || OPENING });
+  s.messages.push({ role: "user", content: userText || opening(s) });
   let assistantText = "";
 
   for (let step = 0; step < 8; step++) {
@@ -318,14 +318,15 @@ async function runClaudeTurn(s: AdvisorSession, userText: string, emit: (e: Advi
   if (assistantText.trim()) s.transcript.push({ role: "assistant", text: assistantText.trim(), at: now() });
 }
 
-const OPENING = "(The owner just opened the advisor. Greet them in one line and ask what business they run, or invite them to share their GSTIN to skip questions.)";
+/** The first turn when the owner only said hello: the language is stated, or WhatsApp openings drift into Hinglish. */
+const opening = (s: AdvisorSession) => `(The owner just opened the advisor. Greet them in one line in ${langName(s.language)} and ask what business they run, or invite them to share their GSTIN to skip questions.)`;
 
 const GEMINI_TOOLS = [{ functionDeclarations: TOOLS.map((t) => ({ name: t.name, description: t.description ?? "", parametersJsonSchema: t.input_schema })) }];
 
 async function runGeminiTurn(s: AdvisorSession, userText: string, emit: (e: AdvisorEvent) => void, signal?: AbortSignal) {
   s.profile = mergeParsed(s.profile, parseUtterance(userText));
   const contents = (s.geminiContents ??= []);
-  contents.push({ role: "user", parts: [{ text: userText || OPENING }] });
+  contents.push({ role: "user", parts: [{ text: userText || opening(s) }] });
   let assistantText = "";
 
   for (let step = 0; step < 8; step++) {
@@ -388,7 +389,7 @@ async function runGroqTurn(s: AdvisorSession, userText: string, emit: (e: Adviso
   const model = ep === DEEPSEEK ? DEEPSEEK_MODEL : GROQ_MODEL;
   s.profile = mergeParsed(s.profile, parseUtterance(userText));
   const history = (s.groqMessages ??= []);
-  history.push({ role: "user", content: userText || OPENING });
+  history.push({ role: "user", content: userText || opening(s) });
   const system = SYSTEM + "\n\n" + sessionRules(s) + "\n\nCatalogue (for understanding requests only — prices and eligibility come from tools):\n" + CATALOGUE_BRIEF();
   let assistantText = "";
 
