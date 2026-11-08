@@ -179,6 +179,8 @@ body {
   /* side phones drift slowly up and down, out of step with each other */
   .hero-float { animation: hero-float 7s ease-in-out infinite; animation-delay: var(--fd, 0s); }
   @keyframes hero-float { 50% { translate: 0 -12px; } }
+  .typing-dot { animation: typing-dot 1s ease-in-out infinite; }
+  @keyframes typing-dot { 50% { opacity: 0.25; translate: 0 -20%; } }
 }
 @media (prefers-reduced-motion: reduce) { .flow { stroke-dasharray: 5 16; } }
 

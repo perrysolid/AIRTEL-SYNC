@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 /** The signed-in customer's account: what we remember, their orders with the latest updates, and how updates reach them. */
 export async function GET() {
   const c = await currentCustomer();
-  if (!c) return Response.json({ signedIn: false }, { status: 401 });
+  if (!c) return Response.json({ signedIn: false }); // a visitor, not an error
   const orders = c.orderIds
     .map((id) => store.getOrder(id))
     .filter((o) => !!o)

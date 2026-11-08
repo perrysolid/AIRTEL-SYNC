@@ -2,7 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { issueCustomerToken, issueToken, readCustomerToken, readTelegramLinkCode, readToken, telegramLinkCode } from "./auth";
 import { customerByPhone, customerForChat, startDemoCustomer, linkTelegram, memoryBrief, noteWhatsAppInbound, normalizePhone, rememberSession, signInCustomer } from "./customers";
 import { notifyOrder } from "./notify";
-import { resetOtpForTests, sendOtp, verifyOtp } from "./otp";
+import { redeemWhatsAppCode, resetOtpForTests, sendOtp, verifyOtp } from "./otp";
+import { botTurn } from "./bots/core";
 import { newSession } from "./advisor";
 import { store, type Order } from "./store";
 import { buildTimeline } from "./tracker";
@@ -82,6 +83,17 @@ describe("OTP sign-in through 2Factor", () => {
     expect(urls[0]).toContain("/VOICE/+919812345670/AUTOGEN");
     expect(await verifyOtp(sent.requestId, "1234")).toEqual({ phone: "919812345670" });
     expect(urls[1]).toContain("/VOICE/VERIFY/voice-1/1234");
+  });
+
+  it("LOGIN on WhatsApp replies with a code that signs in as that number, once", async () => {
+    process.env.AI_DISABLED = "1";
+    const [m] = await botTurn({ chat: { channel: "whatsapp", chatId: "919812300001" }, text: "LOGIN", phone: "919812300001" });
+    const code = m.text.match(/\*\*(\d{6})\*\*/)?.[1];
+    expect(code).toBeDefined();
+    expect(redeemWhatsAppCode(code!, "ip-wa")).toEqual({ phone: "919812300001" });
+    expect(redeemWhatsAppCode(code!, "ip-wa")).toMatchObject({ status: 401 });
+    const [tg] = await botTurn({ chat: { channel: "telegram", chatId: "tg-login" }, text: "/login" });
+    expect(tg.text).not.toMatch(/\d{6}/);
   });
 
   it("is off without a 2Factor key", async () => {

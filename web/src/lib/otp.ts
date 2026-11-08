@@ -48,7 +48,7 @@ export type SendResult = { requestId: string } | { error: string; status: number
 
 /** Sends a code to 91XXXXXXXXXX by SMS, or reads it out in a phone call. Returns an opaque request id the browser sends back with the code. */
 export async function sendOtp(phone: string, ip: string, at = Date.now(), via: OtpVia = "sms"): Promise<SendResult> {
-  if (!otpEnabled()) return { error: "Sign-in by SMS isn't set up on this server yet.", status: 503 };
+  if (!otpEnabled()) return { error: "Calls aren't switched on yet. Use WhatsApp below, or the demo.", status: 503 };
   if (!allow(`ip:${ip}`, LIMITS.perIp, at)) return { error: "Too many codes requested from this network. Try again in an hour.", status: 429 };
   if (!allow(`ph:${phone}`, LIMITS.perPhone, at)) return { error: "We've sent 3 codes to this number. Wait 10 minutes and try again.", status: 429 };
   const j = await twoFactor(`${ROUTE[via]}/+${phone}/AUTOGEN`).catch((e: Error) => ({ Status: "Error", Details: e.message }));
@@ -79,7 +79,36 @@ export async function verifyOtp(requestId: string, code: string, at = Date.now()
   return { error: "That code doesn't match. Check it and try again.", status: 401 };
 }
 
+// ---------------------------------------------------------------------------------------------------------------
+// Codes over WhatsApp: the owner sends LOGIN to our WhatsApp number and the bot replies with a code. The message
+// itself proves the number is theirs, so the code alone signs them in as that number. Free, and it opens the
+// 24-hour window so their first order updates arrive in full.
+// ---------------------------------------------------------------------------------------------------------------
+
+const waCodes = ((g as { __waCodes?: Map<string, { phone: string; expires: number }> }).__waCodes ??= new Map());
+
+/** A fresh 6-digit code for a number that just messaged us on WhatsApp (replaces any earlier one for that number). */
+export function issueWhatsAppCode(phone: string, at = Date.now()): string | undefined {
+  if (!allow(`wa:${phone}`, LIMITS.perPhone, at)) return undefined;
+  for (const [code, v] of waCodes) if (v.phone === phone || v.expires < at) waCodes.delete(code);
+  let code: string;
+  do code = String(crypto.randomInt(100000, 1000000));
+  while (waCodes.has(code));
+  waCodes.set(code, { phone, expires: at + TTL_MS });
+  return code;
+}
+
+/** The number a WhatsApp code was issued to. Wrong guesses are limited per network. */
+export function redeemWhatsAppCode(code: string, ip: string, at = Date.now()): VerifyResult {
+  if (!allow(`wa-try:${ip}`, [10, 10 * 60_000], at)) return { error: "Too many tries. Wait 10 minutes and try again.", status: 429 };
+  const v = waCodes.get(code);
+  if (!v || v.expires < at) return { error: "That code doesn't match. Send LOGIN on WhatsApp for a new one.", status: 401 };
+  waCodes.delete(code);
+  return { phone: v.phone };
+}
+
 export const resetOtpForTests = () => {
   pending.clear();
   sends.clear();
+  waCodes.clear();
 };

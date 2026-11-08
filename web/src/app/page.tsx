@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { MessageCircle, Mic, MessageSquareText, Search, Send } from "lucide-react";
-import { Shop3D, VISUAL_LABEL } from "@/components/shop/Shop3D";
-import { Logo } from "@/components/Brand";
+import { CheckCheck, MessageCircle, Mic, MessageSquareText, Search, Send } from "lucide-react";
+import { Bazaar3D, BAZAAR_STEPS } from "@/components/bazaar/Bazaar3D";
+import { Logo, LogoMark } from "@/components/Brand";
 import { HeroMenu } from "@/components/HeroMenu";
 import { NetworkBackdrop } from "@/components/NetworkBackdrop";
 import { Reveal } from "@/components/Reveal";
@@ -33,19 +33,7 @@ const GREETING: Record<string, { line: string; sub: string; talk: string; type: 
   pa: { line: "ਛੋਟਾ ਕਾਰੋਬਾਰ, ਵੱਡਾ ਕਨੈਕਸ਼ਨ।", sub: "ਤੁਹਾਡੀ ਦੁਕਾਨ ਲਈ ਇੰਟਰਨੈੱਟ, ਬਿਜ਼ਨਸ ਨੰਬਰ, ਬਿਲਿੰਗ ਅਤੇ CCTV — ਇੱਕ ਪਲਾਨ, ਇੱਕ ਬਿੱਲ। ਆਪਣੀ ਭਾਸ਼ਾ ਵਿੱਚ ਚੈਟ ਰਾਹੀਂ ਸੈੱਟਅੱਪ।", talk: "ਸਲਾਹਕਾਰ ਨਾਲ ਗੱਲ ਕਰੋ", type: "ਟਾਈਪ ਕਰੋ", chat: "ਜਾਂ ਚੈਟ ਕਰੋ" },
 };
 
-const SHOWCASE = ["P01", "P19", "P07", "P23", "P15", "P22", "P16", "P17"];
 const TELEGRAM = process.env.NEXT_PUBLIC_TELEGRAM_BOT ?? "UdyamAdvisorBot";
-
-/** Builds a sample plan onto the 3D shop, one product at a time, then starts over. */
-function useShowcase() {
-  const [n, setN] = useState(0);
-  useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return setN(SHOWCASE.length);
-    const t = setInterval(() => setN((k) => (k >= SHOWCASE.length + 3 ? 0 : k + 1)), 1100);
-    return () => clearInterval(t);
-  }, []);
-  return SHOWCASE.slice(0, Math.min(n, SHOWCASE.length));
-}
 
 /** Where the scroll zoom runs: wide and tall enough to hold the section in one screen, and motion allowed. Same query as globals.css. */
 const ZOOM_QUERY = "(min-width: 1024px) and (min-height: 720px) and (prefers-reduced-motion: no-preference)";
@@ -147,7 +135,7 @@ function useHeroZoom() {
         fl.style.width = `${s.width}px`;
         fl.style.height = `${s.height}px`;
       }
-      const k = 1 + ((vh * 0.84) / s.height - 1) * a;
+      const k = 1 + ((vh * 0.6) / s.height - 1) * a; // rises to a little over half the screen, never fills it
       const x0 = s.left - box.left, y0 = s.top - box.top;
       const x1 = box.width / 2 - s.width / 2, y1 = vh / 2 - s.height / 2;
       // it starts tipped back like the side phones and straightens up as it rises
@@ -186,31 +174,56 @@ function useHeroZoom() {
   return { runway, overlay, slot, fly, screen, layer, copy, sideL, sideR, veil, frameEl, enhanced, revealed };
 }
 
-type Greeting = (typeof GREETING)[string];
 
-/** The "come alive" section as it looks on a phone, drawn inside the centre phone (sizes in cqw: the phone's width). */
-function MiniAlive({ g, items, latest }: { g: Greeting; items: string[]; latest?: string }) {
+/** The chat the owner sees: their plan, then every step of the order arriving by itself (sizes in cqw: the phone's width). */
+const CHAT: { me?: boolean; text: string; plan?: boolean }[] = [
+  { me: true, text: "Kirana in Indore, 2 people. Need internet and UPI billing." },
+  { text: "Here's your plan", plan: true },
+  { text: "✅ Business verified" },
+  { text: "💳 Payment received. Installation booked for tomorrow, 10 am." },
+  { text: "📶 Fibre is live. Your shop is online!" },
+];
+
+function MiniChat() {
+  const [n, setN] = useState(1);
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return setN(CHAT.length);
+    const t = setInterval(() => setN((k) => (k >= CHAT.length + 2 ? 1 : k + 1)), 1600);
+    return () => clearInterval(t);
+  }, []);
+  const shown = CHAT.slice(0, Math.min(n, CHAT.length));
+  const typing = n < CHAT.length && !CHAT[n]?.me;
   return (
-    <div className="absolute inset-x-0 bottom-0 flex flex-col bg-white px-[7cqw] pt-[7cqw] text-ink" style={{ top: "4.8%" }} aria-hidden inert>
-      <span className="mb-[3cqw] block h-[1.1cqw] w-[11cqw] rounded-full bg-brand" />
-      <div className="text-[7.6cqw] leading-[1.08] font-extrabold tracking-tight">
-        Watch your shop <span className="sweep">come alive</span>, one service at a time
+    <div className="absolute inset-x-0 bottom-0 flex flex-col bg-[#efeae2] text-ink" style={{ top: "4.8%" }} aria-hidden inert>
+      <div className="flex items-center gap-[2.6cqw] bg-white px-[4.5cqw] py-[3cqw] shadow-[0_1px_0_rgb(0_0_0/0.06)]">
+        <LogoMark className="h-[9cqw] w-[9cqw]" />
+        <div className="leading-tight">
+          <div className="text-[4.2cqw] font-extrabold">Accel Business</div>
+          <div className="text-[3.1cqw] text-wa">online</div>
+        </div>
       </div>
-      <p className="mt-[3cqw] text-[3.9cqw] leading-snug text-ink-soft">Every product in your plan shows up on your shop as the advisor adds it.</p>
-      <div className="mt-[4.5cqw] flex flex-wrap items-center gap-[2.4cqw] text-[3.5cqw] font-extrabold">
-        <span className="inline-flex items-center gap-[1.6cqw] rounded-full bg-brand py-[1.2cqw] pr-[3.4cqw] pl-[1.2cqw] text-white">
-          <span className="grid h-[6.4cqw] w-[6.4cqw] place-items-center rounded-full bg-white text-brand"><Mic className="h-[3.6cqw] w-[3.6cqw]" strokeWidth={2.6} /></span>
-          {g.talk}
-        </span>
-        <span className="rounded-full border border-ink/20 px-[3.4cqw] py-[1.9cqw] font-semibold">{g.type}</span>
-      </div>
-      <div className="mt-[3cqw] flex items-center gap-[1.4cqw] text-[3.4cqw] font-semibold text-wa"><MessageCircle className="h-[3.6cqw] w-[3.6cqw]" /> Continue on WhatsApp</div>
-      <div className="relative -mx-[5cqw] mt-[2cqw] min-h-0 flex-1">
-        <Shop3D items={items} className="absolute inset-0" />
-        {latest && (
-          <span key={latest} className="chip-in absolute bottom-[5cqw] left-1/2 inline-flex -translate-x-1/2 items-center gap-[1.4cqw] rounded-full border border-rule bg-sheet/90 px-[3cqw] py-[1.2cqw] text-[3.2cqw] font-semibold whitespace-nowrap shadow-[var(--shadow-card)]">
-            <span className="h-[1.8cqw] w-[1.8cqw] rounded-full bg-signal" /> {VISUAL_LABEL[latest]} connected
-          </span>
+      <div className="flex flex-1 flex-col justify-end gap-[2.2cqw] overflow-hidden px-[3.6cqw] pb-[4cqw]">
+        {shown.map((m, i) => (
+          <div key={i} className={`chip-in max-w-[82%] rounded-[3cqw] px-[3cqw] py-[2cqw] text-[3.5cqw] leading-snug shadow-[0_1px_1px_rgb(0_0_0/0.08)] ${m.me ? "self-end rounded-tr-[0.6cqw] bg-[#d9fdd3]" : "self-start rounded-tl-[0.6cqw] bg-white"}`}>
+            {m.plan ? (
+              <div className="grid gap-[1cqw]">
+                <span className="font-bold">{m.text}</span>
+                <span className="rounded-[2cqw] bg-brand-soft px-[2.4cqw] py-[1.6cqw]">
+                  <span className="block text-[5.6cqw] leading-none font-extrabold text-brand">₹2,697<span className="text-[3cqw] font-semibold text-ink-soft">/month</span></span>
+                  <span className="mt-[0.8cqw] block text-[3cqw] text-ink-soft">Fibre 100 · UPI billing · one GST bill</span>
+                </span>
+              </div>
+            ) : (
+              m.text
+            )}
+            {!m.me && <span className="ml-[1.4cqw] text-[2.6cqw] text-ink-soft">now</span>}
+            {m.me && <CheckCheck className="ml-[1cqw] inline h-[3.2cqw] w-[3.2cqw] text-[#53bdeb]" />}
+          </div>
+        ))}
+        {typing && (
+          <div className="flex gap-[1cqw] self-start rounded-[3cqw] bg-white px-[3cqw] py-[2.6cqw]">
+            {[0, 1, 2].map((d) => <span key={d} className="typing-dot h-[1.6cqw] w-[1.6cqw] rounded-full bg-ink-soft" style={{ animationDelay: `${d * 160}ms` }} />)}
+          </div>
         )}
       </div>
     </div>
@@ -222,8 +235,7 @@ export default function Home() {
   const [orderId, setOrderId] = useState("");
   const router = useRouter();
   const g = GREETING[lang] ?? GREETING.en;
-  const items = useShowcase();
-  const latest = items.at(-1);
+  const [shop, setShop] = useState(-1);
   const z = useHeroZoom();
   const show = z.enhanced ? z.revealed : undefined;
 
@@ -309,7 +321,7 @@ export default function Home() {
                     <div className="phone-in h-full" style={{ ["--i" as string]: 0 }}>
                       <div className="h-full" style={{ transform: "perspective(1600px) rotateX(calc(9deg - var(--ty, 0) * 1deg)) rotateY(calc(var(--tx, 0) * 1deg))" }}>
                         <PhoneMock className="h-full">
-                          <MiniAlive g={g} items={items} latest={latest} />
+                          <MiniChat />
                         </PhoneMock>
                       </div>
                     </div>
@@ -337,7 +349,7 @@ export default function Home() {
               <div ref={z.fly} aria-hidden className="zoom-fly pointer-events-none absolute top-0 left-0 z-10">
                 <div className="phone-in h-full" style={{ ["--i" as string]: 0 }}>
                   <PhoneMock className="h-full" screenRef={z.screen} frameRef={z.frameEl}>
-                    <MiniAlive g={g} items={items} latest={latest} />
+                    <MiniChat />
                   </PhoneMock>
                 </div>
               </div>
@@ -348,11 +360,11 @@ export default function Home() {
                 <Reveal show={show}>
                   <span aria-hidden className="mb-3 block h-1 w-12 rounded-full bg-brand" />
                   <h2 id="alive" className="text-[clamp(1.9rem,4.4vw,3rem)] leading-[1.08] font-extrabold tracking-tight text-balance">
-                    Watch your shop <span className="sweep">come alive</span>, one service at a time
+                    One connection. <span className="sweep">Every shop</span> on the street.
                   </h2>
                 </Reveal>
                 <Reveal show={show} delay={120}>
-                  <p className="mt-4 max-w-lg text-lg text-ink-soft">Every product in your plan shows up on your shop as the advisor adds it. Then, on the tracker, each one turns from setting-up to live.</p>
+                  <p className="mt-4 max-w-lg text-lg text-ink-soft">Kirana, clinic, salon or chai stall: tell us what you run and we connect what it needs. Fibre, UPI billing, business SIMs, Wi-Fi and CCTV, on one bill, with every step sent to your WhatsApp.</p>
                 </Reveal>
                 <Reveal show={show} delay={240}>
                   <div className="mt-7 flex flex-wrap items-center gap-3">
@@ -391,11 +403,11 @@ export default function Home() {
                 </Reveal>
               </div>
               <Reveal show={show} delay={200} className="relative h-[300px] sm:h-[380px] lg:h-[480px]">
-                <Shop3D items={items} className="absolute inset-0" />
-                <div className="pointer-events-none absolute inset-x-0 bottom-2 flex justify-center" aria-live="polite">
-                  {latest && (
-                    <span key={latest} className="chip-in inline-flex items-center gap-2 rounded-full border border-rule bg-sheet/90 px-3.5 py-1.5 text-sm font-semibold shadow-[var(--shadow-card)] backdrop-blur">
-                      <span className="h-2 w-2 rounded-full bg-signal" /> {VISUAL_LABEL[latest]} connected
+                <Bazaar3D className="absolute inset-0" onStep={setShop} />
+                <div className="pointer-events-none absolute inset-x-0 bottom-2 flex justify-center">
+                  {shop >= 0 && (
+                    <span key={shop} className="chip-in inline-flex items-center gap-2 rounded-full border border-rule bg-sheet/90 px-3.5 py-1.5 text-sm font-semibold shadow-[var(--shadow-card)] backdrop-blur">
+                      <span className="h-2 w-2 rounded-full bg-signal" /> {BAZAAR_STEPS[shop]} connected
                     </span>
                   )}
                 </div>

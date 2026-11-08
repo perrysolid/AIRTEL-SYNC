@@ -25,7 +25,8 @@ export function useCustomer(pollMs = 0) {
   const refresh = useCallback(async () => {
     try {
       const r = await fetch("/api/me", { cache: "no-store" });
-      setMe(r.ok ? ((await r.json()) as Me) : null);
+      const j = r.ok ? await r.json() : null;
+      setMe(j?.signedIn ? (j as Me) : null);
     } catch {
       setMe((m) => m ?? null);
     }

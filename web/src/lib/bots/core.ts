@@ -4,7 +4,8 @@ import { aiProviders } from "../ai";
 import { transcribeAudio as geminiTranscribe } from "../gemini";
 import { transcribeAudio as groqTranscribe } from "../groq";
 import { transcribeAudio as sarvamTranscribe } from "../sarvam";
-import { customerForChat } from "../customers";
+import { customerForChat, normalizePhone } from "../customers";
+import { issueWhatsAppCode } from "../otp";
 import { createOrder } from "../orders";
 import { store, type AdvisorSession, type BotChat, type Order } from "../store";
 import { liveDay, stepStatus } from "../tracker";
@@ -94,6 +95,15 @@ export async function botTurn(input: BotInput): Promise<BotMessage[]> {
   if (["status", "track", "स्टेटस"].includes(cmd)) {
     const o = latestOrder(input.chat, input.phone ?? (input.chat.channel === "whatsapp" ? input.chat.chatId : undefined));
     return [o ? statusMessage(o) : { text: "📭 No order yet. Tell me about your business and I'll find the right plan in a minute." }];
+  }
+  // Website sign-in: LOGIN on WhatsApp replies with a code for the number it came from.
+  if (["login", "otp", "लॉगिन"].includes(cmd)) {
+    const phone = input.chat.channel === "whatsapp" ? normalizePhone(input.chat.chatId) : undefined;
+    if (!phone) return [{ text: "🔐 Sign-in codes come on WhatsApp. Send **LOGIN** to us there, or choose *Send code* on the website to get a call." }];
+    const code = issueWhatsAppCode(phone);
+    return [{ text: code ? `🔐 Your Accel sign-in code is **${code}**
+
+Enter it on the website. It works for 10 minutes. Never share it with anyone, not even us.` : "🔐 You've asked for 3 codes already. Wait 10 minutes and send **LOGIN** again." }];
   }
   // Scam Shield, Network check, scheduler, troubleshooter, Branch-in-a-Box, backup: handled before the advisor.
   const feature = await featureTurn(input, raw, cmd);
