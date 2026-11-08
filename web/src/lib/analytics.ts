@@ -74,9 +74,21 @@ export function scoreLead(lead: LeadRow): Score {
   const reasons = contrib
     .sort((a, b) => Math.abs(b.effect) - Math.abs(a.effect))
     .slice(0, 3)
-    .map((c) => ({ label: READABLE[c.name] ?? c.name.replace("=", ": "), effect: c.effect }));
+    .map((c) => ({ label: READABLE[c.name] ?? readable(c.name), effect: c.effect }));
   const band = probability >= 0.15 ? "hot" : probability >= 0.07 ? "warm" : "cold";
   return { probability, band, reasons };
+}
+
+/** "lead_source=Channel partner" → "Channel partner lead", for features without a hand-written label. */
+function readable(name: string) {
+  const [col, val] = name.split("=");
+  if (col === "lead_source") return `${val} lead`;
+  if (col === "current_internet") return `On ${val.toLowerCase()} today`;
+  if (col === "current_provider") return val === "None" ? "No provider today" : `With ${val} today`;
+  if (col === "preferred_language") return `Speaks ${val}`;
+  if (col === "annual_turnover_band") return `Turnover ${val}`;
+  if (col === "segment") return val;
+  return val ?? name;
 }
 
 const STAGES = ["Lead", "Contacted", "Needs assessed", "Quote accepted", "KYC complete", "Activated"];

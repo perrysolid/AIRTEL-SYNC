@@ -5,12 +5,16 @@ import { store } from "@/lib/store";
 import { summarize } from "@/lib/advisor";
 import { liveDay } from "@/lib/tracker";
 import { winbackSummary } from "@/lib/winback";
+import { cookies } from "next/headers";
+import { readToken, SESSION_COOKIE } from "@/lib/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /** Back-office data for field sales and channel partners. PII stays masked. */
 export async function GET() {
+  const who = readToken((await cookies()).get(SESSION_COOKIE)?.value);
+  if (!who || who.role === "partner") return Response.json({ error: "Sign in to the sales portal" }, { status: 401 });
   const sessions = store.listSessions().sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   const orders = store.listOrders().sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const unclosed = sessions

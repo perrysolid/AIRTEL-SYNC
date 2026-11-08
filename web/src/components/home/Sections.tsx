@@ -139,7 +139,7 @@ export function ForTeams() {
 
         <div>
           <h2 id="teams" className="text-4xl font-extrabold sm:text-5xl">Your sales team calls the right shops first</h2>
-          <p className="mt-4 text-lg text-ink-soft">The partner console scores every lead with a model trained on 5,000 past leads, explains each score, and hands over chats the advisor couldn&apos;t close.</p>
+          <p className="mt-4 text-lg text-ink-soft">The sales portal scores every lead with a model trained on 5,000 past leads, explains each score, and hands over chats the advisor couldn&apos;t close.</p>
           <dl className="mt-8 grid grid-cols-3 gap-4">
             {[
               { v: 2.39, f: (n: number) => `${n.toFixed(1)}×`, l: "more activations in the top tenth of leads" },
@@ -154,7 +154,7 @@ export function ForTeams() {
             ))}
           </dl>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/console" className="btn-primary inline-flex items-center gap-2 rounded-full px-5 py-3"><BarChart3 size={18} /> Open the partner console</Link>
+            <Link href="/sales" className="btn-primary inline-flex items-center gap-2 rounded-full px-5 py-3"><BarChart3 size={18} /> Open the sales portal</Link>
           </div>
           <p className="mt-4 flex items-center gap-2 text-sm text-ink-soft"><Users size={15} /> For Accel sales staff and channel partners</p>
         </div>

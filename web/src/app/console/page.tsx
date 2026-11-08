@@ -24,7 +24,11 @@ export default function ConsolePage() {
       window.prompt("Copy this:", text);
     }
   };
-  const load = async () => setData(await (await fetch("/api/console", { cache: "no-store" })).json());
+  const load = async () => {
+    const r = await fetch("/api/console", { cache: "no-store" });
+    if (r.status === 401) return void (window.location.href = "/sales/login");
+    setData(await r.json());
+  };
   useEffect(() => {
     void load();
     const t = setInterval(load, 10_000);
@@ -41,7 +45,8 @@ export default function ConsolePage() {
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
           <div className="flex items-center gap-3">
             <Logo small />
-            <span className="rounded bg-ink px-2 py-0.5 text-xs font-semibold text-white">Partner & sales console</span>
+            <span className="rounded bg-ink px-2 py-0.5 text-xs font-semibold text-white">Insights & win-back</span>
+            <Link href="/sales" className="text-sm font-semibold text-brand underline-offset-4 hover:underline">Back to sales portal</Link>
           </div>
           <button onClick={load} className="inline-flex items-center gap-1.5 text-sm text-ink-soft"><RefreshCw size={14} /> Refresh</button>
         </div>

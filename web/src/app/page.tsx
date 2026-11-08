@@ -26,7 +26,7 @@ function Header() {
         </div>
         <nav className={`flex items-center gap-5 text-[15px] font-semibold ${solid ? "text-ink-soft" : "text-white/80"}`}>
           <a href="#track" className="hidden underline-offset-4 hover:underline sm:inline">Track order</a>
-          <Link href="/console" className="underline-offset-4 hover:underline">Partner console</Link>
+          <Link href="/sales" className="underline-offset-4 hover:underline">Sales portal</Link>
         </nav>
       </div>
     </header>

@@ -20,3 +20,30 @@ CREATE TABLE IF NOT EXISTS audit_log (
   ref    text        NOT NULL,
   detail text        NOT NULL DEFAULT ''
 );
+
+-- Sales portal: staff accounts (salespeople, channel partners, managers).
+CREATE TABLE IF NOT EXISTS staff (
+  id            text        PRIMARY KEY,
+  email         text        NOT NULL UNIQUE,
+  name          text        NOT NULL,
+  role          text        NOT NULL CHECK (role IN ('admin', 'sales', 'partner')),
+  region        text,
+  partner_code  text,
+  password_hash text        NOT NULL,
+  created_at    timestamptz NOT NULL DEFAULT now()
+);
+
+-- Every touch on a lead: calls, WhatsApp links sent, notes, status changes, reassignments.
+CREATE TABLE IF NOT EXISTS lead_activity (
+  id        bigserial   PRIMARY KEY,
+  lead_id   text        NOT NULL,
+  staff_id  text        NOT NULL,
+  at        timestamptz NOT NULL DEFAULT now(),
+  kind      text        NOT NULL CHECK (kind IN ('call', 'whatsapp', 'note', 'status', 'assign')),
+  outcome   text,
+  status    text,
+  note      text        NOT NULL DEFAULT '',
+  next_at   timestamptz
+);
+CREATE INDEX IF NOT EXISTS lead_activity_lead ON lead_activity (lead_id, at);
+CREATE INDEX IF NOT EXISTS lead_activity_staff ON lead_activity (staff_id, at);
