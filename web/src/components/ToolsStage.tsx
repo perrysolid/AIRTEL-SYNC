@@ -69,8 +69,8 @@ export function ToolsStage() {
       <div className="relative mx-auto max-w-6xl px-4 pt-[clamp(5rem,10vw,8rem)] pb-[clamp(6rem,11vw,9rem)]">
         <Reveal className="mx-auto max-w-2xl text-center">
           <div className="text-xs font-bold tracking-[0.16em] text-white/80 uppercase">Beyond the sale</div>
-          <h2 id="tools" className="mt-2 text-[clamp(1.7rem,4vw,2.6rem)] leading-tight font-extrabold tracking-tight text-balance">Tools that keep your business running</h2>
-          <p className="mt-3 text-lg text-white/85">Free to try, no sign-up. They also work as commands in WhatsApp and Telegram.</p>
+          <h2 id="tools" className="mt-2 text-[clamp(1.7rem,4vw,2.6rem)] leading-tight font-extrabold tracking-tight text-balance">Happy Network, Happy Networth</h2>
+          <p className="mt-3 text-lg text-white/85">Tools that keep your business running</p>
         </Reveal>
 
         <div className="mt-12 grid items-center gap-10 lg:grid-cols-[1fr_auto_1fr] lg:gap-6">

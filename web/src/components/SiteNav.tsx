@@ -108,7 +108,7 @@ export function SiteNav() {
 
 const FOOTER_COLUMNS: [string, [string, string][]][] = [
   ["Explore", [["Solutions", "/solutions"], ["Products", "/products"], ["How it works", "/how-it-works"], ["Talk to the advisor", "/advisor"]]],
-  ["Tools", [["Scam Shield", "/shield"], ["Network check", "/network"], ["WhatsApp chat", "/whatsapp"], ["Track an order", "/#track"]]],
+  ["Tools", [["Scam Shield", "/shield"], ["Network check", "/network"], ["WhatsApp chat", "/whatsapp"], ["My plan & order status", "/track"]]],
   ["Support", [["Help centre", "/help"], ["Install slots", "/help"], ["Privacy & security", "/privacy"], ["Partner console", "/console"]]],
 ];
 

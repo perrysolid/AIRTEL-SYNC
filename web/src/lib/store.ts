@@ -48,6 +48,8 @@ export interface AdvisorSession {
   guidedStep?: string;
   status: "open" | "quoted" | "ordered" | "handoff";
   handoff?: { reason: string; at: string; summary: string; partner?: string };
+  /** "Request a call" from the website: where and when to call. Shown masked in the console. */
+  callback?: { phone: string; name?: string; when: string; at: string };
   orderId?: string;
   /** SHA-256 of the WhatsApp sender, to continue a chat without storing the number. */
   contactHash?: string;

@@ -3,21 +3,20 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { CheckCheck, MessageCircle, Mic, MessageSquareText, Search, Send } from "lucide-react";
+import { ArrowRight, CheckCheck, LayoutGrid, MessageCircle, Mic, MessageSquareText, PackageSearch, Send } from "lucide-react";
 import { Bazaar3D, BAZAAR_STEPS } from "@/components/bazaar/Bazaar3D";
 import { Logo, LogoMark } from "@/components/Brand";
 import { HeroMenu } from "@/components/HeroMenu";
 import { NetworkBackdrop } from "@/components/NetworkBackdrop";
 import { Reveal } from "@/components/Reveal";
-import { NewsFlashes } from "@/components/NewsFlashes";
-import { PlanDock } from "@/components/PlanDock";
+import { CuratedPlans } from "@/components/CuratedPlans";
+import { RequestCall } from "@/components/RequestCall";
 import { QuickStart } from "@/components/QuickStart";
 import { StepsCarousel } from "@/components/StepsCarousel";
 import { ToolsStage } from "@/components/ToolsStage";
 import { PhoneMock } from "@/components/PhoneMock";
 import { PromoBar, SiteFooter } from "@/components/SiteNav";
 import { AccountButton, WelcomeBack } from "@/components/Account";
-import { TelegramLogo, WhatsAppLogo } from "@/components/BrandIcons";
 import { LangPicker } from "@/components/LangPicker";
 
 const GREETING: Record<string, { line: string; sub: string; talk: string; type: string; chat: string }> = {
@@ -162,7 +161,6 @@ function MiniChat() {
 
 export default function Home() {
   const [lang, setLang] = useState("en");
-  const [orderId, setOrderId] = useState("");
   const router = useRouter();
   const g = GREETING[lang] ?? GREETING.en;
   const [shop, setShop] = useState(-1);
@@ -181,7 +179,12 @@ export default function Home() {
 
             {/* the two corners: brand on the left, menu on the right, on the same baseline and the same inset */}
             <header className="flex h-[4.5rem] w-full items-center justify-between px-[clamp(1rem,3vw,2.75rem)]">
-              <Logo onDark />
+              <div className="flex items-center gap-3 sm:gap-4">
+                <Logo onDark />
+                <Link href="/track" className="inline-flex h-9 items-center gap-1.5 rounded-full border border-white/30 bg-white/10 px-4 text-sm font-bold text-white backdrop-blur transition-colors hover:bg-white/20">
+                  <PackageSearch size={16} /> Track
+                </Link>
+              </div>
               <div className="flex items-center gap-2">
                 <LangPicker lang={lang} onLang={setLang} onDark />
                 <AccountButton onDark />
@@ -198,27 +201,6 @@ export default function Home() {
               <p lang={lang} className="rise mt-[clamp(0.6rem,1.6dvh,1rem)] max-w-[34rem] text-[clamp(0.9rem,1.9dvh,1.05rem)] leading-snug text-white/80 [text-shadow:0_1px_18px_rgb(0_0_0/0.7)]" style={{ ["--i" as string]: 2 }}>
                 {g.sub}
               </p>
-              <div className="rise mt-[clamp(1rem,2.6dvh,1.6rem)] flex flex-wrap items-center justify-center gap-3" style={{ ["--i" as string]: 3 }}>
-                <button
-                  onClick={() => router.push(`/advisor?lang=${lang}&voice=1`)}
-                  className="group inline-flex items-center gap-2.5 rounded-full bg-brand py-1.5 pr-5 pl-1.5 text-[15px] font-extrabold text-white shadow-[0_14px_32px_-12px_var(--brand)] transition-transform hover:-translate-y-0.5 active:scale-[0.97]"
-                >
-                  <span className="grid h-9 w-9 place-items-center rounded-full bg-white text-brand transition-transform group-hover:scale-105"><Mic size={18} strokeWidth={2.4} /></span>
-                  <span lang={lang}>{g.talk}</span>
-                </button>
-                <Link href={`/advisor?lang=${lang}`} lang={lang} className="inline-flex h-[2.9rem] items-center gap-2 rounded-full border border-white/30 bg-white/10 px-5 text-[15px] font-semibold text-white backdrop-blur transition-transform hover:-translate-y-0.5 hover:bg-white/20">
-                  <MessageSquareText size={17} /> {g.type}
-                </Link>
-              </div>
-              <div className="rise mt-3 flex flex-wrap items-center justify-center gap-2 text-sm" style={{ ["--i" as string]: 4 }}>
-                <span lang={lang} className="text-white/65">{g.chat}</span>
-                <Link href={`/whatsapp?lang=${lang}`} className="inline-flex h-9 items-center gap-2 rounded-full bg-white py-1 pr-3.5 pl-1.5 font-bold text-[#0b3d2e] shadow-[0_8px_24px_-12px_rgb(0_0_0/0.6)] transition-transform hover:-translate-y-0.5">
-                  <WhatsAppLogo className="h-6 w-6" /> WhatsApp
-                </Link>
-                <a href={`https://t.me/${TELEGRAM}`} target="_blank" rel="noreferrer" className="inline-flex h-9 items-center gap-2 rounded-full bg-white py-1 pr-3.5 pl-1.5 font-bold text-[#0b3550] shadow-[0_8px_24px_-12px_rgb(0_0_0/0.6)] transition-transform hover:-translate-y-0.5">
-                  <TelegramLogo className="h-6 w-6" /> Telegram
-                </a>
-              </div>
             </div>
 
             {/* ------------------------------------------- the stage: a low white arc, three phones standing on it, sized from one number */}
@@ -271,7 +253,7 @@ export default function Home() {
                 <Reveal>
                   <span aria-hidden className="mb-3 block h-1 w-12 rounded-full bg-brand" />
                   <h2 id="alive" className="text-[clamp(1.9rem,4.4vw,3rem)] leading-[1.08] font-extrabold tracking-tight text-balance">
-                    One connection. <span className="sweep">Every shop</span> on the street.
+                    One connection, <span className="sweep">one stop</span>.
                   </h2>
                 </Reveal>
                 <Reveal delay={120}>
@@ -297,20 +279,14 @@ export default function Home() {
                   <QuickStart lang={lang} />
                 </Reveal>
                 <Reveal delay={360}>
-                  <form
-                    id="track"
-                    className="card mt-6 max-w-lg scroll-mt-24 p-4"
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      if (orderId.trim()) router.push(`/order/${orderId.trim().toUpperCase()}`);
-                    }}
-                  >
-                    <label htmlFor="track-id" className="text-sm font-semibold">Already ordered? Check your status</label>
-                    <div className="mt-2 flex gap-2">
-                      <input id="track-id" value={orderId} onChange={(e) => setOrderId(e.target.value)} placeholder="Order ID, e.g. ACC-3F9A2C71D0" className="min-w-0 flex-1 rounded-xl border border-rule bg-paper px-3 py-2.5 uppercase placeholder:normal-case" />
-                      <button className="inline-flex items-center gap-1.5 rounded-xl bg-brand px-4 py-2 font-semibold text-white"><Search size={16} /> Track</button>
-                    </div>
-                  </form>
+                  <Link href="/products" className="card group mt-6 flex max-w-lg items-center gap-4 p-4 transition-transform hover:-translate-y-0.5">
+                    <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-brand-soft text-brand"><LayoutGrid size={22} /></span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-extrabold">Explore everything we offer</span>
+                      <span className="block text-sm text-ink-soft">All 25 products: internet, SIMs, billing, security, CCTV and more, with prices.</span>
+                    </span>
+                    <ArrowRight size={20} className="shrink-0 text-brand transition-transform group-hover:translate-x-1" />
+                  </Link>
                 </Reveal>
               </div>
               <Reveal delay={200} className="relative h-[300px] sm:h-[380px] lg:h-[480px]">
@@ -326,6 +302,8 @@ export default function Home() {
             </div>
           </section>
       </div>
+
+      <CuratedPlans lang={lang} />
 
       <ToolsStage />
 
@@ -346,9 +324,7 @@ export default function Home() {
         </div>
       </section>
 
-      <NewsFlashes />
-
-      <PlanDock lang={lang} />
+      <RequestCall lang={lang} />
 
       <SiteFooter />
     </div>

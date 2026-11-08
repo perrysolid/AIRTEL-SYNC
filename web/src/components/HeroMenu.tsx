@@ -11,7 +11,7 @@ const LINKS: [string, string][] = [
   ["How it works", "/how-it-works"],
   ["Scam Shield", "/shield"],
   ["Network check", "/network"],
-  ["Track your order", "/#track"],
+  ["My plan & order status", "/track"],
   ["Help", "/help"],
   ["Partner console", "/console"],
 ];
