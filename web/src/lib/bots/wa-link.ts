@@ -7,9 +7,10 @@ import { asPlainText, type BotMessage } from "./types";
 
 /**
  * WhatsApp on an ordinary number, no Meta Business account: the backend links to the number as a linked device
- * (like WhatsApp Web) and answers everyone who writes, and order updates go out the same way. An admin links it once
- * from the staff portal with a pairing code; the login is kept in Postgres (or STORE_DIR) so restarts reconnect on
- * their own. On with WA_LINK=on. Unofficial client: WhatsApp can restrict numbers that run bots.
+ * (like WhatsApp Web) and answers everyone who writes, and order updates go out the same way. Set WA_LINK=on and
+ * WA_LINK_NUMBER=91XXXXXXXXXX; until the number is linked, the server log prints a pairing code to type on the phone
+ * (WhatsApp → Linked devices → Link with phone number instead). The login is kept in Postgres (or STORE_DIR), so
+ * restarts reconnect on their own. Unofficial client: WhatsApp can restrict numbers that run bots.
  */
 
 type Baileys = typeof import("@whiskeysockets/baileys");
@@ -18,18 +19,21 @@ type Socket = ReturnType<Baileys["default"]>;
 export interface LinkStatus {
   state: "off" | "starting" | "waiting" | "pairing" | "open" | "logged_out";
   number?: string;
-  code?: string;
   since: string;
   error?: string;
 }
 
-const g = globalThis as unknown as { __waLink?: { sock?: Socket; status: LinkStatus; pairNumber?: string; stopped?: boolean } };
+const g = globalThis as unknown as { __waLink?: { sock?: Socket; status: LinkStatus; stopped?: boolean } };
 const link = (g.__waLink ??= { status: { state: "off", since: new Date().toISOString() } });
 const set = (s: Partial<LinkStatus> & Pick<LinkStatus, "state">) => (link.status = { ...link.status, error: undefined, ...s, since: new Date().toISOString() });
 
 export const waLinkEnabled = () => process.env.WA_LINK === "on";
 export const waLinkReady = () => link.status.state === "open" && !!link.sock;
 export const waLinkStatus = () => link.status;
+const pairNumber = () => {
+  const d = (process.env.WA_LINK_NUMBER ?? "").replace(/\D/g, "");
+  return d.length === 10 ? `91${d}` : d || undefined;
+};
 
 // --- Login storage: one row per key, the same layout as Baileys' multi-file store.
 const DIR = path.join(process.env.STORE_DIR || path.join(process.cwd(), ".data"), "wa-auth");
@@ -107,30 +111,36 @@ export async function startWaLink() {
   let asked = false;
   sock.ev.on("connection.update", async ({ connection, lastDisconnect, qr }) => {
     if (qr && !state.creds.registered) {
-      if (link.pairNumber && !asked) {
+      const number = pairNumber();
+      if (number && !asked) {
         asked = true;
         try {
-          const code = await sock.requestPairingCode(link.pairNumber);
-          set({ state: "pairing", number: link.pairNumber, code });
-          console.log(`[wa-link] pairing code ready for ${link.pairNumber.slice(0, 4)}••••`);
+          const code = (await sock.requestPairingCode(number)).match(/.{1,4}/g)!.join("-");
+          set({ state: "pairing", number });
+          // The code is only useful to whoever holds the phone; it expires after a few minutes and a new one follows.
+          console.log(`[wa-link] PAIRING CODE ${code}  →  on the phone: WhatsApp → Settings → Linked devices → Link a device → Link with phone number instead`);
         } catch (err) {
           set({ state: "waiting", error: `Could not get a pairing code: ${(err as Error).message}` });
+          console.warn(`[wa-link] ${link.status.error}`);
         }
-      } else if (!link.pairNumber && link.status.state !== "pairing") set({ state: "waiting" });
+      } else if (!number) {
+        set({ state: "waiting" });
+        if (!asked) console.warn("[wa-link] not linked: set WA_LINK_NUMBER to the WhatsApp number (with 91) to get a pairing code in this log");
+        asked = true;
+      }
     }
     if (connection === "open") {
-      link.pairNumber = undefined;
-      set({ state: "open", number: sock.user?.id?.split(":")[0], code: undefined });
+      set({ state: "open", number: sock.user?.id?.split(":")[0] });
       console.log(`[wa-link] linked as ${link.status.number?.slice(0, 4)}••••, answering every message`);
     }
     if (connection === "close") {
-      if (link.sock !== sock) return; // a newer socket took over
+      if (link.sock !== sock) return;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const code = (lastDisconnect?.error as any)?.output?.statusCode;
       if (code === b.DisconnectReason.loggedOut) {
         await kv.clear();
-        set({ state: "logged_out", number: undefined, code: undefined });
-        console.warn("[wa-link] logged out from the phone; link again from the staff portal");
+        set({ state: "logged_out", number: undefined });
+        console.warn("[wa-link] logged out from the phone; a new pairing code follows");
         setTimeout(() => void startWaLink(), 2_000);
         return;
       }
@@ -141,7 +151,9 @@ export async function startWaLink() {
         set({ state: "off" });
         return;
       }
-      console.warn(`[wa-link] connection closed (${code ?? "network"}), reconnecting`);
+      // An unanswered pairing code expires with the connection; start the next one from a clean login.
+      if (!state.creds.registered) await kv.clear();
+      else console.warn(`[wa-link] connection closed (${code ?? "network"}), reconnecting`);
       setTimeout(() => void startWaLink(), code === b.DisconnectReason.restartRequired ? 0 : 3_000);
     }
   });
@@ -199,33 +211,4 @@ export async function sendLinked(to: string, msg: BotMessage) {
   if (!waLinkReady()) throw new Error("WhatsApp link is not connected");
   const phone = to.replace(/\D/g, "");
   await sendTo(link.sock!, `${phone.length === 10 ? `91${phone}` : phone}@s.whatsapp.net`, msg);
-}
-
-/** Admin: link a number (returns once the pairing code is ready) or start over. */
-export async function pairWaLink(number: string): Promise<LinkStatus> {
-  const digits = number.replace(/\D/g, "");
-  link.pairNumber = digits.length === 10 ? `91${digits}` : digits;
-  link.stopped = false;
-  await resetSocket(false);
-  for (let i = 0; i < 40 && link.status.state !== "pairing" && link.status.state !== "open" && !link.status.error; i++) await new Promise((r) => setTimeout(r, 500));
-  return link.status;
-}
-
-export async function unlinkWaLink() {
-  try {
-    await link.sock?.logout();
-  } catch {
-    // Not linked: nothing to log out.
-  }
-  await resetSocket(true);
-  return link.status;
-}
-
-async function resetSocket(clearLogin: boolean) {
-  const old = link.sock;
-  link.sock = undefined;
-  old?.end(undefined);
-  // A fresh pairing starts from a fresh login.
-  if (clearLogin || link.pairNumber) await kv.clear();
-  await startWaLink();
 }
