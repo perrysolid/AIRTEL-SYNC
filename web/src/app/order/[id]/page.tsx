@@ -24,8 +24,16 @@ export default function OrderPage() {
     else setOrder(j);
   }, [id]);
 
+  // Stay current without a reload: coming back from WhatsApp, or a step moved on by our team.
   useEffect(() => {
     void refresh();
+    const onShow = () => document.visibilityState === "visible" && void refresh();
+    const t = setInterval(onShow, 15_000);
+    document.addEventListener("visibilitychange", onShow);
+    return () => {
+      clearInterval(t);
+      document.removeEventListener("visibilitychange", onShow);
+    };
   }, [refresh]);
 
   if (error) return <main className="mx-auto max-w-xl px-4 py-16 text-center text-lg">{error}. Check the order ID in your WhatsApp message.</main>;
@@ -60,6 +68,7 @@ export default function OrderPage() {
             );
           })}
         </ol>
+        <WhatsAppLink order={order} />
 
         <div className="mt-6">
           {stage === "consent" && <ConsentStep orderId={order.id} onDone={refresh} />}
@@ -69,7 +78,6 @@ export default function OrderPage() {
           {stage === "track" && <Tracker order={order} onUpdate={setOrder} />}
         </div>
 
-        <WhatsAppLink order={order} />
       </main>
     </div>
   );

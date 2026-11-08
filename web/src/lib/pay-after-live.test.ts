@@ -43,3 +43,16 @@ describe("pay after installation", () => {
     expect(store.getOrder(o.id)!.payment).toBeDefined();
   });
 });
+
+describe("say hi on WhatsApp", () => {
+  it("links the order when the hi comes from the order's number, and not from anyone else", async () => {
+    const { botTurn } = await import("./bots/core");
+    const o = signedReadyOrder();
+    const stranger = await botTurn({ chat: { channel: "whatsapp", chatId: "919999999999" }, text: `Hi! Please send me updates for my order ${o.id}` });
+    expect(store.getOrder(o.id)!.botChat).toBeUndefined();
+    expect(stranger[0].text).toContain("couldn't find an order");
+    const owner = await botTurn({ chat: { channel: "whatsapp", chatId: "919876543210" }, text: `Hi! Please send me updates for my order ${o.id}` });
+    expect(store.getOrder(o.id)!.botChat).toEqual({ channel: "whatsapp", chatId: "919876543210" });
+    expect(owner[0].text).toContain("You'll get every update");
+  });
+});

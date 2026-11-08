@@ -49,6 +49,8 @@ export function publicOrder(o: Order) {
     liveDay: liveDay(o.timeline),
     steps,
     notifications: o.notifications,
+    /** Updates reach the owner on WhatsApp (they said hi, or ordered there). */
+    whatsappLinked: o.botChat?.channel === "whatsapp",
     pincode: o.pincode,
     slot: o.slot,
     reschedules: o.reschedules ?? 0,

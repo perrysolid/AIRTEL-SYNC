@@ -92,9 +92,10 @@ export async function botTurn(input: BotInput): Promise<BotMessage[]> {
   let s = currentSession(input.chat);
 
   if (["help", "menu"].includes(cmd)) return [HELP];
-  if (["status", "track", "स्टेटस"].includes(cmd)) {
+  // "Hi! Send me updates for ACC-…" (the website's Say hi button) or STATUS: link the order and show where it stands.
+  const named = raw.match(/ACC-[A-Z0-9]{6,}/i)?.[0].toUpperCase();
+  if (named || ["status", "track", "स्टेटस"].includes(cmd)) {
     const phone = input.phone ?? (input.chat.channel === "whatsapp" ? input.chat.chatId : undefined);
-    const named = raw.match(/ACC-[A-Z0-9]{6,}/i)?.[0].toUpperCase();
     const o = (named && store.getOrder(named)) || latestOrder(input.chat, phone);
     // An owner writing from the number on the order links it to this chat, so every update after this comes here.
     // Anyone else only gets the generic reply: an order ID alone never reveals someone's order.
@@ -103,6 +104,8 @@ export async function botTurn(input: BotInput): Promise<BotMessage[]> {
       o.botChat = input.chat;
       store.saveOrder(o);
       store.audit("owner", "order:link-chat", o.id, input.chat.channel);
+      const status = statusMessage(o);
+      return [{ ...status, text: `👋 Done! You'll get every update for **${o.id}** right here: technician, installation, go-live and your bill. No need to call.\n\n${status.text}` }];
     }
     if (o && !own) return [{ text: "📭 I couldn't find an order for this number. Send STATUS from the mobile number you ordered with." }];
     return [o ? statusMessage(o) : { text: "📭 No order yet. Tell me about your business and I'll find the right plan in a minute." }];
