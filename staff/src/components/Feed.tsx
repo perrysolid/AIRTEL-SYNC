@@ -1,14 +1,14 @@
 import Link from "next/link";
-import { BadgeCheck, CircleDollarSign, ClipboardList, FileSignature, Hand, Megaphone, MessageCircle, PhoneCall, Rocket, ShoppingBag, StickyNote, UserRoundCog } from "lucide-react";
+import { BadgeCheck, CircleDollarSign, ClipboardList, FileSignature, FileText, Hand, Megaphone, MessageCircle, PhoneCall, Rocket, ShoppingBag, StickyNote, UserRoundCog } from "lucide-react";
 import { ago } from "@/lib/api";
 import type { FeedEvent } from "@/lib/types";
 
 const ICON: Record<FeedEvent["kind"], typeof PhoneCall> = {
   call: PhoneCall, whatsapp: MessageCircle, note: StickyNote, status: ClipboardList, assign: UserRoundCog,
   order: ShoppingBag, verified: BadgeCheck, signed: FileSignature, live: Rocket, paid: CircleDollarSign,
-  message: Megaphone, handoff: Hand, quoted: ClipboardList,
+  message: Megaphone, handoff: Hand, quoted: ClipboardList, report: FileText,
 };
-const TONE: Partial<Record<FeedEvent["kind"], string>> = { handoff: "bg-brand text-white", order: "bg-ok text-white", live: "bg-ok text-white", paid: "bg-ok text-white" };
+const TONE: Partial<Record<FeedEvent["kind"], string>> = { report: "bg-ink text-white", handoff: "bg-brand text-white", order: "bg-ok text-white", live: "bg-ok text-white", paid: "bg-ok text-white" };
 
 /** The team timeline: who did what, newest first. */
 export function Feed({ events }: { events: FeedEvent[] }) {

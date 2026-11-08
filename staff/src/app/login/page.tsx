@@ -6,11 +6,11 @@ import { Loader2 } from "lucide-react";
 import { send } from "@/lib/api";
 import { Mark } from "@/components/ui";
 
-// Demo accounts on the backend (synthetic data). The password is the demo one unless STAFF_DEMO_PASSWORD is set there.
+// The team's accounts on the backend. The password is the demo one unless STAFF_DEMO_PASSWORD is set there.
 const DEMO = [
+  { label: "Area salesman", email: "salesman@accel.demo" },
+  { label: "Supervisor", email: "supervisor@accel.demo" },
   { label: "Manager", email: "manager@accel.demo" },
-  { label: "Field sales, North", email: "priya@accel.demo" },
-  { label: "Channel partner", email: "metro@partner.demo" },
 ];
 const DEMO_PASSWORD = process.env.NEXT_PUBLIC_STAFF_DEMO_PASSWORD ?? "Accel@2026";
 
@@ -40,7 +40,7 @@ function Login() {
           <span className="text-xl font-extrabold"><span className="text-brand">accel</span> <span className="font-medium text-ink-soft">business</span></span>
         </div>
         <h1 className="mt-8 text-3xl font-extrabold tracking-tight">Staff sign in</h1>
-        <p className="mt-1 text-ink-soft">For Accel sales teams and channel partners.</p>
+        <p className="mt-1 text-ink-soft">For the area salesman, the supervisor and the manager.</p>
         <form
           className="mt-6 grid gap-3"
           onSubmit={(e) => {
@@ -56,7 +56,7 @@ function Login() {
           </button>
         </form>
         <div className="mt-8">
-          <div className="text-sm font-semibold text-ink-soft">Try a demo account</div>
+          <div className="text-sm font-semibold text-ink-soft">Sign in as</div>
           <div className="mt-2 grid gap-2">
             {DEMO.map((d) => (
               <button key={d.email} disabled={busy} onClick={() => void signIn(d.email, DEMO_PASSWORD)} className="flex items-center justify-between rounded-2xl border border-rule bg-sheet px-4 py-3 text-left hover:border-ink/25 disabled:opacity-50">

@@ -1,14 +1,15 @@
 import { z } from "zod";
-import { activityFor, CALL_OUTCOMES, canSee, demoPhone, leadViews, listStaff, logActivity, outreachFor, STATUSES, type LeadStatus } from "@/lib/crm";
+import { activityFor, CALL_OUTCOMES, canSee, leadPhone, leadViews, listStaff, logActivity, outreachFor, STATUSES, type LeadStatus } from "@/lib/crm";
 import { leadRow, staffOr401 } from "@/lib/staff-api";
 import { chatSummary } from "@/lib/chat-summary";
 import { store } from "@/lib/store";
+import { product } from "@/lib/catalogue";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-async function load(id: string) {
-  const a = await staffOr401();
+async function load(id: string, roles?: Parameters<typeof staffOr401>[0]) {
+  const a = await staffOr401(roles);
   if ("res" in a) return a;
   const lead = (await leadViews()).get(id);
   if (!lead || !canSee(a.staff, lead)) return { res: Response.json({ error: "This lead isn't in your book." }, { status: 404 }) };
@@ -24,7 +25,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const r = l.lead.row;
   return Response.json({
     ...leadRow(l.lead, names),
-    phone: demoPhone(l.lead.id),
+    phone: leadPhone(l.lead),
     contact: r.contact_name,
     contactRole: r.contact_role,
     employees: Number(r.employee_count),
@@ -35,13 +36,13 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     internetToday: r.current_internet,
     providerToday: r.current_provider,
     spendToday: Number(r.monthly_telecom_spend_inr || 0),
-    interests: r.products_of_interest.split(";").filter(Boolean),
+    interests: r.products_of_interest.split(";").filter(Boolean).map((id) => { try { return product(id).name; } catch { return id; } }),
     chats: await Promise.all(
-      store.listSessions().filter((s) => s.leadId === l.lead.id).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 3).map(async (s) => ({ id: s.id, at: s.updatedAt, channel: s.channel, summary: await chatSummary(s) })),
+      l.lead.sessionIds.map((id) => store.getSession(id)).filter((s) => !!s).sort((a, b) => b!.updatedAt.localeCompare(a!.updatedAt)).slice(0, 3).map(async (s) => ({ id: s.id, at: s.updatedAt, channel: s.channel, summary: await chatSummary(s) })),
     ),
     activity: (await activityFor(l.lead.id)).map((x) => ({ ...x, staffName: names.get(x.staffId) ?? x.staffId })),
     outreach: outreachFor(r),
-    assignable: l.staff.role === "admin" ? staff.filter((s) => s.role !== "admin").map((s) => ({ id: s.id, name: s.name, role: s.role, region: s.region })) : [],
+    assignable: l.staff.role === "admin" || l.staff.role === "supervisor" ? staff.filter((s) => s.role !== "admin").map((s) => ({ id: s.id, name: s.name, role: s.role, region: s.region })) : [],
   });
 }
 
@@ -55,7 +56,8 @@ const Touch = z.object({
 
 /** Log a call, a WhatsApp sent, or a note, with an optional new status and follow-up time. */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const l = await load((await params).id);
+  // The manager reads; the area salesman and the supervisor do the calling.
+  const l = await load((await params).id, ["sales", "supervisor"]);
   if ("res" in l) return l.res;
   const t = Touch.safeParse(await req.json().catch(() => ({})));
   if (!t.success) return Response.json({ error: "Check the form." }, { status: 400 });

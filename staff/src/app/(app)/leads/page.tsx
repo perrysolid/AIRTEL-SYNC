@@ -30,7 +30,7 @@ export default function Leads() {
   const chip = (on: boolean) => `whitespace-nowrap rounded-full border px-3 py-1.5 text-sm font-semibold ${on ? "border-ink bg-ink text-white" : "border-rule bg-sheet text-ink-soft hover:text-ink"}`;
   return (
     <>
-      <PageHead title={me.role === "admin" ? "All leads" : "My leads"} sub={data ? `${data.total.toLocaleString("en-IN")} leads, best chance to activate first` : undefined} />
+      <PageHead title={me.role === "sales" ? "My leads" : "All leads"} sub={data ? `${data.total.toLocaleString("en-IN")} leads, best chance to activate first` : undefined} />
       <label className="relative block">
         <span className="sr-only">Search leads</span>
         <Search size={18} className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-ink-soft" />
@@ -42,7 +42,7 @@ export default function Leads() {
         {(["hot", "warm", "cold"] as const).map((b) => <button key={b} onClick={() => setBand(band === b ? "" : b)} className={chip(band === b)}>{b[0].toUpperCase() + b.slice(1)}</button>)}
       </div>
       <div className="mt-4">
-        {!data ? <Loading /> : data.leads.length ? <div className="grid gap-2">{data.leads.map((l) => <LeadCard key={l.id} l={l} showOwner={me.role === "admin"} />)}</div> : <Empty>No leads match. Try another filter.</Empty>}
+        {!data ? <Loading /> : data.leads.length ? <div className="grid gap-2">{data.leads.map((l) => <LeadCard key={l.id} l={l} showOwner={me.role !== "sales"} />)}</div> : <Empty>No leads match. Try another filter.</Empty>}
       </div>
     </>
   );

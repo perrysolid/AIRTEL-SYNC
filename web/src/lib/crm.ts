@@ -1,10 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
-import { scoreLead, type Score } from "./analytics";
+import type { Score } from "./analytics";
 import { hashPassword, type Role } from "./auth";
-import { datasets, type LeadRow } from "./data";
+import type { LeadRow } from "./data";
+import { langName } from "./advisor-types";
+import type { Profile } from "./profile";
+import { allLive } from "./tracker";
 import { dbEnabled, pool } from "./db";
-import { store } from "./store";
+import { store, type AdvisorSession, type Order } from "./store";
 import { botLinks, winbackMessage } from "./winback";
 
 /**
@@ -24,7 +27,7 @@ export interface Staff {
 }
 
 export type Region = "North" | "West" | "South" | "East";
-export type ActivityKind = "call" | "whatsapp" | "note" | "status" | "assign";
+export type ActivityKind = "call" | "whatsapp" | "note" | "status" | "assign" | "report";
 export interface Activity {
   id: number;
   leadId: string;
@@ -60,18 +63,17 @@ const REGION_OF_STATE: Record<string, Region> = {
 };
 export const regionOf = (state: string): Region => REGION_OF_STATE[state] ?? "West";
 
-/** Demo team. Password comes from STAFF_DEMO_PASSWORD (see README); change it before real use. */
+/**
+ * The team: an area salesman who works the leads and installations, a supervisor who also calls, moves leads and
+ * sends the day's report, and the manager who reads it. Password from STAFF_DEMO_PASSWORD (see README).
+ */
 const DEMO_STAFF: Omit<Staff, "passwordHash">[] = [
   { id: "st_manager", email: "manager@accel.demo", name: "Kavita Rao", role: "admin" },
-  { id: "st_priya", email: "priya@accel.demo", name: "Priya Malhotra", role: "sales", region: "North" },
-  { id: "st_rahul", email: "rahul@accel.demo", name: "Rahul Deshmukh", role: "sales", region: "West" },
-  { id: "st_arjun", email: "arjun@accel.demo", name: "Arjun Nair", role: "sales", region: "South" },
-  { id: "st_ananya", email: "ananya@accel.demo", name: "Ananya Sen", role: "sales", region: "East" },
-  { id: "pt_metro", email: "metro@partner.demo", name: "Metro Mobiles (Delhi)", role: "partner", region: "North", partnerCode: "PTN-METRO" },
-  { id: "pt_shree", email: "shree@partner.demo", name: "Shree Telecom (Pune)", role: "partner", region: "West", partnerCode: "PTN-SHREE" },
-  { id: "pt_sai", email: "sai@partner.demo", name: "Sai Digital (Chennai)", role: "partner", region: "South", partnerCode: "PTN-SAI" },
-  { id: "pt_eastern", email: "eastern@partner.demo", name: "Eastern Connect (Kolkata)", role: "partner", region: "East", partnerCode: "PTN-EAST" },
+  { id: "st_supervisor", email: "supervisor@accel.demo", name: "Priya Malhotra", role: "supervisor" },
+  { id: "st_salesman", email: "salesman@accel.demo", name: "Rahul Deshmukh", role: "sales", region: "West" },
 ];
+/** New registrations land with the area salesman. */
+export const AREA_SALESMAN = "st_salesman";
 export const demoPassword = () => process.env.STAFF_DEMO_PASSWORD || "Accel@2026";
 
 interface Crm {
@@ -81,41 +83,6 @@ interface Crm {
 const FILE = path.join(process.env.STORE_DIR || path.join(process.cwd(), ".data"), "crm.json");
 const g = globalThis as unknown as { __accelCrm?: Promise<Crm> };
 
-/**
- * Two weeks of sample call history so a fresh demo has something on its
- * charts. Deterministic (seeded), marked "Sample activity" in the note.
- */
-function sampleActivity(now = new Date()): Omit<Activity, "id">[] {
-  let seed = 20260715;
-  const rnd = () => ((seed = (seed * 1103515245 + 12345) % 2 ** 31) / 2 ** 31);
-  const book = [...leadBook().values()].filter((l) => l.defaultStatus === "to_call").sort((a, b) => b.score.probability - a.score.probability);
-  const byOwner = new Map<string, LeadBase[]>();
-  for (const l of book) byOwner.set(l.defaultOwner, [...(byOwner.get(l.defaultOwner) ?? []), l]);
-  const out: Omit<Activity, "id">[] = [];
-  for (let d = 13; d >= 0; d--) {
-    const day = new Date(now.getFullYear(), now.getMonth(), now.getDate() - d);
-    if (day.getDay() === 0) continue;
-    for (const [owner, leads] of byOwner) {
-      const n = Math.round((owner.startsWith("pt_") ? 3 : 7) * (0.6 + rnd() * 0.8));
-      for (let k = 0; k < n; k++) {
-        const lead = leads.shift();
-        if (!lead) break;
-        const r = rnd();
-        const outcome = r < 0.42 ? "Connected" : r < 0.7 ? "No answer" : r < 0.82 ? "Busy, call back" : r < 0.88 ? "Wrong number" : "Not interested";
-        const won = outcome === "Connected" && rnd() < 0.18 + lead.score.probability;
-        const status: LeadStatus = won ? (rnd() < 0.4 ? "won" : "quote_sent") : outcome === "Connected" ? (rnd() < 0.5 ? "interested" : "contacted") : outcome === "Not interested" ? "lost" : outcome === "Wrong number" ? "dnc" : "contacted";
-        const at = new Date(day.getTime() + (10 + rnd() * 8) * 3_600_000);
-        if (at > now) continue;
-        // Promised call-backs land between yesterday and five days out, so "due today" is a realistic handful.
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const follow = OPEN_STATUSES.includes(status) && rnd() < 0.55 ? new Date(today.getTime() + (Math.floor(rnd() * 7) - 1) * 86_400_000 + (10 + Math.floor(rnd() * 8)) * 3_600_000).toISOString() : undefined;
-        out.push({ leadId: lead.id, staffId: owner, at: at.toISOString(), kind: "call", outcome, status, note: "Sample activity", nextAt: follow });
-      }
-    }
-  }
-  return out.sort((a, b) => a.at.localeCompare(b.at));
-}
-
 function seedStaff(): Staff[] {
   const pw = demoPassword();
   return DEMO_STAFF.map((s) => ({ ...s, passwordHash: hashPassword(pw) }));
@@ -124,22 +91,23 @@ function seedStaff(): Staff[] {
 async function loadCrm(): Promise<Crm> {
   if (dbEnabled()) {
     const db = pool();
-    let { rows: staff } = await db.query("SELECT id, email, name, role, region, partner_code, password_hash FROM staff ORDER BY created_at, id");
-    if (!staff.length) {
-      const seed = seedStaff();
-      await db.query(
-        `INSERT INTO staff (id, email, name, role, region, partner_code, password_hash)
-         SELECT * FROM unnest($1::text[], $2::text[], $3::text[], $4::text[], $5::text[], $6::text[], $7::text[]) ON CONFLICT DO NOTHING`,
-        [seed.map((s) => s.id), seed.map((s) => s.email), seed.map((s) => s.name), seed.map((s) => s.role), seed.map((s) => s.region ?? null), seed.map((s) => s.partnerCode ?? null), seed.map((s) => s.passwordHash)],
-      );
-      ({ rows: staff } = await db.query("SELECT id, email, name, role, region, partner_code, password_hash FROM staff ORDER BY created_at, id"));
-      const sample = sampleActivity();
-      await db.query(
-        `INSERT INTO lead_activity (lead_id, staff_id, at, kind, outcome, status, note, next_at)
-         SELECT * FROM unnest($1::text[], $2::text[], $3::timestamptz[], $4::text[], $5::text[], $6::text[], $7::text[], $8::timestamptz[])`,
-        [sample.map((a) => a.leadId), sample.map((a) => a.staffId), sample.map((a) => a.at), sample.map((a) => a.kind), sample.map((a) => a.outcome ?? null), sample.map((a) => a.status ?? null), sample.map((a) => a.note), sample.map((a) => a.nextAt ?? null)],
-      );
-    }
+    // Bring an older database up to date: the supervisor role and reports, no sample calls, only today's team.
+    await db.query(`
+      ALTER TABLE staff DROP CONSTRAINT IF EXISTS staff_role_check;
+      ALTER TABLE staff ADD CONSTRAINT staff_role_check CHECK (role IN ('admin', 'supervisor', 'sales', 'partner'));
+      ALTER TABLE lead_activity DROP CONSTRAINT IF EXISTS lead_activity_kind_check;
+      ALTER TABLE lead_activity ADD CONSTRAINT lead_activity_kind_check CHECK (kind IN ('call', 'whatsapp', 'note', 'status', 'assign', 'report'));
+      DELETE FROM lead_activity WHERE note = 'Sample activity';
+    `);
+    const seed = seedStaff();
+    await db.query("DELETE FROM staff WHERE NOT (id = ANY($1::text[]))", [seed.map((s) => s.id)]);
+    await db.query(
+      `INSERT INTO staff (id, email, name, role, region, partner_code, password_hash)
+       SELECT * FROM unnest($1::text[], $2::text[], $3::text[], $4::text[], $5::text[], $6::text[], $7::text[])
+       ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email, name = EXCLUDED.name, role = EXCLUDED.role, region = EXCLUDED.region, partner_code = EXCLUDED.partner_code`,
+      [seed.map((s) => s.id), seed.map((s) => s.email), seed.map((s) => s.name), seed.map((s) => s.role), seed.map((s) => s.region ?? null), seed.map((s) => s.partnerCode ?? null), seed.map((s) => s.passwordHash)],
+    );
+    const { rows: staff } = await db.query("SELECT id, email, name, role, region, partner_code, password_hash FROM staff ORDER BY created_at, id");
     const { rows: act } = await db.query("SELECT id, lead_id, staff_id, at, kind, outcome, status, note, next_at FROM lead_activity ORDER BY id");
     return {
       staff: staff.map((r) => ({ id: r.id, email: r.email, name: r.name, role: r.role, region: r.region ?? undefined, partnerCode: r.partner_code ?? undefined, passwordHash: r.password_hash })),
@@ -149,13 +117,19 @@ async function loadCrm(): Promise<Crm> {
       })),
     };
   }
+  let crm: Crm;
   try {
-    return JSON.parse(fs.readFileSync(FILE, "utf8")) as Crm;
+    crm = JSON.parse(fs.readFileSync(FILE, "utf8")) as Crm;
   } catch {
-    const crm: Crm = { staff: seedStaff(), activity: sampleActivity().map((a, i) => ({ ...a, id: i + 1 })) };
-    saveFile(crm);
-    return crm;
+    crm = { staff: [], activity: [] };
   }
+  // Same upgrade as the database: today's team, no sample calls.
+  if (DEMO_STAFF.some((d) => !crm.staff.some((s) => s.id === d.id)) || crm.staff.length !== DEMO_STAFF.length) {
+    crm.staff = seedStaff();
+    crm.activity = crm.activity.filter((a) => a.note !== "Sample activity");
+    saveFile(crm);
+  }
+  return crm;
 }
 
 function saveFile(crm: Crm) {
@@ -193,8 +167,6 @@ export async function listStaff() {
 // Lead book
 // ---------------------------------------------------------------------------
 
-const RECOVERABLE = /no time|not scheduled|took too long|too complex|decided to wait|paperwork|signatory|missing|unreachable|slow|complex|price/i;
-
 export interface LeadBase {
   id: string;
   row: LeadRow;
@@ -202,20 +174,124 @@ export interface LeadBase {
   score: Score;
   defaultOwner: string;
   defaultStatus: LeadStatus;
+  /** The number they gave us, 91XXXXXXXXXX. */
+  phone?: string;
+  /** Their advisor conversations, newest first. */
+  sessionIds: string[];
+  orderIds: string[];
 }
 
-let base: Map<string, LeadBase> | undefined;
-/** Scored once per process: 5,000 leads take ~30 ms. */
+const EMPTY_ROW: LeadRow = { lead_id: "", created_date: "", lead_source: "", business_name: "", business_type: "", segment: "", city: "", city_tier: "", state: "", preferred_language: "", employee_count: "", num_sites: "", annual_turnover_band: "", has_gstin: "", gstin: "", has_udyam: "", udyam_number: "", current_internet: "", current_provider: "", monthly_telecom_spend_inr: "", products_of_interest: "", contact_name: "", contact_role: "", stage_reached: "", outcome: "", drop_reason: "", contacted_date: "", needs_assessed_date: "", quote_accepted_date: "", kyc_complete_date: "", activated_date: "", days_lead_to_activation: "", customer_follow_up_calls: "", bundle_products: "", monthly_bundle_value_inr: "", one_time_setup_inr: "", contract_months: "", churned_within_6_months: "", nps_score: "", acquisition_cost_inr: "" };
+
+/** A WhatsApp chat id is the sender's number (91XXXXXXXXXX, maybe with the WhatsApp suffix); anything else isn't. */
+const waNumber = (chatId: string) => /^(91\d{10})(@s\.whatsapp\.net)?$/.exec(chatId)?.[1];
+const digits10 = (p: string) => p.replace(/\D/g, "").slice(-10);
+
+/** How likely they are to buy, from what they actually did. Shown with the reasons, like the old call-list score. */
+function intentScore(x: { callback: boolean; handoff: boolean; quoted?: number; signedIn: boolean; lastAt: string }): Score {
+  const reasons: Score["reasons"] = [];
+  let p = 0.04;
+  const add = (label: string, effect: number) => ((p += effect), reasons.push({ label, effect }));
+  if (x.callback) add("Asked us to call them", 0.35);
+  else if (x.handoff) add("Asked to talk to a person", 0.25);
+  if (x.quoted) add(`Has a priced plan, ₹${x.quoted.toLocaleString("en-IN")}/month`, 0.2);
+  if (x.signedIn) add("Signed in with their number", 0.08);
+  if (Date.now() - new Date(x.lastAt).getTime() < 2 * 86_400_000) add("Active in the last two days", 0.06);
+  else add("Quiet for more than two days", -0.03);
+  const probability = Math.max(0.01, Math.min(0.95, p));
+  return { probability, band: probability >= 0.3 ? "hot" : probability >= 0.12 ? "warm" : "cold", reasons };
+}
+
+/**
+ * The lead book: only businesses that registered with us. Signed-in owners, "request a call" forms, and WhatsApp
+ * chats that got a plan or asked for a person, merged by phone number. Rebuilt from the live records on every read.
+ */
 export function leadBook(): Map<string, LeadBase> {
-  if (base) return base;
-  base = new Map();
-  for (const row of datasets().leads) {
-    const region = regionOf(row.state);
-    const owner = DEMO_STAFF.find((s) => s.region === region && s.role === (row.lead_source === "Channel partner" ? "partner" : "sales"))!.id;
-    const status: LeadStatus = row.outcome === "Activated" ? "customer" : RECOVERABLE.test(row.drop_reason) ? "to_call" : "lost";
-    base.set(row.lead_id, { id: row.lead_id, row, region, score: scoreLead(row), defaultOwner: owner, defaultStatus: status });
+  const sessions = store.listSessions().sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  const orders = store.listOrders();
+  type Acc = { id: string; phone?: string; name?: string; signedIn: boolean; createdAt: string; source: string; sessions: AdvisorSession[]; orders: Order[]; profile: Profile; language?: string };
+  const byPhone = new Map<string, Acc>();
+  const out: Acc[] = [];
+  const acc = (id: string, phone: string | undefined, init: Omit<Acc, "id" | "phone" | "sessions" | "orders">) => {
+    const key = phone ? digits10(phone) : undefined;
+    const hit = key ? byPhone.get(key) : undefined;
+    if (hit) return hit;
+    const a: Acc = { id, phone, sessions: [], orders: [], ...init };
+    if (key) byPhone.set(key, a);
+    out.push(a);
+    return a;
+  };
+  const customers = store.listCustomers().filter((c) => !c.demo);
+  const byCustomer = new Map<string, Acc>();
+  for (const c of customers) byCustomer.set(c.id, acc(c.id, c.phone, { name: c.name, signedIn: true, createdAt: c.createdAt, source: "Signed in on the website", profile: c.profile, language: c.language }));
+  for (const s of sessions) {
+    const owner = s.customerId ? byCustomer.get(s.customerId) : undefined;
+    if (owner) {
+      owner.sessions.push(s);
+      continue;
+    }
+    const phone = s.callback?.phone ?? (s.botChat?.channel === "whatsapp" ? waNumber(s.botChat.chatId) : undefined);
+    if (!phone || !(s.callback || s.status === "handoff" || s.quote || s.orderId)) continue;
+    const a = acc(s.id, phone, { name: s.callback?.name, signedIn: false, createdAt: s.createdAt, source: s.callback ? "Asked for a call" : "WhatsApp chat", profile: s.profile, language: s.language });
+    a.sessions.push(s);
   }
-  return base;
+  for (const o of orders) {
+    const phone = o.phone ? `91${digits10(o.phone)}` : undefined;
+    const viaSession = o.sessionId ? out.find((a) => a.sessions.some((s) => s.id === o.sessionId)) : undefined;
+    const a = viaSession ?? (phone ? acc(o.sessionId ?? o.id, phone, { name: o.contactName, signedIn: false, createdAt: o.createdAt, source: `Ordered on ${o.channel}`, profile: o.profile }) : undefined);
+    if (a) {
+      a.orders.push(o);
+      a.name ??= o.contactName;
+    }
+  }
+
+  const book = new Map<string, LeadBase>();
+  for (const a of out) {
+    const latest = a.sessions[0];
+    const profile = { ...a.profile, ...(latest?.profile ?? {}) } as Profile;
+    const order = a.orders.sort((x, y) => y.createdAt.localeCompare(x.createdAt))[0];
+    const quote = order?.quote ?? latest?.quote;
+    const handoff = a.sessions.find((s) => s.status === "handoff");
+    const callback = a.sessions.find((s) => s.callback);
+    const lastAt = [latest?.updatedAt, order?.createdAt, a.createdAt].filter(Boolean).sort().at(-1)!;
+    const live = !!order && order.timeline.clockDay >= 0 && allLive(order.timeline);
+    const status: LeadStatus = live ? "customer" : order ? "won" : "to_call";
+    const stage = live ? "Activated" : order?.kyc?.result.verdict === "verified" ? "KYC complete" : order ? "Quote accepted" : quote || profile.businessType ? "Needs assessed" : "Lead";
+    const row: LeadRow = {
+      ...EMPTY_ROW,
+      lead_id: a.id,
+      created_date: a.createdAt.slice(0, 10),
+      lead_source: a.source,
+      business_name: profile.businessName || order?.businessName || (profile.businessType ? `${profile.businessType}${profile.city ? `, ${profile.city}` : ""}` : a.name ? `${a.name}'s business` : "New enquiry"),
+      business_type: profile.businessType ?? "Business not told yet",
+      segment: profile.segment ?? "",
+      city: profile.city ?? order?.city ?? "City not told yet",
+      preferred_language: langName(latest?.language ?? a.language ?? "en"),
+      employee_count: profile.employees ? String(profile.employees) : "",
+      num_sites: profile.sites ? String(profile.sites) : "",
+      has_gstin: profile.hasGstin ? "Y" : "N",
+      current_internet: profile.currentInternet ?? "",
+      monthly_telecom_spend_inr: profile.monthlySpend ? String(profile.monthlySpend) : "",
+      products_of_interest: (quote?.lines.filter((l) => l.active).map((l) => l.productId) ?? []).join(";"),
+      contact_name: a.name ?? callback?.callback?.name ?? order?.contactName ?? "",
+      contact_role: "Owner",
+      stage_reached: stage,
+      outcome: live ? "Activated" : "",
+      drop_reason: order ? "" : handoff?.handoff?.reason ?? (quote ? "Got a plan but hasn't ordered" : ""),
+    };
+    book.set(a.id, {
+      id: a.id,
+      row,
+      region: "West",
+      score: intentScore({ callback: !!callback, handoff: !!handoff, quoted: order ? undefined : quote?.monthlyWithGst, signedIn: a.signedIn, lastAt }),
+      defaultOwner: AREA_SALESMAN,
+      defaultStatus: status,
+      phone: a.phone,
+      sessionIds: a.sessions.map((s) => s.id),
+      orderIds: a.orders.map((o) => o.id),
+    });
+  }
+  return book;
 }
 
 export interface LeadView extends LeadBase {
@@ -246,7 +322,7 @@ export async function leadViews(): Promise<Map<string, LeadView>> {
 }
 
 export function canSee(staff: Pick<Staff, "id" | "role">, lead: LeadView) {
-  return staff.role === "admin" || lead.owner === staff.id;
+  return staff.role === "admin" || staff.role === "supervisor" || lead.owner === staff.id;
 }
 
 export async function visibleLeads(staff: Pick<Staff, "id" | "role">) {
@@ -310,8 +386,13 @@ export function resetCrmForTests() {
   g.__accelCrm = undefined;
 }
 
-/** The dataset has no phone numbers, so the demo shows a stable placeholder per lead. */
-export function demoPhone(leadId: string) {
-  const n = Number(leadId.slice(1));
-  return `+91 9${String((n * 7919) % 1000).padStart(3, "0")}0 ${String((n * 104729) % 100000).padStart(5, "0")}`;
+/** The number to call, written the way people read it. */
+export function leadPhone(l: Pick<LeadBase, "phone">) {
+  const d = l.phone ? digits10(l.phone) : "";
+  return d.length === 10 ? `+91 ${d.slice(0, 5)} ${d.slice(5)}` : "";
+}
+
+/** The supervisor's end-of-day reports to the manager, newest first. */
+export async function teamReports(limit = 30) {
+  return (await crm()).activity.filter((a) => a.kind === "report").reverse().slice(0, limit);
 }

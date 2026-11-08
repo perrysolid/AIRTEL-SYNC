@@ -11,8 +11,8 @@ import { chatSummary } from "@/lib/chat-summary";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-async function load(id: string) {
-  const a = await staffOr401();
+async function load(id: string, roles?: Parameters<typeof staffOr401>[0]) {
+  const a = await staffOr401(roles);
   if ("res" in a) return a;
   const o = (await ordersFor(a.staff)).find((x) => x.id === id);
   if (!o) return { res: Response.json({ error: "This order isn't in your book." }, { status: 404 }) };
@@ -53,10 +53,11 @@ const Body = z.discriminatedUnion("action", [
   z.object({ action: z.literal("message"), text: z.string().trim().min(3).max(600) }),
 ]);
 
-/** Staff updates an order. Every update reaches the owner automatically: tracker, WhatsApp, Telegram. */
+/** The salesman or supervisor updates an order. Every update reaches the owner automatically: tracker, WhatsApp, Telegram. */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const id = (await params).id;
-  const l = await load(id);
+  // The area salesman and the supervisor update installations; the manager reads.
+  const l = await load(id, ["sales", "supervisor"]);
   if ("res" in l) return l.res;
   const body = Body.safeParse(await req.json().catch(() => ({})));
   if (!body.success) return Response.json({ error: "Write a message of at least a few words." }, { status: 400 });

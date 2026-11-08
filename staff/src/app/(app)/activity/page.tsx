@@ -13,7 +13,7 @@ export default function Activity() {
     <>
       <PageHead
         title={me.role === "admin" ? "What the team is doing" : "Activity"}
-        sub={me.role === "admin" ? "Every call, follow-up and order update from sales and partners, and every owner who needs a person. Last 7 days." : "Everything on your leads and orders in the last 7 days."}
+        sub={me.role === "sales" ? "Everything on your leads and orders in the last 7 days." : "Every call, order update and report from the salesman and the supervisor, and every owner who needs a person. Last 7 days."}
         right={<LiveDot />}
       />
       {!data ? <Loading /> : data.events.length ? <div className="card p-2">{<Feed events={data.events} />}</div> : <Empty>Nothing yet this week.</Empty>}

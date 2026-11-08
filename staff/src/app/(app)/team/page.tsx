@@ -9,7 +9,7 @@ export default function Team() {
   const { data } = useApi<{ team: Row[] }>("/api/staff/team", 20_000);
   return (
     <>
-      <PageHead title="Team" sub="Each salesperson's and partner's last seven days, and the book they hold." />
+      <PageHead title="Team" sub="The salesman's and the supervisor's last seven days, and the leads each one holds." />
       {!data ? (
         <Loading />
       ) : (
@@ -23,7 +23,7 @@ export default function Team() {
             <tbody>
               {data.team.map((r) => (
                 <tr key={r.id} className="border-b border-rule last:border-0">
-                  <td className="px-4 py-3"><div className="font-bold">{r.name}</div><div className="text-xs text-ink-soft">{r.role === "partner" ? "Channel partner" : "Field sales"}</div></td>
+                  <td className="px-4 py-3"><div className="font-bold">{r.name}</div><div className="text-xs text-ink-soft">{r.role === "supervisor" ? "Supervisor" : "Area salesman"}</div></td>
                   <td className="px-4 py-3">{r.region ?? ""}</td>
                   <td className="tabular px-4 py-3 text-right">{r.calls7}</td>
                   <td className="tabular px-4 py-3 text-right">{r.calls7 ? pct(r.connectRate) : ""}</td>

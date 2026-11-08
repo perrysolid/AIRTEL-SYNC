@@ -18,11 +18,11 @@ export default function Calls() {
         <div className="grid gap-8">
           <section>
             <h2 className="mb-3 text-lg font-extrabold">Follow-ups due today <span className="text-ink-soft">{data.due.length}</span></h2>
-            {data.due.length ? <div className="grid gap-2">{data.due.map((l) => <LeadCard key={l.id} l={l} showOwner={me.role === "admin"} />)}</div> : <Empty>No follow-ups due. Start with the list below.</Empty>}
+            {data.due.length ? <div className="grid gap-2">{data.due.map((l) => <LeadCard key={l.id} l={l} showOwner={me.role !== "sales"} />)}</div> : <Empty>No follow-ups due. Start with the list below.</Empty>}
           </section>
           <section>
             <h2 className="mb-3 text-lg font-extrabold">Best chance to activate <span className="text-ink-soft">{data.fresh.length} of {data.openTotal.toLocaleString("en-IN")} open</span></h2>
-            <div className="grid gap-2">{data.fresh.map((l) => <LeadCard key={l.id} l={l} showOwner={me.role === "admin"} />)}</div>
+            <div className="grid gap-2">{data.fresh.map((l) => <LeadCard key={l.id} l={l} showOwner={me.role !== "sales"} />)}</div>
           </section>
         </div>
       )}

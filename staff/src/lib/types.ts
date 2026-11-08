@@ -1,4 +1,5 @@
-export type Role = "admin" | "sales" | "partner";
+/** admin = the manager; sales = the area salesman. */
+export type Role = "admin" | "supervisor" | "sales" | "partner";
 export interface Me { id: string; email: string; name: string; role: Role; region?: string; partnerCode?: string }
 
 export type Band = "hot" | "warm" | "cold";
@@ -88,9 +89,11 @@ export interface ChatSummary {
 
 export interface FeedEvent {
   at: string;
-  kind: "call" | "whatsapp" | "note" | "status" | "assign" | "order" | "verified" | "signed" | "live" | "paid" | "message" | "handoff" | "quoted";
+  kind: "call" | "whatsapp" | "note" | "status" | "assign" | "order" | "verified" | "signed" | "live" | "paid" | "message" | "handoff" | "quoted" | "report";
   who: string;
   title: string;
   detail?: string;
   href?: string;
 }
+
+export interface Report { id: number; at: string; by: string; text: string }

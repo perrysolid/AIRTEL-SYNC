@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { BarChart3, LineChart, ListChecks, LogOut, PhoneCall, ShoppingBag, Users } from "lucide-react";
 import { signOut } from "../actions";
 
-const ROLE = { admin: "Sales manager", sales: "Salesperson", partner: "Channel partner" } as const;
+const ROLE = { admin: "Manager", supervisor: "Supervisor", sales: "Area salesman", partner: "Channel partner" } as const;
 
 export function SalesNav({ staff }: { staff: { name: string; role: keyof typeof ROLE; region?: string; partnerCode?: string } }) {
   const path = usePathname();
@@ -14,7 +14,7 @@ export function SalesNav({ staff }: { staff: { name: string; role: keyof typeof 
     { href: "/sales/calls", label: "Who to call", icon: PhoneCall },
     { href: "/sales/leads", label: "Lead records", icon: ListChecks },
     { href: "/sales/orders", label: "Orders", icon: ShoppingBag },
-    ...(staff.role === "admin" ? [{ href: "/sales/team", label: "Team", icon: Users }] : []),
+    ...(staff.role === "admin" || staff.role === "supervisor" ? [{ href: "/sales/team", label: "Team", icon: Users }] : []),
     ...(staff.role !== "partner" ? [{ href: "/console", label: "Insights & win-back", icon: LineChart }] : []),
   ];
   const active = (h: string) => (h === "/sales" ? path === h : path.startsWith(h));

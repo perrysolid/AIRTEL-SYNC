@@ -7,9 +7,13 @@ import { liveDay } from "./tracker";
 
 export async function ordersFor(staff: SignedInStaff): Promise<Order[]> {
   const all = store.listOrders().sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  if (staff.role === "admin") return all;
-  const book = await leadViews();
-  return all.filter((o) => (staff.partnerCode && o.partnerCode?.toUpperCase() === staff.partnerCode) || (o.leadId && book.get(o.leadId)?.owner === staff.id));
+  if (staff.role === "admin" || staff.role === "supervisor") return all;
+  // The salesman sees the orders of the businesses he looks after, and anything nobody has been given yet.
+  const book = [...(await leadViews()).values()];
+  return all.filter((o) => {
+    const lead = book.find((l) => l.orderIds.includes(o.id));
+    return !lead || lead.owner === staff.id;
+  });
 }
 
 export function orderStage(o: Order) {
@@ -26,7 +30,7 @@ export async function dashboard(staff: SignedInStaff, now = new Date()) {
   const leads = await visibleLeads(staff);
   const queue = await callQueue(staff, now);
   const since = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 13);
-  const acts = (await activitySince(since)).filter((a) => a.kind === "call" && (staff.role === "admin" || a.staffId === staff.id));
+  const acts = (await activitySince(since)).filter((a) => a.kind === "call" && (staff.role === "admin" || staff.role === "supervisor" || a.staffId === staff.id));
   const weekAgo = new Date(now.getTime() - 7 * 86_400_000).toISOString();
   const orders = await ordersFor(staff);
 

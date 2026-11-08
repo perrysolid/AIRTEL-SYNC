@@ -6,7 +6,8 @@ import crypto from "node:crypto";
  * the portal works the same on Render, locally and in tests.
  */
 
-export type Role = "admin" | "sales" | "partner";
+/** admin = the manager; supervisor; sales = the area salesman. "partner" is kept only for older records. */
+export type Role = "admin" | "supervisor" | "sales" | "partner";
 export interface StaffSession {
   sub: string;
   role: Role;

@@ -7,12 +7,14 @@ import { ago, inr, send, stageTone, useApi } from "@/lib/api";
 import type { OrderDetail } from "@/lib/types";
 import { LiveDot, Loading, TelegramLogo, WhatsAppLogo } from "@/components/ui";
 import { Summary } from "@/components/Summary";
+import { useMe } from "@/components/Shell";
 
 const REACH_ICON = { whatsapp: <WhatsAppLogo className="h-5 w-5" />, telegram: <TelegramLogo className="h-5 w-5" />, web: <Globe size={18} className="text-ink-soft" /> };
 const REACH_NAME = { whatsapp: "WhatsApp", telegram: "Telegram", web: "Tracker" };
 
 export default function OrderPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const me = useMe();
   const { data: o, reload } = useApi<OrderDetail>(`/api/staff/orders/${id}`, 8_000);
   const [fresh, setFresh] = useState<string>();
   if (!o) return <Loading />;
@@ -46,7 +48,7 @@ export default function OrderPage({ params }: { params: Promise<{ id: string }> 
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div className="grid content-start gap-5">
-          <Actions o={o} act={act} />
+          {me.role !== "admin" && <Actions o={o} act={act} />}
           {o.tracks.length > 0 && (
             <section className="card p-5">
               <div className="flex items-center justify-between">

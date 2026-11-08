@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, MessageCircle, Phone, Send } from "lucide-react";
 import { reassign } from "../../../actions";
-import { activityFor, canSee, demoPhone, leadViews, listStaff, outreachFor, STATUSES } from "@/lib/crm";
+import { activityFor, canSee, leadViews, listStaff, outreachFor, STATUSES } from "@/lib/crm";
+import { leadPhone } from "@/lib/crm";
 import { inr } from "@/lib/format";
 import { requireStaff } from "@/lib/staff-session";
 import { Panel, StatusBadge, when } from "../../ui";
@@ -31,7 +32,7 @@ export default async function LeadRecord({ params }: { params: Promise<{ id: str
   const maxEffect = Math.max(...lead.score.reasons.map((x) => Math.abs(x.effect)), 0.01);
   const facts: [string, string][] = [
     ["Contact", `${r.contact_name}, ${r.contact_role}`],
-    ["Phone", `${demoPhone(lead.id)} (demo)`],
+    ["Phone", leadPhone(lead) || "Not given"],
     ["Language", r.preferred_language],
     ["Business", `${r.business_type}, ${r.segment}`],
     ["Location", `${r.city}, ${r.state} (tier ${r.city_tier})`],
@@ -56,7 +57,7 @@ export default async function LeadRecord({ params }: { params: Promise<{ id: str
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <a href={`tel:${demoPhone(lead.id).replace(/\s/g, "")}`} className="btn-primary inline-flex items-center gap-2 rounded-full px-5 py-2.5"><Phone size={17} /> Call {r.contact_name.split(" ")[0]}</a>
+          <a href={`tel:${leadPhone(lead).replace(/\s/g, "")}`} className="btn-primary inline-flex items-center gap-2 rounded-full px-5 py-2.5"><Phone size={17} /> Call {r.contact_name.split(" ")[0]}</a>
           <a href={`https://wa.me/?text=${encodeURIComponent(out.message)}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full border border-rule bg-sheet px-5 py-2.5 font-semibold"><MessageCircle size={17} className="text-wa" /> Send plan link</a>
         </div>
       </div>

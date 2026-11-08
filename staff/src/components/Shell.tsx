@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Activity, BarChart3, ClipboardList, LogOut, MessagesSquare, PhoneCall, Sun, Users } from "lucide-react";
+import { Activity, BarChart3, ClipboardList, FileText, LogOut, MessagesSquare, PhoneCall, Sun, Users } from "lucide-react";
 import { createContext, useContext } from "react";
 import { send, useApi } from "@/lib/api";
 import type { Me } from "@/lib/types";
@@ -15,14 +15,15 @@ type Nav = { href: string; label: string; icon: typeof Sun; roles?: Me["role"][]
 const NAV: Nav[] = [
   { href: "/", label: "Today", icon: Sun },
   { href: "/activity", label: "Activity", icon: Activity },
-  { href: "/calls", label: "Calls", icon: PhoneCall },
+  { href: "/calls", label: "Calls", icon: PhoneCall, roles: ["sales", "supervisor"] },
   { href: "/leads", label: "Leads", icon: Users },
-  { href: "/chats", label: "Advisor chats", icon: MessagesSquare, roles: ["admin", "sales"] },
+  { href: "/chats", label: "Advisor chats", icon: MessagesSquare },
   { href: "/orders", label: "Orders", icon: ClipboardList },
-  { href: "/team", label: "Team", icon: BarChart3, roles: ["admin"] },
+  { href: "/reports", label: "Reports", icon: FileText, roles: ["admin", "supervisor"] },
+  { href: "/team", label: "Team", icon: BarChart3, roles: ["admin", "supervisor"] },
 ];
 
-const ROLE: Record<Me["role"], string> = { admin: "Manager", sales: "Field sales", partner: "Channel partner" };
+export const ROLE: Record<Me["role"], string> = { admin: "Manager", supervisor: "Supervisor", sales: "Area salesman", partner: "Channel partner" };
 
 /** Signed-in frame: a sidebar on desktop, a tab bar at the bottom on phones (field staff work from their phones). */
 export function Shell({ children }: { children: React.ReactNode }) {
@@ -45,7 +46,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <Mark />
             <span className="leading-tight">
               <span className="block text-[17px] font-extrabold"><span className="text-brand">accel</span> <span className="font-medium text-ink-soft">business</span></span>
-              <span className="block text-xs font-semibold text-ink-soft">{me.role === "admin" ? "Admin console" : me.role === "partner" ? "Partner portal" : "Sales portal"}</span>
+              <span className="block text-xs font-semibold text-ink-soft">{me.role === "admin" ? "Manager" : me.role === "supervisor" ? "Supervisor" : "Sales portal"}</span>
             </span>
           </Link>
           <nav className="mt-7 grid gap-0.5" aria-label="Main">
@@ -64,7 +65,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
         <div className="min-w-0">
           <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-rule bg-sheet/90 px-4 backdrop-blur lg:hidden">
-            <Link href="/" className="flex items-center gap-2"><Mark className="h-7 w-7" /><span className="font-extrabold">{me.role === "admin" ? "Admin" : me.role === "partner" ? "Partner" : "Sales"}</span></Link>
+            <Link href="/" className="flex items-center gap-2"><Mark className="h-7 w-7" /><span className="font-extrabold">{ROLE[me.role]}</span></Link>
             <button onClick={signOut} aria-label="Sign out" className="grid h-9 w-9 place-items-center rounded-full border border-rule"><LogOut size={16} /></button>
           </header>
           <main className="mx-auto w-full max-w-6xl px-4 pt-6 pb-28 lg:px-8 lg:pt-8 lg:pb-12">{children}</main>

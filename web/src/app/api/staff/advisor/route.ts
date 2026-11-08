@@ -9,7 +9,7 @@ const readable = (t?: string) => (t && !/^[a-z]+:/.test(t) ? t : undefined);
 
 /** Conversations the advisor could not close: asked for a person, got a quote but didn't order, or went quiet. */
 export async function GET() {
-  const a = await staffOr401(["admin", "sales"]);
+  const a = await staffOr401();
   if ("res" in a) return a.res;
   const quiet = (iso: string) => Date.now() - new Date(iso).getTime() > 2 * 60_000;
   const chats = store

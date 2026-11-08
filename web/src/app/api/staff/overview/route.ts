@@ -1,5 +1,4 @@
-import { leadSummary } from "@/lib/analytics";
-import { listStaff } from "@/lib/crm";
+import { listStaff, teamReports } from "@/lib/crm";
 import { dashboard } from "@/lib/sales-data";
 import { leadRow, staffOr401 } from "@/lib/staff-api";
 import { store } from "@/lib/store";
@@ -7,7 +6,7 @@ import { store } from "@/lib/store";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-/** Home screen: KPIs, today's best calls, the funnel; managers also get the quarter's numbers and live journey stats. */
+/** Home screen: KPIs, today's best calls and live journey stats, all from real registrations; the manager also gets the latest reports. */
 export async function GET() {
   const a = await staffOr401();
   if ("res" in a) return a.res;
@@ -25,6 +24,6 @@ export async function GET() {
       ordersToday: orders.filter((o) => o.createdAt >= new Date(day).toISOString()).length,
       updatesSent: orders.reduce((n, o) => n + o.notifications.length, 0),
     },
-    quarter: a.staff.role === "admin" ? (({ funnel, activationRate, avgDaysToActivate, avgChaseCalls, cacPerActivation, churn6m, dropReasons, bySource, model }) => ({ funnel, activationRate, avgDaysToActivate, avgChaseCalls, cacPerActivation, churn6m, dropReasons: dropReasons.slice(0, 6), bySource, model }))(leadSummary()) : null,
+    reports: a.staff.role === "admin" || a.staff.role === "supervisor" ? (await teamReports(3)).map((r) => ({ id: r.id, at: r.at, by: names.get(r.staffId) ?? r.staffId, text: r.note })) : [],
   });
 }

@@ -38,10 +38,10 @@ export default function LeadPage({ params }: { params: Promise<{ id: string }> }
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-[1.75rem] leading-tight font-extrabold tracking-tight">{l.business}</h1>
-          <p className="text-ink-soft">{l.type} in {l.city} · {l.id} · {l.statusLabel}{me.role === "admin" ? ` · ${l.ownerName}` : ""}</p>
+          <p className="text-ink-soft">{l.type} in {l.city} · {l.id} · {l.statusLabel}{me.role !== "sales" ? ` · ${l.ownerName}` : ""}</p>
         </div>
         <div className="flex items-center gap-2">
-          <a href={`tel:${l.phone.replace(/\s/g, "")}`} className="inline-flex items-center gap-2 rounded-full bg-brand px-4 py-2.5 font-extrabold text-white"><Phone size={17} /> Call</a>
+          {l.phone && <a href={`tel:${l.phone.replace(/\s/g, "")}`} className="inline-flex items-center gap-2 rounded-full bg-brand px-4 py-2.5 font-extrabold text-white"><Phone size={17} /> Call {l.phone}</a>}
         </div>
       </header>
 
@@ -65,7 +65,7 @@ export default function LeadPage({ params }: { params: Promise<{ id: string }> }
             </section>
           )}
 
-          <LogTouch id={l.id} status={l.status} onDone={reload} />
+          {me.role !== "admin" && <LogTouch id={l.id} status={l.status} onDone={reload} />}
 
           <section className="card p-5">
             <h2 className="font-extrabold">History</h2>
@@ -83,13 +83,13 @@ export default function LeadPage({ params }: { params: Promise<{ id: string }> }
                 ))}
               </ol>
             ) : (
-              <p className="mt-2 text-sm text-ink-soft">Nobody has contacted this business yet.</p>
+              <p className="mt-2 text-sm text-ink-soft">Nobody has called them yet.</p>
             )}
           </section>
         </div>
 
         <div className="grid content-start gap-5">
-          <Outreach l={l} onSent={reload} />
+          {me.role !== "admin" && <Outreach l={l} onSent={reload} />}
           <section className="card p-5">
             <h2 className="font-extrabold">The business</h2>
             <dl className="mt-3 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-2 text-sm">
@@ -180,7 +180,7 @@ function Assign({ l, onDone }: { l: LeadDetail; onDone: () => void }) {
       <h2 className="font-extrabold">Owner</h2>
       <div className="mt-3 flex gap-2">
         <select value={to} onChange={(e) => setTo(e.target.value)} className="min-w-0 flex-1 rounded-xl border border-rule bg-sheet px-3 py-2.5">
-          {l.assignable.map((s) => <option key={s.id} value={s.id}>{s.name} ({s.role === "partner" ? "partner" : "sales"}{s.region ? `, ${s.region}` : ""})</option>)}
+          {l.assignable.map((s) => <option key={s.id} value={s.id}>{s.name} ({s.role === "supervisor" ? "supervisor" : "area salesman"})</option>)}
         </select>
         <button disabled={busy || to === l.owner} onClick={async () => { setBusy(true); await send(`/api/staff/leads/${l.id}/assign`, "POST", { to }); setBusy(false); onDone(); }} className="rounded-full bg-ink px-4 py-2 font-bold text-white disabled:opacity-40">Move</button>
       </div>

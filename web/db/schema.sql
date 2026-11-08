@@ -24,12 +24,12 @@ CREATE TABLE IF NOT EXISTS audit_log (
   detail text        NOT NULL DEFAULT ''
 );
 
--- Sales portal: staff accounts (salespeople, channel partners, managers).
+-- Sales portal: staff accounts (area salesman, supervisor, manager).
 CREATE TABLE IF NOT EXISTS staff (
   id            text        PRIMARY KEY,
   email         text        NOT NULL UNIQUE,
   name          text        NOT NULL,
-  role          text        NOT NULL CHECK (role IN ('admin', 'sales', 'partner')),
+  role          text        NOT NULL CHECK (role IN ('admin', 'supervisor', 'sales', 'partner')),
   region        text,
   partner_code  text,
   password_hash text        NOT NULL,
@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS lead_activity (
   lead_id   text        NOT NULL,
   staff_id  text        NOT NULL,
   at        timestamptz NOT NULL DEFAULT now(),
-  kind      text        NOT NULL CHECK (kind IN ('call', 'whatsapp', 'note', 'status', 'assign')),
+  kind      text        NOT NULL CHECK (kind IN ('call', 'whatsapp', 'note', 'status', 'assign', 'report')),
   outcome   text,
   status    text,
   note      text        NOT NULL DEFAULT '',

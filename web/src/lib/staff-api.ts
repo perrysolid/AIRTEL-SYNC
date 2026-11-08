@@ -16,7 +16,7 @@ import type { Order } from "./store";
 export async function staffOr401(roles?: Role[]): Promise<{ staff: SignedInStaff } | { res: Response }> {
   const staff = await currentStaff();
   if (!staff) return { res: Response.json({ error: "Sign in again." }, { status: 401 }) };
-  if (roles && !roles.includes(staff.role)) return { res: Response.json({ error: "Only managers can do that." }, { status: 403 }) };
+  if (roles && !roles.includes(staff.role)) return { res: Response.json({ error: staff.role === "admin" ? "The manager can view this but not change it." : "Your role can't do that." }, { status: 403 }) };
   return { staff };
 }
 

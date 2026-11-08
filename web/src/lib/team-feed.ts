@@ -7,13 +7,13 @@ import { store } from "./store";
 import { liveDay } from "./tracker";
 
 /**
- * One timeline of everything that happened across the business: what salespeople and partners did, what owners did
- * with their orders, and conversations the advisor could not close. Managers see all of it; a salesperson or partner
- * sees their own book.
+ * One timeline of everything that happened across the business: what the salesman and supervisor did, what owners did
+ * with their orders, conversations the advisor could not close, and the supervisor's reports. The manager and the
+ * supervisor see all of it; the area salesman sees his own book.
  */
 export interface FeedEvent {
   at: string;
-  kind: "call" | "whatsapp" | "note" | "status" | "assign" | "order" | "verified" | "signed" | "live" | "paid" | "message" | "handoff" | "quoted";
+  kind: "call" | "whatsapp" | "note" | "status" | "assign" | "order" | "verified" | "signed" | "live" | "paid" | "message" | "handoff" | "quoted" | "report";
   who: string;
   title: string;
   detail?: string;
@@ -28,6 +28,11 @@ export async function teamFeed(staff: SignedInStaff, days = 7, limit = 120): Pro
   const out: FeedEvent[] = [];
 
   for (const a of await activitySince(since)) {
+    if (a.kind === "report") {
+      // The supervisor's day, for the manager (and the supervisor's own record).
+      if (staff.role === "admin" || staff.role === "supervisor") out.push({ at: a.at, kind: "report", who: name.get(a.staffId) ?? a.staffId, title: "sent the day's report", detail: a.note, href: "/reports" });
+      continue;
+    }
     const lead = views.get(a.leadId);
     if (!lead || !canSee(staff, lead)) continue;
     const business = lead.row.business_name;
@@ -62,7 +67,7 @@ export async function teamFeed(staff: SignedInStaff, days = 7, limit = 120): Pro
   if (staff.role !== "partner") {
     for (const s of store.listSessions()) {
       if (s.updatedAt < sinceIso || s.status === "ordered" || (s.status !== "handoff" && !s.quote)) continue;
-      if (staff.role === "sales" && s.leadId && views.get(s.leadId)?.owner !== staff.id) continue;
+      if (staff.role === "sales" && [...views.values()].some((l) => l.sessionIds.includes(s.id) && l.owner !== staff.id)) continue;
       const sum = await chatSummary(s);
       const biz = s.profile.businessName ?? s.profile.businessType ?? "A business";
       out.push(

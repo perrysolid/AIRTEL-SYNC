@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { MessageCircle, Phone } from "lucide-react";
 import { summarize } from "@/lib/advisor";
-import { callQueue, demoPhone, listStaff, outreachFor, type LeadView } from "@/lib/crm";
+import { callQueue, listStaff, outreachFor, type LeadView } from "@/lib/crm";
+import { leadPhone } from "@/lib/crm";
 import { requireStaff } from "@/lib/staff-session";
 import { store } from "@/lib/store";
 import { PageHead, Panel, ScoreBadge, StatusBadge, when } from "../ui";
@@ -30,7 +31,7 @@ function Row({ l, owner }: { l: LeadView; owner?: string }) {
         </div>
       </Link>
       <div className="flex gap-2">
-        <a href={`tel:${demoPhone(l.id).replace(/\s/g, "")}`} className="inline-flex items-center gap-1.5 rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white"><Phone size={15} /> Call</a>
+        <a href={`tel:${leadPhone(l).replace(/\s/g, "")}`} className="inline-flex items-center gap-1.5 rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white"><Phone size={15} /> Call</a>
         <a href={`https://wa.me/?text=${encodeURIComponent(out.message)}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-rule bg-sheet px-4 py-2 text-sm font-semibold"><MessageCircle size={15} className="text-wa" /> Send link</a>
         <Link href={`/sales/leads/${l.id}#log`} className="inline-flex items-center rounded-full border border-rule bg-sheet px-4 py-2 text-sm font-semibold">Log</Link>
       </div>

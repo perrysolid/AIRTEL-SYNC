@@ -50,10 +50,10 @@ export async function logTouch(_prev: { ok?: boolean; error?: string } | undefin
 
 /** Managers move a lead to another salesperson or partner. */
 export async function reassign(form: FormData) {
-  const staff = await requireStaff(["admin"]);
+  const staff = await requireStaff(["admin", "supervisor"]);
   const leadId = String(form.get("leadId"));
   const to = await staffById(String(form.get("to")));
-  if (!to || to.role === "admin" || !/^L\d{5}$/.test(leadId)) return;
+  if (!to || to.role === "admin" || !(await leadViews()).has(leadId)) return;
   await logActivity({ leadId, staffId: staff.id, kind: "assign", note: to.id });
   revalidatePath(`/sales/leads/${leadId}`);
 }
