@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { ago, inr, send, useApi } from "@/lib/api";
 import { Empty, LiveDot, Loading, PageHead, TelegramLogo, WhatsAppLogo } from "@/components/ui";
+import { Summary } from "@/components/Summary";
+import type { ChatSummary } from "@/lib/types";
 
 interface Chat {
   id: string;
@@ -12,7 +14,7 @@ interface Chat {
   updatedAt: string;
   business: string;
   city: string | null;
-  summary: string;
+  summary: ChatSummary;
   reason: string;
   lastMessage: string | null;
   monthlyWithGst: number | null;
@@ -48,7 +50,7 @@ function ChatCard({ c, onDone }: { c: Chat; onDone: () => void }) {
         </div>
         {c.monthlyWithGst && <div className="text-right"><div className="tabular text-lg font-extrabold">{inr(c.monthlyWithGst)}</div><div className="text-xs text-ink-soft">a month, plan shown</div></div>}
       </div>
-      <p className="mt-3 text-sm">{c.summary}</p>
+      <div className="mt-3"><Summary s={c.summary} /></div>
       {c.lastMessage && <p className="mt-2 rounded-xl bg-paper px-3 py-2 text-sm text-ink-soft">“{c.lastMessage}”</p>}
       {c.canNudge && (
         <div className="mt-3 flex items-center gap-3">

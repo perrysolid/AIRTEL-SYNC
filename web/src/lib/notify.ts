@@ -67,6 +67,9 @@ export async function deliver(chat: BotChat, msg: BotMessage) {
     if (chat.channel === "telegram") await sendTelegram(chat.chatId, msg);
     else await sendWhatsApp(chat.chatId, msg);
   } catch (err) {
-    console.warn(`[notify] ${chat.channel} delivery failed: ${(err as Error).message}`);
+    const m = (err as Error).message;
+    // Meta's test number only delivers to its allowed list (up to 5 numbers); everyone else needs a real business number.
+    if (/131030|allowed list/i.test(m)) console.warn(`[notify] whatsapp: ${chat.chatId.slice(0, 4)}•••• is not on the test number's allowed list; add it in Meta, or move to a real business number`);
+    else console.warn(`[notify] ${chat.channel} delivery failed: ${m}`);
   }
 }

@@ -7,6 +7,8 @@ import type { Lead } from "@/lib/types";
 import { useMe } from "@/components/Shell";
 import { LeadCard } from "@/components/LeadCard";
 import { Kpi, LiveDot, Loading, PageHead } from "@/components/ui";
+import { Feed } from "@/components/Feed";
+import type { FeedEvent } from "@/lib/types";
 
 interface Overview {
   kpis: { open: number; due: number; hotUntouched: number; calls7: number; connected7: number; won: number; orders: number; orderMrr: number };
@@ -29,6 +31,7 @@ interface Overview {
 export default function Today() {
   const me = useMe();
   const { data } = useApi<Overview>("/api/staff/overview", 15_000);
+  const { data: feed } = useApi<{ events: FeedEvent[] }>("/api/staff/feed?limit=6", 10_000);
   const hour = new Date().getHours();
   const hello = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   if (!data) return <><PageHead title={`${hello}, ${me.name.split(" ")[0]}`} /><Loading /></>;
@@ -57,6 +60,16 @@ export default function Today() {
         </div>
         <div className="grid gap-2">{data.top.map((l) => <LeadCard key={l.id} l={l} showOwner={me.role === "admin"} />)}</div>
       </section>
+
+      {feed && feed.events.length > 0 && (
+        <section className="mt-8">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-xl font-extrabold">{me.role === "admin" ? "Latest from the team" : "Latest"}</h2>
+            <Link href="/activity" className="inline-flex items-center gap-1 text-sm font-bold text-brand">Everything <ArrowRight size={15} /></Link>
+          </div>
+          <div className="card p-2"><Feed events={feed.events} /></div>
+        </section>
+      )}
 
       <section className="mt-8 grid gap-3 sm:grid-cols-4">
         {[

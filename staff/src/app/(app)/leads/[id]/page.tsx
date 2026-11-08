@@ -7,6 +7,7 @@ import { ago, inr, send, useApi, when } from "@/lib/api";
 import type { LeadDetail } from "@/lib/types";
 import { useMe } from "@/components/Shell";
 import { Loading, Score, TelegramLogo, WhatsAppLogo } from "@/components/ui";
+import { Summary } from "@/components/Summary";
 
 const OUTCOMES = ["Connected", "No answer", "Busy, call back", "Wrong number", "Not interested"];
 const STATUSES = [["", "Keep status"], ["contacted", "Contacted"], ["interested", "Interested"], ["quote_sent", "Quote sent"], ["won", "Won"], ["lost", "Lost"], ["dnc", "Do not call"]] as const;
@@ -55,6 +56,14 @@ export default function LeadPage({ params }: { params: Promise<{ id: string }> }
               {l.reasons.map((r) => <li key={r.label} className="flex justify-between"><span>{r.label}</span><span className={r.effect > 0 ? "font-semibold text-ok" : "text-ink-soft"}>{r.effect > 0 ? "raises it" : "lowers it"}</span></li>)}
             </ul>
           </section>
+
+          {l.chats.length > 0 && (
+            <section className="card p-5">
+              <h2 className="font-extrabold">Their chat with the advisor</h2>
+              <p className="text-xs text-ink-soft">{ago(l.chats[0].at)} on {l.chats[0].channel}</p>
+              <div className="mt-2"><Summary s={l.chats[0].summary} /></div>
+            </section>
+          )}
 
           <LogTouch id={l.id} status={l.status} onDone={reload} />
 

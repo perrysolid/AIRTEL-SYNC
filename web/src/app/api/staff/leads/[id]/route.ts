@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { activityFor, CALL_OUTCOMES, canSee, demoPhone, leadViews, listStaff, logActivity, outreachFor, STATUSES, type LeadStatus } from "@/lib/crm";
 import { leadRow, staffOr401 } from "@/lib/staff-api";
+import { chatSummary } from "@/lib/chat-summary";
+import { store } from "@/lib/store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -34,6 +36,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     providerToday: r.current_provider,
     spendToday: Number(r.monthly_telecom_spend_inr || 0),
     interests: r.products_of_interest.split(";").filter(Boolean),
+    chats: await Promise.all(
+      store.listSessions().filter((s) => s.leadId === l.lead.id).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 3).map(async (s) => ({ id: s.id, at: s.updatedAt, channel: s.channel, summary: await chatSummary(s) })),
+    ),
     activity: (await activityFor(l.lead.id)).map((x) => ({ ...x, staffName: names.get(x.staffId) ?? x.staffId })),
     outreach: outreachFor(r),
     assignable: l.staff.role === "admin" ? staff.filter((s) => s.role !== "admin").map((s) => ({ id: s.id, name: s.name, role: s.role, region: s.region })) : [],

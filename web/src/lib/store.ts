@@ -69,6 +69,23 @@ export interface AdvisorSession {
   customerId?: string;
   /** What we remembered about the customer when the conversation began (fixed for the session, so the prompt cache holds). */
   memoryBrief?: string;
+  /** Staff-facing summary of the conversation, refreshed when new messages arrive (see chat-summary.ts). */
+  summary?: ChatSummary;
+}
+
+export interface ChatSummary {
+  /** One or two sentences: who they are and how it ended. */
+  headline: string;
+  needs: string[];
+  offered: string | null;
+  concerns: string[];
+  outcome: string;
+  nextStep: string;
+  /** "ai" when a model wrote it, "rules" when built from the profile. */
+  by: "ai" | "rules";
+  /** Transcript length it was written from, so it is rewritten only when the chat moves on. */
+  turns: number;
+  at: string;
 }
 
 /** A customer who signed in with their mobile number (OTP). Their memory follows them across visits and channels. */

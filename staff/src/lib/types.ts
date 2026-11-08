@@ -38,6 +38,7 @@ export interface LeadDetail extends Lead {
   providerToday: string;
   spendToday: number;
   interests: string[];
+  chats: { id: string; at: string; channel: string; summary: ChatSummary }[];
   activity: { id: number; at: string; kind: string; outcome?: string; status?: string; note: string; nextAt?: string; staffName: string }[];
   outreach: { whatsapp: string; telegram: string; message: string };
   assignable: { id: string; name: string; role: Role; region?: string }[];
@@ -72,4 +73,24 @@ export interface OrderDetail extends Omit<OrderRow, "updates"> {
   hasFibre: boolean;
   updates: Update[];
   reach: { channel: "whatsapp" | "telegram" | "web"; note: string }[];
+  chat: ChatSummary | null;
+}
+
+export interface ChatSummary {
+  headline: string;
+  needs: string[];
+  offered: string | null;
+  concerns: string[];
+  outcome: string;
+  nextStep: string;
+  by: "ai" | "rules";
+}
+
+export interface FeedEvent {
+  at: string;
+  kind: "call" | "whatsapp" | "note" | "status" | "assign" | "order" | "verified" | "signed" | "live" | "paid" | "message" | "handoff" | "quoted";
+  who: string;
+  title: string;
+  detail?: string;
+  href?: string;
 }

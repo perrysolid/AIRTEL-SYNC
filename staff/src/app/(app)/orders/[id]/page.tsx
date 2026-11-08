@@ -6,6 +6,7 @@ import { ArrowLeft, Check, Globe, Loader2, Send } from "lucide-react";
 import { ago, inr, send, stageTone, useApi } from "@/lib/api";
 import type { OrderDetail } from "@/lib/types";
 import { LiveDot, Loading, TelegramLogo, WhatsAppLogo } from "@/components/ui";
+import { Summary } from "@/components/Summary";
 
 const REACH_ICON = { whatsapp: <WhatsAppLogo className="h-5 w-5" />, telegram: <TelegramLogo className="h-5 w-5" />, web: <Globe size={18} className="text-ink-soft" /> };
 const REACH_NAME = { whatsapp: "WhatsApp", telegram: "Telegram", web: "Tracker" };
@@ -78,6 +79,12 @@ export default function OrderPage({ params }: { params: Promise<{ id: string }> 
         </div>
 
         <div className="grid content-start gap-5">
+          {o.chat && (
+            <section className="card p-5">
+              <h2 className="font-extrabold">What happened in the chat</h2>
+              <div className="mt-2"><Summary s={o.chat} /></div>
+            </section>
+          )}
           <section className="card p-5">
             <h2 className="font-extrabold">Where the owner gets updates</h2>
             <ul className="mt-3 grid gap-2">

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { BarChart3, ClipboardList, LogOut, MessagesSquare, PhoneCall, Sun, Users } from "lucide-react";
+import { Activity, BarChart3, ClipboardList, LogOut, MessagesSquare, PhoneCall, Sun, Users } from "lucide-react";
 import { createContext, useContext } from "react";
 import { send, useApi } from "@/lib/api";
 import type { Me } from "@/lib/types";
@@ -14,6 +14,7 @@ export const useMe = () => useContext(MeContext)!;
 type Nav = { href: string; label: string; icon: typeof Sun; roles?: Me["role"][] };
 const NAV: Nav[] = [
   { href: "/", label: "Today", icon: Sun },
+  { href: "/activity", label: "Activity", icon: Activity },
   { href: "/calls", label: "Calls", icon: PhoneCall },
   { href: "/leads", label: "Leads", icon: Users },
   { href: "/chats", label: "Advisor chats", icon: MessagesSquare, roles: ["admin", "sales"] },

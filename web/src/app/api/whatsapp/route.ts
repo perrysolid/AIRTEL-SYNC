@@ -61,7 +61,13 @@ async function handleCloudMessage(m: any, name?: string) {
   noteWhatsAppInbound(to);
   await markReadTyping(m.id);
   const send = async (msgs: BotMessage[]) => {
-    for (const msg of msgs) await sendWhatsApp(to, msg);
+    try {
+      for (const msg of msgs) await sendWhatsApp(to, msg);
+    } catch (err) {
+      // Meta's test number only replies to its allowed list (up to 5 numbers): say so plainly in the logs.
+      if (/131030|allowed list/i.test((err as Error).message)) console.warn(`[whatsapp] reply to ${to.slice(0, 4)}•••• not delivered: not on the test number's allowed list`);
+      else throw err;
+    }
   };
 
   switch (m.type) {

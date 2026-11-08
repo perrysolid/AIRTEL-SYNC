@@ -6,6 +6,7 @@ import { ordersFor } from "@/lib/sales-data";
 import { orderRow, reachFor, staffOr401 } from "@/lib/staff-api";
 import { store } from "@/lib/store";
 import { liveDay, stepStatus } from "@/lib/tracker";
+import { chatSummary } from "@/lib/chat-summary";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,8 +19,9 @@ async function load(id: string) {
   return { staff: a.staff, o };
 }
 
-function detail(id: string) {
+async function detail(id: string) {
   const o = store.getOrder(id)!;
+  const chat = o.sessionId ? store.getSession(o.sessionId) : undefined;
   const v = publicOrder(o);
   return {
     ...orderRow(o),
@@ -33,12 +35,13 @@ function detail(id: string) {
     hasFibre: o.lines.some((l) => ["P01", "P02", "P03"].includes(l.productId)),
     updates: [...o.notifications].reverse(),
     reach: reachFor(o),
+    chat: chat ? await chatSummary(chat) : null,
   };
 }
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const l = await load((await params).id);
-  return "res" in l ? l.res : Response.json(detail(l.o.id));
+  return "res" in l ? l.res : Response.json(await detail(l.o.id));
 }
 
 const Body = z.discriminatedUnion("action", [
@@ -66,5 +69,5 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (!r.ok) return Response.json(await r.json(), { status: r.status });
   }
   store.audit(l.staff.id, `staff:order:${body.data.action}`, id);
-  return Response.json(detail(id));
+  return Response.json(await detail(id));
 }
