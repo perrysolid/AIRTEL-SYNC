@@ -1,5 +1,7 @@
 import { z } from "zod";
-import { aiProviders, anthropic, ADVISOR_MODEL } from "./ai";
+import { aiProviders } from "./ai";
+import { DEEPSEEK, DEEPSEEK_MODEL } from "./deepseek";
+import { chat } from "./groq";
 import { product } from "./catalogue";
 import { inr } from "./format";
 import { NEED_LABELS } from "./profile";
@@ -8,7 +10,8 @@ import { now, store, type AdvisorSession, type ChatSummary } from "./store";
 
 /**
  * What happened in an advisor conversation, for the people who pick it up: the salesperson calling back, the
- * partner visiting, the manager reviewing the day. Written by Claude from the transcript when it is available,
+ * partner visiting, the manager reviewing the day. Written by DeepSeek from the transcript (Claude stays free for
+ * live chats and documents),
  * otherwise from the facts the advisor recorded. Cached on the session and rewritten only when the chat moves on.
  */
 
@@ -58,7 +61,7 @@ export function rulesSummary(s: AdvisorSession): ChatSummary {
   };
 }
 
-// Summaries are written one at a time, so they never take capacity from owners chatting with the advisor right now,
+// Summaries are written one at a time, so they never crowd out owners chatting with the advisor right now,
 // and a failed one waits 10 minutes before it is tried again.
 const inFlight = new Map<string, Promise<ChatSummary>>();
 const lastTry = new Map<string, { turns: number; at: number }>();
@@ -66,17 +69,17 @@ let queue: Promise<unknown> = Promise.resolve();
 const RETRY_MS = 10 * 60_000;
 
 async function writeWithAi(s: AdvisorSession): Promise<ChatSummary | undefined> {
-  if (!aiProviders().includes("anthropic") || s.transcript.length < 2) return undefined;
+  if (!aiProviders().includes("deepseek") || s.transcript.length < 2) return undefined;
   const transcript = s.transcript
     .slice(-40)
     .map((t) => `${t.role === "user" ? "Owner" : "Advisor"}: ${redactText(t.text).slice(0, 600)}`)
     .join("\n");
   const facts = `Recorded facts: ${JSON.stringify({ ...s.profile, gstin: undefined, udyam: undefined })}\nOutcome so far: ${outcomeOf(s)}${s.quote ? `\nPlan shown: ${rulesSummary(s).offered}` : ""}`;
-  const res = await anthropic().messages.create(
-    { model: ADVISOR_MODEL, max_tokens: 700, output_config: { effort: "low" }, system: PROMPT, messages: [{ role: "user", content: `${facts}\n\nTranscript:\n${transcript}` }] },
-    { timeout: 20_000, maxRetries: 0 },
+  const res = await chat(
+    { model: DEEPSEEK_MODEL, max_completion_tokens: 700, temperature: 0.2, response_format: { type: "json_object" }, messages: [{ role: "system", content: PROMPT }, { role: "user", content: `${facts}\n\nTranscript:\n${transcript}` }] },
+    DEEPSEEK,
   );
-  const text = res.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join("");
+  const text = res.content ?? "";
   const parsed = Reply.safeParse(JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1) || "{}"));
   if (!parsed.success) return undefined;
   return { ...parsed.data, by: "ai", turns: s.transcript.length, at: now() };
@@ -85,7 +88,7 @@ async function writeWithAi(s: AdvisorSession): Promise<ChatSummary | undefined> 
 /** The summary to show now. A stale or missing AI summary is refreshed in the background (or awaited with `wait`). */
 export async function chatSummary(s: AdvisorSession, opts: { wait?: boolean } = {}): Promise<ChatSummary> {
   const current = s.summary && s.summary.turns === s.transcript.length ? s.summary : undefined;
-  const ai = aiProviders().includes("anthropic") && s.transcript.length >= 2;
+  const ai = aiProviders().includes("deepseek") && s.transcript.length >= 2;
   if (current && (current.by === "ai" || !ai)) return current;
   const tried = lastTry.get(s.id);
   const backingOff = tried && tried.turns === s.transcript.length && Date.now() - tried.at < RETRY_MS;
