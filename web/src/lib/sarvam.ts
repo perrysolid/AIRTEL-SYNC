@@ -1,9 +1,14 @@
-import { GroqError } from "./groq";
+import { GroqError, type ChatEndpoint } from "./groq";
 
 /**
- * Sarvam AI, for voice only: Bulbul speaks replies in Indian languages (see
- * /api/tts) and Saaras transcribes voice notes. It is not in the chat chain.
+ * Sarvam AI: Indian-language models hosted in India. Sarvam 105B runs the
+ * advisor chat (fast, natural Hindi and Hinglish) through the shared
+ * OpenAI-style client; it has no vision, so documents go to DeepSeek. Saaras
+ * transcribes voice notes and Bulbul speaks replies (see /api/tts).
  */
+
+export const SARVAM: ChatEndpoint = { name: "Sarvam", base: "https://api.sarvam.ai/v1", keyVar: "SARVAM_API_KEY" };
+export const SARVAM_MODEL = process.env.SARVAM_MODEL ?? "sarvam-105b";
 
 export const SARVAM_STT_MODEL = process.env.SARVAM_STT_MODEL ?? "saaras:v4";
 export const SARVAM_TTS_MODEL = process.env.SARVAM_TTS_MODEL ?? "bulbul:v3";

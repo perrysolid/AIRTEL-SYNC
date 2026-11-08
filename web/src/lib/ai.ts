@@ -1,12 +1,13 @@
 import Anthropic from "@anthropic-ai/sdk";
 
 /**
- * Single place that decides which GenAI provider is used. DeepSeek is primary
- * (chat and documents), then Gemini, Groq and Claude; every AI
+ * Single place that decides which GenAI provider is used. Sarvam runs the chat
+ * (it has no vision, so documents start at DeepSeek), then DeepSeek, Gemini, Groq
+ * and Claude; every AI
  * feature also has a deterministic fallback, so the journey works (and demos) without any key.
  */
 
-export type AiProvider = "deepseek" | "groq" | "gemini" | "anthropic";
+export type AiProvider = "sarvam" | "deepseek" | "groq" | "gemini" | "anthropic";
 
 export const ADVISOR_MODEL = process.env.ADVISOR_MODEL ?? "claude-opus-5-5";
 export const EXTRACT_MODEL = process.env.EXTRACT_MODEL ?? "claude-opus-5-5";
@@ -17,6 +18,7 @@ const g = globalThis as unknown as { __aiDownUntil?: Map<AiProvider, number> };
 const downUntil = (g.__aiDownUntil ??= new Map());
 
 function configured(p: AiProvider): boolean {
+  if (p === "sarvam") return !!process.env.SARVAM_API_KEY;
   if (p === "deepseek") return !!process.env.DEEPSEEK_API_KEY;
   if (p === "groq") return !!process.env.GROQ_API_KEY;
   if (p === "gemini") return !!process.env.GEMINI_API_KEY;
@@ -28,7 +30,7 @@ export function aiProviders(): AiProvider[] {
   if (process.env.AI_DISABLED === "1") return [];
   // AI_PROVIDER moves one provider to the front; the rest keep their order.
   const preferred = process.env.AI_PROVIDER as AiProvider | undefined;
-  const order: AiProvider[] = ["deepseek", "gemini", "groq", "anthropic"].sort((a, b) => +(b === preferred) - +(a === preferred)) as AiProvider[];
+  const order: AiProvider[] = ["sarvam", "deepseek", "gemini", "groq", "anthropic"].sort((a, b) => +(b === preferred) - +(a === preferred)) as AiProvider[];
   return order.filter((p) => configured(p) && (downUntil.get(p) ?? 0) < Date.now());
 }
 

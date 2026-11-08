@@ -190,7 +190,8 @@ async function extractWithTesseract(image: Buffer): Promise<ExtractedDoc> {
 
 export async function extractDocument(image: Buffer, mediaType: "image/png" | "image/jpeg" | "image/webp", hint?: DocType): Promise<ExtractionResult> {
   const t0 = Date.now();
-  for (const provider of aiProviders()) {
+  // Sarvam has no vision model, so documents start at the next provider.
+  for (const provider of aiProviders().filter((p): p is keyof typeof ENGINES => p in ENGINES)) {
     try {
       const [extract, engine] = ENGINES[provider];
       const doc = await extract(image, mediaType);
