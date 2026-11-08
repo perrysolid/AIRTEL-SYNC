@@ -205,3 +205,64 @@ body {
   .float-slow { animation: float-slow 8s ease-in-out infinite; }
   @keyframes float-slow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 }
+
+/* ------------------------------------------------------------------------------------------------
+ * Staff sales portal (/sales): the few classes and tokens it uses, kept from its own design so the
+ * portal looks the way it was built. Nothing on the customer pages uses these.
+ * ------------------------------------------------------------------------------------------------ */
+:root {
+  --night: #0c1030;
+  --night-2: #151a45;
+  --ember: #ff5c39;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --shadow-brand: 0 18px 36px -14px rgb(228 0 43 / 0.55);
+}
+@theme inline {
+  --color-night: var(--night);
+  --color-night-2: var(--night-2);
+  --color-ember: var(--ember);
+}
+.btn-primary {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--ember) -20%, var(--brand) 45%, var(--brand-deep) 120%);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: var(--shadow-brand);
+  transition: transform 180ms var(--ease-out), box-shadow 180ms var(--ease-out), opacity 150ms;
+}
+.btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 24px 40px -14px rgb(228 0 43 / 0.6); }
+.btn-primary:active:not(:disabled) { transform: scale(0.98); }
+.btn-primary:disabled { opacity: 0.55; box-shadow: none; }
+.btn-primary::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(105deg, transparent 35%, rgb(255 255 255 / 0.28) 50%, transparent 65%);
+  transform: translateX(-120%);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .btn-primary:not(:disabled)::after { animation: btn-sweep 3.2s 1.2s var(--ease-out) infinite; }
+}
+@keyframes btn-sweep { 0% { transform: translateX(-120%); } 45%, 100% { transform: translateX(120%); } }
+.night {
+  background:
+    radial-gradient(70rem 32rem at 75% 110%, rgb(228 0 43 / 0.42), transparent 60%),
+    radial-gradient(40rem 26rem at 10% -10%, rgb(255 92 57 / 0.16), transparent 60%),
+    linear-gradient(180deg, var(--night) 0%, var(--night-2) 100%);
+  color: #fff;
+}
+.night .text-ink-soft { color: rgb(255 255 255 / 0.68); }
+.grid-floor {
+  background-image: linear-gradient(rgb(255 255 255 / 0.06) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / 0.06) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(60% 70% at 60% 60%, #000 30%, transparent 75%);
+}
+.glass {
+  background: rgb(255 255 255 / 0.08);
+  border: 1px solid rgb(255 255 255 / 0.14);
+  backdrop-filter: blur(14px);
+}

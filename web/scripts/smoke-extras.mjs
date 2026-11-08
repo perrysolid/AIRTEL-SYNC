@@ -12,12 +12,14 @@ const ok = (cond, msg) => {
   console.log(cond ? "✓" : "✗", msg);
   if (!cond) failed++;
 };
+/** Staff session cookie, set once the script signs in to the sales portal (the console APIs need it). */
+let staffCookie = "";
 const post = async (p, body) => {
-  const r = await fetch(`${BASE}${p}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const r = await fetch(`${BASE}${p}`, { method: "POST", headers: { "Content-Type": "application/json", ...(staffCookie && { cookie: staffCookie }) }, body: JSON.stringify(body) });
   return { status: r.status, json: await r.json().catch(() => ({})) };
 };
 const get = async (p) => {
-  const r = await fetch(`${BASE}${p}`, { cache: "no-store" });
+  const r = await fetch(`${BASE}${p}`, { cache: "no-store", headers: staffCookie ? { cookie: staffCookie } : {} });
   return { status: r.status, json: await r.json().catch(() => ({})) };
 };
 async function advisor(sessionId, message) {
@@ -150,7 +152,12 @@ ok(/Branch-in-a-Box/.test(await wa(phone, "BRANCH") + (await wa(phone, "Nashik 4
 await wa(phone, "MENU");
 ok(/Order ACC-/.test(await wa(phone, "STATUS")), "chat: STATUS still works (existing feature unharmed)");
 
-// ----------------------------------------------------------------------- console
+// ----------------------------------------------------------------------- console (staff only)
+ok((await get("/api/console")).status === 401, "console: back-office data needs a staff sign-in");
+ok((await post("/api/console/nudge", { sessionId: "nope" })).status === 401, "console: nudging a lead needs a staff sign-in");
+const login = await fetch(`${BASE}/api/sales/session`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: "manager@accel.demo", password: process.env.STAFF_DEMO_PASSWORD ?? "Accel@2026" }) });
+ok(login.ok, "console: sales manager signs in");
+staffCookie = (login.headers.get("set-cookie") ?? "").split(";")[0];
 const con = (await get("/api/console")).json;
 ok(con.service.tickets.length >= 3 && con.service.branches >= 1 && con.service.booked >= 1, `console: ${con.service.tickets.length} tickets, ${con.service.branches} branch, ${con.service.booked} slot(s) booked`);
 ok(!JSON.stringify(con).includes("9876501234"), "console still masks phone numbers");

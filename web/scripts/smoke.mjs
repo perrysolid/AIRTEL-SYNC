@@ -74,6 +74,9 @@ ok(ord.steps.every((s) => s.done), `all services live on day ${ord.liveDay} · $
 const wa = await fetch(`${BASE}/api/whatsapp`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ From: "whatsapp:+919876543210", Body: "STATUS" }) });
 ok((await wa.text()).includes(orderId), "WhatsApp STATUS returns the live order");
 
-const con = await (await fetch(`${BASE}/api/console`)).json();
+ok((await fetch(`${BASE}/api/console`)).status === 401, "back-office data needs a staff sign-in");
+const login = await fetch(`${BASE}/api/sales/session`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: "manager@accel.demo", password: process.env.STAFF_DEMO_PASSWORD ?? "Accel@2026" }) });
+ok(login.ok, "sales manager signs in");
+const con = await (await fetch(`${BASE}/api/console`, { headers: { cookie: login.headers.get("set-cookie").split(";")[0] } })).json();
 ok(con.orders.some((x) => x.id === orderId) && !JSON.stringify(con.orders).includes("9876543210"), "order visible in partner console with phone masked");
 console.log(`\nJourney complete in ${((Date.now() - t0) / 1000).toFixed(1)}s`);

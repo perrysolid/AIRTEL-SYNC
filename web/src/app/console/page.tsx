@@ -30,7 +30,11 @@ export default function ConsolePage() {
       window.prompt("Copy this:", text);
     }
   };
-  const load = async () => setData(await (await fetch("/api/console", { cache: "no-store" })).json());
+  const load = async () => {
+    const r = await fetch("/api/console", { cache: "no-store" });
+    if (r.status === 401) return void (window.location.href = "/sales/login");
+    setData(await r.json());
+  };
   useEffect(() => {
     void load();
     const t = setInterval(load, 10_000);

@@ -1,4 +1,6 @@
+import { cookies } from "next/headers";
 import { z } from "zod";
+import { readToken, SESSION_COOKIE } from "@/lib/auth";
 import { deliver } from "@/lib/notify";
 import { inr } from "@/lib/format";
 import { store } from "@/lib/store";
@@ -13,6 +15,8 @@ const Body = z.object({ sessionId: z.string() });
  * Only works for chat-born leads (we hold no phone number for anyone else).
  */
 export async function POST(req: Request) {
+  const who = readToken((await cookies()).get(SESSION_COOKIE)?.value);
+  if (!who || who.role === "partner") return Response.json({ error: "Sign in to the sales portal" }, { status: 401 });
   const body = Body.safeParse(await req.json().catch(() => ({})));
   if (!body.success) return Response.json({ error: "sessionId required" }, { status: 400 });
   const s = store.getSession(body.data.sessionId);
