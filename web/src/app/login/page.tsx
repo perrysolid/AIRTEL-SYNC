@@ -92,6 +92,8 @@ function Login() {
     }
   }
 
+  // the call reads out 4 digits; the WhatsApp code has 6
+  const digits = step === "call" ? 4 : 6;
   const field = "w-full rounded-2xl border border-rule bg-sheet px-4 py-4 text-lg outline-none transition-colors focus:border-ink";
   const primary = "flex w-full items-center justify-center gap-2 rounded-full bg-brand px-4 py-4 text-lg font-extrabold text-white transition-opacity disabled:opacity-40";
 
@@ -131,13 +133,13 @@ function Login() {
             required
             inputMode="numeric"
             autoComplete="one-time-code"
-            maxLength={6}
+            maxLength={digits}
             value={code}
             aria-label="Code"
             onChange={(e) => {
               const v = e.target.value.replace(/\D/g, "");
               setCode(v);
-              if (v.length === 6) void verify(v);
+              if (v.length === digits) void verify(v); // signs in as soon as the whole code is in
             }}
             className={`${field} text-center font-mono text-3xl tracking-[0.5em]`}
           />
