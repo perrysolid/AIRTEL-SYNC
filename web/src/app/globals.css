@@ -266,3 +266,56 @@ body {
   border: 1px solid rgb(255 255 255 / 0.14);
   backdrop-filter: blur(14px);
 }
+
+/* ------------------------------------------------------------------------------------------------
+ * Landing scroll zoom: the hero pins, the centre phone grows, the next section opens out of its screen.
+ * Only on screens that can hold that section in one view (same query as ZOOM_QUERY in page.tsx).
+ * page.tsx writes --za (0..1), --zs (target scale) and --zty (target lift) on .zoom-stage.
+ * ------------------------------------------------------------------------------------------------ */
+@media (min-width: 1024px) and (min-height: 640px) and (prefers-reduced-motion: no-preference) {
+  .zoom-runway { height: calc(100dvh + 170vh); }
+  .zoom-stage { position: sticky; top: 0; height: 100dvh; overflow: hidden; }
+  .zoom-hero { position: absolute; inset: 0; min-height: 0; }
+  .zoom-bg { transform: scale(calc(1 + var(--za, 0) * 0.08)); }
+  .zoom-copy { opacity: calc(1 - var(--za, 0) * 1.8); transform: translateY(calc(var(--za, 0) * -70px)); }
+  .zoom-side-l { opacity: calc(1 - var(--za, 0) * 1.4); transform: translateX(calc(var(--za, 0) * -26vw)) rotate(calc(var(--za, 0) * -10deg)); }
+  .zoom-side-r { opacity: calc(1 - var(--za, 0) * 1.4); transform: translateX(calc(var(--za, 0) * 26vw)) rotate(calc(var(--za, 0) * 10deg)); }
+  .zoom-arc { opacity: calc(1 - var(--za, 0) * 1.3); transform: translateY(calc(var(--za, 0) * 140px)); }
+  .zoom-fade { opacity: calc(1 - var(--za, 0) * 2); }
+  .zoom-centre { transform-origin: center; transform: translate3d(0, calc(var(--zty, 0px) * var(--za, 0)), 0) scale(calc(1 + (var(--zs, 1) - 1) * var(--za, 0))); }
+  .zoom-reveal { position: absolute; inset: 0; z-index: 30; display: flex; align-items: center; opacity: 0; will-change: clip-path, opacity; }
+}
+
+/* ------------------------------------------------------------------------------------------------
+ * "From hello to live": a ring of step cards turning slowly in 3D; neighbours bend back on the curve.
+ * ------------------------------------------------------------------------------------------------ */
+.steps-viewport { --R: calc(var(--cw) * 0.866 + 2rem); perspective: 2200px; perspective-origin: 50% 40%; }
+.steps-ring { transform-style: preserve-3d; transition: transform 1.5s cubic-bezier(0.65, 0, 0.35, 1); }
+.steps-card { width: var(--cw); backface-visibility: hidden; transition: opacity 0.9s ease; }
+
+/* Step illustrations: each loops gently while its card is in front; others hold still. */
+@media (prefers-reduced-motion: no-preference) {
+  .st-pulse { transform-box: fill-box; transform-origin: center; animation: st-pulse 2.4s ease-out infinite; }
+  @keyframes st-pulse { 0% { transform: scale(0.85); opacity: 0.8; } 100% { transform: scale(1.7); opacity: 0; } }
+  .st-pop { transform-box: fill-box; transform-origin: center; animation: st-pop 3.6s ease-in-out infinite; }
+  @keyframes st-pop { 0%, 8% { transform: scale(0.2); opacity: 0; } 18%, 82% { transform: scale(1); opacity: 1; } 92%, 100% { transform: scale(0.2); opacity: 0; } }
+  .st-eq { transform-box: fill-box; transform-origin: bottom; animation: st-eq 0.9s ease-in-out infinite alternate; }
+  @keyframes st-eq { from { transform: scaleY(0.3); } to { transform: scaleY(1); } }
+  .st-grow { transform-box: fill-box; transform-origin: left; animation: st-grow 3.6s ease-out infinite; }
+  @keyframes st-grow { 0%, 6% { transform: scaleX(0); } 30%, 88% { transform: scaleX(1); opacity: 1; } 100% { transform: scaleX(1); opacity: 0; } }
+  .st-toggle { animation: st-toggle 3.6s ease-in-out infinite; }
+  @keyframes st-toggle { 0%, 40% { transform: translateX(0); } 55%, 100% { transform: translateX(16px); } }
+  .st-scan { animation: st-scan 2.8s ease-in-out infinite; }
+  @keyframes st-scan { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(84px); } }
+  .st-draw { stroke-dasharray: 100; stroke-dashoffset: 100; animation: st-draw 3.6s ease-in-out infinite; }
+  @keyframes st-draw { 0%, 8% { stroke-dashoffset: 100; opacity: 1; } 55%, 88% { stroke-dashoffset: 0; opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 0; } }
+  .st-blink { animation: st-blink 1.8s ease-in-out infinite; }
+  @keyframes st-blink { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
+  .st-drop { animation: st-drop 3.2s cubic-bezier(0.5, 0, 0.5, 1) infinite; }
+  @keyframes st-drop { 0% { transform: translateY(-34px); opacity: 0; } 15% { opacity: 1; } 45%, 80% { transform: translateY(46px) scale(0.9); opacity: 1; } 100% { transform: translateY(46px) scale(0.6); opacity: 0; } }
+  .st-wave { animation: st-wave 1.8s ease-in-out infinite; }
+  @keyframes st-wave { 0%, 100% { opacity: 0.15; } 50% { opacity: 1; } }
+  .st-light { animation: st-light 3.6s ease-in-out infinite; }
+  @keyframes st-light { 0%, 25% { fill: #f1f1f4; } 40%, 85% { fill: #c9f2dd; } 100% { fill: #f1f1f4; } }
+  .st-paused * { animation-play-state: paused !important; }
+}

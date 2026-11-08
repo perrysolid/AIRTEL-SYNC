@@ -655,7 +655,9 @@ export default function ShopScene({ items, live, className }: ShopSceneProps) {
   const liveSet = useMemo(() => (live ? new Set(live) : undefined), [live]);
   return (
     <div className={className} aria-hidden>
-      <Canvas shadows dpr={[1, 2]} camera={{ fov: 30, near: 0.1, far: 100 }} gl={{ antialias: true, alpha: true }}>
+      {/* No re-measure on scroll: the landing page scales a phone holding this scene, and a transformed
+          bounding box would otherwise shrink the canvas. Real size changes still re-measure. */}
+      <Canvas shadows dpr={[1, 2]} camera={{ fov: 30, near: 0.1, far: 100 }} gl={{ antialias: true, alpha: true }} resize={{ scroll: false }}>
         <hemisphereLight args={["#ffffff", "#e6e6e6", 1.6]} />
         <directionalLight position={[5, 9, 6]} intensity={2.2} castShadow shadow-mapSize={[1024, 1024]} shadow-camera-left={-6} shadow-camera-right={6} shadow-camera-top={6} shadow-camera-bottom={-6} shadow-bias={-0.0004} />
         <directionalLight position={[-6, 4, -2]} intensity={0.5} color="#cfe8ff" />
