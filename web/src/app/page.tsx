@@ -3,13 +3,15 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Mic, MessageSquareText, Search } from "lucide-react";
+import { MessageCircle, Mic, MessageSquareText, Search, Send } from "lucide-react";
 import { Shop3D, VISUAL_LABEL } from "@/components/shop/Shop3D";
 import { Logo } from "@/components/Brand";
 import { HeroMenu } from "@/components/HeroMenu";
 import { NetworkBackdrop } from "@/components/NetworkBackdrop";
+import { Reveal } from "@/components/Reveal";
+import { ToolsStage } from "@/components/ToolsStage";
 import { PhoneMock } from "@/components/PhoneMock";
-import { PromoBar } from "@/components/SiteNav";
+import { PromoBar, SiteFooter } from "@/components/SiteNav";
 
 const GREETING: Record<string, { line: string; sub: string; talk: string; type: string }> = {
   en: { line: "Keep the payment beep coming.", sub: "Internet, business numbers, billing and CCTV for your shop, in one plan and one bill. Set up by chat, in your language, live in days.", talk: "Talk to the advisor", type: "Type instead" },
@@ -45,15 +47,6 @@ const STEPS = [
   ["Go live", "SIMs today, internet in days. Updates on WhatsApp."],
 ];
 
-const TOOLS: [string, string, string, string][] = [
-  ["🛡️", "Scam Shield", "Forward a suspicious message, link or payment screenshot. Get a verdict, the red flags and what to do next.", "/shield"],
-  ["📡", "Network Reality Check", "Know what can be installed at your pincode before you pay. No fibre? We switch you to 5G AirFiber.", "/network"],
-  ["💓", "Health & backup", "Service status, automatic tickets with an SLA, and a backup link that keeps your billing running.", "/solutions"],
-  ["📅", "Installation slots", "Book and reschedule the technician visit yourself. Two free reschedules, no phone calls.", "/help"],
-  ["🏪", "Branch-in-a-Box", "Opening a second shop? Copy your setup, reuse your KYC and book the install in one tap.", "/solutions"],
-  ["💬", "Everything in chat", "SHIELD, NETWORK, SCHEDULE, TROUBLE, BRANCH and BACKUP work in WhatsApp and Telegram.", "/whatsapp"],
-];
-
 export default function Home() {
   const [lang, setLang] = useState("en");
   const [orderId, setOrderId] = useState("");
@@ -63,7 +56,7 @@ export default function Home() {
   const latest = items.at(-1);
 
   return (
-    <div className="min-h-dvh">
+    <div id="top" className="min-h-dvh">
       <PromoBar />
 
       {/* ------------------------------------------------------------------ hero: a live network, one line, three phones on a stage */}
@@ -124,59 +117,71 @@ export default function Home() {
             </div>
           </div>
         </div>
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-[clamp(44px,8dvh,84px)] bg-gradient-to-b from-transparent to-white" />
       </section>
 
-      {/* ------------------------------------------------------------------ the 3D shop that builds itself + order tracking */}
-      <main className="mx-auto mt-4 grid max-w-6xl grid-cols-[minmax(0,1fr)] items-center gap-6 px-4 pb-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-10">
-        <section className="min-w-0">
-          <span aria-hidden className="mb-3 block h-1 w-12 rounded-full bg-brand" />
-          <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Watch your shop come alive, one service at a time</h2>
-          <p className="mt-3 max-w-lg text-lg text-ink-soft">Every product in your plan shows up on your shop as the advisor adds it. Then, on the tracker, each one turns from setting-up to live.</p>
-          <form
-            id="track"
-            className="card mt-8 max-w-lg scroll-mt-24 p-4"
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (orderId.trim()) router.push(`/order/${orderId.trim().toUpperCase()}`);
-            }}
-          >
-            <label htmlFor="track-id" className="text-sm font-semibold">Already ordered? Check your status</label>
-            <div className="mt-2 flex gap-2">
-              <input id="track-id" value={orderId} onChange={(e) => setOrderId(e.target.value)} placeholder="Order ID, e.g. ACC-3F9A2C71D0" className="min-w-0 flex-1 rounded-xl border border-rule bg-paper px-3 py-2.5 uppercase placeholder:normal-case" />
-              <button className="inline-flex items-center gap-1.5 rounded-xl bg-brand px-4 py-2 font-semibold text-white"><Search size={16} /> Track</button>
-            </div>
-          </form>
-        </section>
-        <div className="relative h-[300px] sm:h-[380px] lg:h-[480px]">
-          <Shop3D items={items} className="absolute inset-0" />
-          <div className="pointer-events-none absolute inset-x-0 bottom-2 flex justify-center" aria-live="polite">
-            {latest && (
-              <span key={latest} className="chip-in inline-flex items-center gap-2 rounded-full border border-rule bg-sheet/90 px-3.5 py-1.5 text-sm font-semibold shadow-[var(--shadow-card)] backdrop-blur">
-                <span className="h-2 w-2 rounded-full bg-signal" /> {VISUAL_LABEL[latest]} connected
-              </span>
-            )}
-          </div>
-        </div>
-      </main>
-
-      <section aria-labelledby="tools" className="border-y border-brand/15 bg-brand-soft">
-        <div className="mx-auto max-w-6xl px-4 py-12">
-          <span aria-hidden className="mb-3 block h-1 w-12 rounded-full bg-brand" />
-          <h2 id="tools" className="text-2xl font-extrabold tracking-tight">Beyond the sale: tools that keep your business running</h2>
-          <p className="mt-1 max-w-2xl text-ink-soft">Free to try, no sign-up. They also work as commands in WhatsApp and Telegram.</p>
-          <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {TOOLS.map(([icon, title, text, href]) => (
-              <li key={title}>
-                <Link href={href} className="card flex h-full flex-col gap-1 p-5 transition-transform hover:-translate-y-0.5">
-                  <span className="text-3xl" aria-hidden>{icon}</span>
-                  <h3 className="mt-1 text-lg font-bold">{title}</h3>
-                  <p className="text-ink-soft">{text}</p>
+      {/* ------------------------------------------------------------------ the 3D shop that builds itself, the ways in, and order tracking */}
+      <section aria-labelledby="alive" className="bg-white">
+        <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] items-center gap-8 px-4 pt-6 pb-[clamp(3rem,7vw,5.5rem)] lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-12">
+          <div className="min-w-0">
+            <Reveal>
+              <span aria-hidden className="mb-3 block h-1 w-12 rounded-full bg-brand" />
+              <h2 id="alive" className="text-[clamp(1.9rem,4.4vw,3rem)] leading-[1.08] font-extrabold tracking-tight text-balance">
+                Watch your shop <span className="sweep">come alive</span>, one service at a time
+              </h2>
+            </Reveal>
+            <Reveal delay={120}>
+              <p className="mt-4 max-w-lg text-lg text-ink-soft">Every product in your plan shows up on your shop as the advisor adds it. Then, on the tracker, each one turns from setting-up to live.</p>
+            </Reveal>
+            <Reveal delay={240}>
+              <div className="mt-7 flex flex-wrap items-center gap-3">
+                <button
+                  onClick={() => router.push(`/advisor?lang=${lang}&voice=1`)}
+                  className="group inline-flex items-center gap-2.5 rounded-full bg-brand py-1.5 pr-5 pl-1.5 text-[15px] font-extrabold text-white shadow-[0_14px_30px_-14px_var(--brand)] transition-transform hover:-translate-y-0.5 active:scale-[0.97]"
+                >
+                  <span className="grid h-9 w-9 place-items-center rounded-full bg-white text-brand transition-transform group-hover:scale-105"><Mic size={18} strokeWidth={2.4} /></span>
+                  <span lang={lang}>{g.talk}</span>
+                </button>
+                <Link href={`/advisor?lang=${lang}`} lang={lang} className="inline-flex h-[2.9rem] items-center gap-2 rounded-full border border-ink/20 px-5 text-[15px] font-semibold transition-transform hover:-translate-y-0.5 hover:bg-paper">
+                  <MessageSquareText size={17} /> {g.type}
                 </Link>
-              </li>
-            ))}
-          </ul>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-[15px] font-semibold">
+                <Link href={`/whatsapp?lang=${lang}`} className="inline-flex items-center gap-1.5 text-wa underline-offset-4 hover:underline"><MessageCircle size={16} /> Continue on WhatsApp</Link>
+                <a href={`https://t.me/${TELEGRAM}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-[#0a6fb0] underline-offset-4 hover:underline"><Send size={16} /> Chat on Telegram</a>
+              </div>
+            </Reveal>
+            <Reveal delay={360}>
+              <form
+                id="track"
+                className="card mt-8 max-w-lg scroll-mt-24 p-4"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (orderId.trim()) router.push(`/order/${orderId.trim().toUpperCase()}`);
+                }}
+              >
+                <label htmlFor="track-id" className="text-sm font-semibold">Already ordered? Check your status</label>
+                <div className="mt-2 flex gap-2">
+                  <input id="track-id" value={orderId} onChange={(e) => setOrderId(e.target.value)} placeholder="Order ID, e.g. ACC-3F9A2C71D0" className="min-w-0 flex-1 rounded-xl border border-rule bg-paper px-3 py-2.5 uppercase placeholder:normal-case" />
+                  <button className="inline-flex items-center gap-1.5 rounded-xl bg-brand px-4 py-2 font-semibold text-white"><Search size={16} /> Track</button>
+                </div>
+              </form>
+            </Reveal>
+          </div>
+          <Reveal delay={200} className="relative h-[300px] sm:h-[380px] lg:h-[480px]">
+            <Shop3D items={items} className="absolute inset-0" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-2 flex justify-center" aria-live="polite">
+              {latest && (
+                <span key={latest} className="chip-in inline-flex items-center gap-2 rounded-full border border-rule bg-sheet/90 px-3.5 py-1.5 text-sm font-semibold shadow-[var(--shadow-card)] backdrop-blur">
+                  <span className="h-2 w-2 rounded-full bg-signal" /> {VISUAL_LABEL[latest]} connected
+                </span>
+              )}
+            </div>
+          </Reveal>
         </div>
       </section>
+
+      <ToolsStage />
 
       <section aria-labelledby="how" className="bg-white">
         <div className="mx-auto max-w-6xl px-4 py-12">
@@ -196,6 +201,8 @@ export default function Home() {
           </p>
         </div>
       </section>
+
+      <SiteFooter />
     </div>
   );
 }
