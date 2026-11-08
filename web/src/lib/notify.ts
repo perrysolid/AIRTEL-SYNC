@@ -5,6 +5,7 @@ import { publicUrl, type BotMessage } from "./bots/types";
 import { sendTelegram, telegramEnabled } from "./bots/telegram";
 import { sendWhatsApp, sendWhatsAppTemplate, whatsappCloudEnabled } from "./bots/whatsapp-cloud";
 import { customerForOrder } from "./customers";
+import { sendLinked, waLinkReady } from "./bots/wa-link";
 
 /**
  * Records owner updates on the order and, when the order came from a chat
@@ -39,7 +40,8 @@ export function notifyOrder(o: Order, update: string | string[]) {
     const key = `${chat.channel}:${chat.chatId.replace(/\D/g, "")}`;
     if (seen.has(key)) continue;
     seen.add(key);
-    const windowClosed = chat.channel === "whatsapp" && c?.phone === chat.chatId && chat !== o.botChat && !withinWhatsAppWindow(c.whatsappInboundAt);
+    // A linked number has no 24-hour window; Meta's Cloud API does.
+    const windowClosed = !waLinkReady() && chat.channel === "whatsapp" && c?.phone === chat.chatId && chat !== o.botChat && !withinWhatsAppWindow(c.whatsappInboundAt);
     void (windowClosed ? deliverTemplate(chat.chatId, o, lines) : deliver(chat, msg));
   }
 }
@@ -62,9 +64,11 @@ async function deliverTemplate(to: string, o: Order, lines: string[]) {
 }
 
 export async function deliver(chat: BotChat, msg: BotMessage) {
-  if (!(chat.channel === "telegram" ? telegramEnabled() : whatsappCloudEnabled())) return;
+  const linked = chat.channel === "whatsapp" && waLinkReady();
+  if (!(chat.channel === "telegram" ? telegramEnabled() : linked || whatsappCloudEnabled())) return;
   try {
     if (chat.channel === "telegram") await sendTelegram(chat.chatId, msg);
+    else if (linked) await sendLinked(chat.chatId, msg);
     else await sendWhatsApp(chat.chatId, msg);
   } catch (err) {
     const m = (err as Error).message;

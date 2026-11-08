@@ -23,6 +23,12 @@ export async function registerNode() {
     setInterval(() => void runNudges().catch((e) => console.warn(`[nudges] ${(e as Error).message}`)), 5 * 60_000).unref();
   }
 
+  // WhatsApp on an ordinary number, as a linked device (WA_LINK=on). Reconnects with the saved login.
+  if (process.env.WA_LINK === "on") {
+    const { startWaLink } = await import("./lib/bots/wa-link");
+    void startWaLink().catch((e) => console.warn(`[wa-link] ${(e as Error).message}`));
+  }
+
   const base = process.env.BOT_WEBHOOK_BASE_URL ?? process.env.RENDER_EXTERNAL_URL;
   if (!base?.startsWith("https://") || !process.env.TELEGRAM_BOT_TOKEN) return;
   const { tg } = await import("./lib/bots/telegram");

@@ -20,7 +20,7 @@ const frontendHost = (() => {
 
 const nextConfig: NextConfig = {
   // Tesseract spawns worker threads from its own files; keep it out of the bundle.
-  serverExternalPackages: ["tesseract.js"],
+  serverExternalPackages: ["tesseract.js", "@whiskeysockets/baileys", "pino"],
   // On Render, pages reached through the Vercel proxy must fetch their own build's chunks.
   assetPrefix: renderUrl || undefined,
   // Sign-in and call logging are server actions posted from the Vercel address.

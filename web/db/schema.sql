@@ -50,3 +50,9 @@ CREATE TABLE IF NOT EXISTS lead_activity (
 );
 CREATE INDEX IF NOT EXISTS lead_activity_lead ON lead_activity (lead_id, at);
 CREATE INDEX IF NOT EXISTS lead_activity_staff ON lead_activity (staff_id, at);
+
+-- WhatsApp linked-device login (keys for the number the bot runs on), so a restart doesn't need relinking.
+CREATE TABLE IF NOT EXISTS wa_auth (
+  key   text PRIMARY KEY,
+  value text NOT NULL
+);

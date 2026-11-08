@@ -3,7 +3,7 @@ import { after } from "next/server";
 import { botTurn, documentRedirect, transcribeVoice, VOICE_UNAVAILABLE } from "@/lib/bots/core";
 import { downloadWhatsAppMedia, markReadTyping, sendWhatsApp, validMetaSignature } from "@/lib/bots/whatsapp-cloud";
 import type { BotMessage } from "@/lib/bots/types";
-import { chatText } from "@/lib/bots/types";
+import { asPlainText } from "@/lib/bots/types";
 import { noteWhatsAppInbound } from "@/lib/customers";
 
 export const runtime = "nodejs";
@@ -109,15 +109,6 @@ function validTwilioSignature(req: Request, params: URLSearchParams): boolean {
 
 const xml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-/** Plain-text rendering for transports without native buttons. */
-function asText(m: BotMessage): string {
-  let t = chatText(m.text, (x) => `*${x}*`);
-  if (m.options?.length) t += "\n\n" + m.options.map((o, i) => `${i + 1}. ${o.label}`).join("\n") + (m.multi ? "\n\n_Reply with all the numbers that apply, e.g. 1,3_" : "");
-  for (const b of m.buttons ?? []) t += b.url ? `\n\n${b.label}: ${b.url}` : b.action === "a:order" ? "\n\nReply *ORDER* to go ahead." : "";
-  if (m.askContact) t += "";
-  return t;
-}
-
 async function twilioWebhook(req: Request, raw: string) {
   const params = new URLSearchParams(raw);
   if (!validTwilioSignature(req, params)) return new Response("Invalid signature", { status: 403 });
@@ -125,6 +116,6 @@ async function twilioWebhook(req: Request, raw: string) {
   let body = (params.get("Body") ?? "").trim();
   if (/^order$/i.test(body)) body = "a:order";
   const msgs = await botTurn({ chat: { channel: "whatsapp", chatId: from }, text: body, phone: from, firstName: params.get("ProfileName")?.split(" ")[0] });
-  const reply = msgs.map(asText).join("\n\n").slice(0, 1550);
+  const reply = msgs.map(asPlainText).join("\n\n").slice(0, 1550);
   return new Response(`<?xml version="1.0" encoding="UTF-8"?><Response><Message>${xml(reply)}</Message></Response>`, { headers: { "Content-Type": "text/xml" } });
 }

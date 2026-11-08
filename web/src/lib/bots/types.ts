@@ -42,3 +42,11 @@ export function linkButtonsAllowed() {
   const u = baseUrl();
   return u.startsWith("https://") && !/localhost|127\.0\.0\.1/.test(u);
 }
+
+/** Plain-text rendering for transports without native buttons (Twilio, a linked WhatsApp device). */
+export function asPlainText(m: BotMessage): string {
+  let t = chatText(m.text, (x) => `*${x}*`);
+  if (m.options?.length) t += "\n\n" + m.options.map((o, i) => `${i + 1}. ${o.label}`).join("\n") + (m.multi ? "\n\n_Reply with all the numbers that apply, e.g. 1,3_" : "");
+  for (const b of m.buttons ?? []) t += b.url ? `\n\n${b.label}: ${b.url}` : b.action === "a:order" ? "\n\nReply *ORDER* to go ahead." : "";
+  return t;
+}
