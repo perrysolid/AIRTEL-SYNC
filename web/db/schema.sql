@@ -2,7 +2,7 @@
 -- Sessions, orders and consents are JSON documents keyed by id; seq keeps
 -- insertion order (the consent ledger is a hash chain, so order matters).
 CREATE TABLE IF NOT EXISTS records (
-  kind       text        NOT NULL CHECK (kind IN ('session', 'order', 'consent')),
+  kind       text        NOT NULL,
   id         text        NOT NULL,
   seq        bigserial,
   data       jsonb       NOT NULL,
@@ -10,6 +10,9 @@ CREATE TABLE IF NOT EXISTS records (
   PRIMARY KEY (kind, id)
 );
 CREATE INDEX IF NOT EXISTS records_kind_seq ON records (kind, seq);
+-- Customer accounts (phone sign-in) were added later; widen the kind check on existing tables.
+ALTER TABLE records DROP CONSTRAINT IF EXISTS records_kind_check;
+ALTER TABLE records ADD CONSTRAINT records_kind_check CHECK (kind IN ('session', 'order', 'consent', 'customer'));
 
 -- Append-only audit trail (identifiers already masked by the caller).
 CREATE TABLE IF NOT EXISTS audit_log (

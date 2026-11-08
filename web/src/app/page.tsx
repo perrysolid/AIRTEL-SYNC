@@ -16,18 +16,21 @@ import { StepsCarousel } from "@/components/StepsCarousel";
 import { ToolsStage } from "@/components/ToolsStage";
 import { PhoneMock } from "@/components/PhoneMock";
 import { PromoBar, SiteFooter } from "@/components/SiteNav";
+import { AccountButton, WelcomeBack } from "@/components/Account";
+import { TelegramLogo, WhatsAppLogo } from "@/components/BrandIcons";
+import { LangPicker } from "@/components/LangPicker";
 
-const GREETING: Record<string, { line: string; sub: string; talk: string; type: string }> = {
-  en: { line: "Keep the payment beep coming.", sub: "Internet, business numbers, billing and CCTV for your shop, in one plan and one bill. Set up by chat, in your language, live in days.", talk: "Talk to the advisor", type: "Type instead" },
-  hi: { line: "बजती रहे, पेमेंट की आवाज़।", sub: "दुकान के लिए इंटरनेट, बिज़नेस नंबर, बिलिंग और CCTV — एक प्लान, एक बिल। अपनी भाषा में चैट से सेटअप, कुछ ही दिनों में चालू।", talk: "सलाहकार से बात करें", type: "लिखकर बताएँ" },
-  mr: { line: "पेमेंटचा आवाज येत राहो.", sub: "दुकानासाठी इंटरनेट, बिझनेस नंबर, बिलिंग आणि CCTV — एक प्लॅन, एक बिल. तुमच्या भाषेत चॅटवरून सेटअप.", talk: "सल्लागाराशी बोला", type: "टाइप करा" },
-  ta: { line: "பணம் வந்த ஒலி நிற்காமல் ஒலிக்கட்டும்.", sub: "உங்கள் கடைக்கு இணையம், வணிக எண்கள், பில்லிங், CCTV — ஒரே திட்டம், ஒரே பில். உங்கள் மொழியில் சாட் மூலம் அமைப்பு.", talk: "ஆலோசகரிடம் பேசுங்கள்", type: "தட்டச்சு செய்யுங்கள்" },
-  te: { line: "పేమెంట్ శబ్దం ఆగకుండా వినిపించాలి.", sub: "మీ షాపు కోసం ఇంటర్నెట్, బిజినెస్ నంబర్లు, బిల్లింగ్, CCTV — ఒకే ప్లాన్, ఒకే బిల్. మీ భాషలో చాట్ ద్వారా సెటప్.", talk: "సలహాదారుతో మాట్లాడండి", type: "టైప్ చేయండి" },
-  kn: { line: "ಪೇಮೆಂಟ್ ಸದ್ದು ನಿಲ್ಲದೆ ಕೇಳಿಸುತ್ತಿರಲಿ.", sub: "ನಿಮ್ಮ ಅಂಗಡಿಗೆ ಇಂಟರ್ನೆಟ್, ಬಿಸಿನೆಸ್ ನಂಬರ್, ಬಿಲ್ಲಿಂಗ್, CCTV — ಒಂದೇ ಪ್ಲಾನ್, ಒಂದೇ ಬಿಲ್. ನಿಮ್ಮ ಭಾಷೆಯಲ್ಲಿ ಚಾಟ್ ಮೂಲಕ ಸೆಟಪ್.", talk: "ಸಲಹೆಗಾರರೊಂದಿಗೆ ಮಾತನಾಡಿ", type: "ಟೈಪ್ ಮಾಡಿ" },
-  gu: { line: "પેમેન્ટનો અવાજ સતત આવતો રહે.", sub: "તમારી દુકાન માટે ઇન્ટરનેટ, બિઝનેસ નંબર, બિલિંગ અને CCTV — એક પ્લાન, એક બિલ. તમારી ભાષામાં ચેટથી સેટઅપ.", talk: "સલાહકાર સાથે વાત કરો", type: "ટાઇપ કરો" },
-  bn: { line: "পেমেন্টের আওয়াজ চলতেই থাকুক।", sub: "আপনার দোকানের জন্য ইন্টারনেট, বিজনেস নম্বর, বিলিং ও CCTV — এক প্ল্যান, এক বিল। নিজের ভাষায় চ্যাটে সেটআপ।", talk: "পরামর্শদাতার সাথে কথা বলুন", type: "টাইপ করুন" },
-  ml: { line: "പേയ്‌മെന്റ് ശബ്ദം നിലയ്ക്കാതിരിക്കട്ടെ.", sub: "നിങ്ങളുടെ കടയ്ക്ക് ഇന്റർനെറ്റ്, ബിസിനസ് നമ്പർ, ബില്ലിംഗ്, CCTV — ഒരു പ്ലാൻ, ഒരു ബിൽ. നിങ്ങളുടെ ഭാഷയിൽ ചാറ്റ് വഴി സെറ്റപ്പ്.", talk: "ഉപദേഷ്ടാവിനോട് സംസാരിക്കൂ", type: "ടൈപ്പ് ചെയ്യൂ" },
-  pa: { line: "ਪੇਮੈਂਟ ਦੀ ਆਵਾਜ਼ ਵੱਜਦੀ ਰਹੇ।", sub: "ਤੁਹਾਡੀ ਦੁਕਾਨ ਲਈ ਇੰਟਰਨੈੱਟ, ਬਿਜ਼ਨਸ ਨੰਬਰ, ਬਿਲਿੰਗ ਅਤੇ CCTV — ਇੱਕ ਪਲਾਨ, ਇੱਕ ਬਿੱਲ। ਆਪਣੀ ਭਾਸ਼ਾ ਵਿੱਚ ਚੈਟ ਰਾਹੀਂ ਸੈੱਟਅੱਪ।", talk: "ਸਲਾਹਕਾਰ ਨਾਲ ਗੱਲ ਕਰੋ", type: "ਟਾਈਪ ਕਰੋ" },
+const GREETING: Record<string, { line: string; sub: string; talk: string; type: string; chat: string }> = {
+  en: { line: "Chhota business. Bada connection.", sub: "Fibre, business SIMs, UPI billing and CCTV for kirana stores, clinics, workshops and every MSME in between. One plan, one GST bill, set up on WhatsApp in your language.", talk: "Talk to the advisor", type: "Type instead", chat: "Or chat on" },
+  hi: { line: "छोटा बिज़नेस, बड़ा कनेक्शन।", sub: "दुकान के लिए इंटरनेट, बिज़नेस नंबर, बिलिंग और CCTV — एक प्लान, एक बिल। अपनी भाषा में चैट से सेटअप, कुछ ही दिनों में चालू।", talk: "सलाहकार से बात करें", type: "लिखकर बताएँ", chat: "या चैट करें" },
+  mr: { line: "छोटा व्यवसाय, मोठं कनेक्शन.", sub: "दुकानासाठी इंटरनेट, बिझनेस नंबर, बिलिंग आणि CCTV — एक प्लॅन, एक बिल. तुमच्या भाषेत चॅटवरून सेटअप.", talk: "सल्लागाराशी बोला", type: "टाइप करा", chat: "किंवा चॅट करा" },
+  ta: { line: "சிறு தொழில், பெரிய இணைப்பு.", sub: "உங்கள் கடைக்கு இணையம், வணிக எண்கள், பில்லிங், CCTV — ஒரே திட்டம், ஒரே பில். உங்கள் மொழியில் சாட் மூலம் அமைப்பு.", talk: "ஆலோசகரிடம் பேசுங்கள்", type: "தட்டச்சு செய்யுங்கள்", chat: "அல்லது சாட் செய்யுங்கள்" },
+  te: { line: "చిన్న వ్యాపారం, పెద్ద కనెక్షన్.", sub: "మీ షాపు కోసం ఇంటర్నెట్, బిజినెస్ నంబర్లు, బిల్లింగ్, CCTV — ఒకే ప్లాన్, ఒకే బిల్. మీ భాషలో చాట్ ద్వారా సెటప్.", talk: "సలహాదారుతో మాట్లాడండి", type: "టైప్ చేయండి", chat: "లేదా చాట్ చేయండి" },
+  kn: { line: "ಸಣ್ಣ ವ್ಯಾಪಾರ, ದೊಡ್ಡ ಕನೆಕ್ಷನ್.", sub: "ನಿಮ್ಮ ಅಂಗಡಿಗೆ ಇಂಟರ್ನೆಟ್, ಬಿಸಿನೆಸ್ ನಂಬರ್, ಬಿಲ್ಲಿಂಗ್, CCTV — ಒಂದೇ ಪ್ಲಾನ್, ಒಂದೇ ಬಿಲ್. ನಿಮ್ಮ ಭಾಷೆಯಲ್ಲಿ ಚಾಟ್ ಮೂಲಕ ಸೆಟಪ್.", talk: "ಸಲಹೆಗಾರರೊಂದಿಗೆ ಮಾತನಾಡಿ", type: "ಟೈಪ್ ಮಾಡಿ", chat: "ಅಥವಾ ಚಾಟ್ ಮಾಡಿ" },
+  gu: { line: "નાનો બિઝનેસ, મોટું કનેક્શન.", sub: "તમારી દુકાન માટે ઇન્ટરનેટ, બિઝનેસ નંબર, બિલિંગ અને CCTV — એક પ્લાન, એક બિલ. તમારી ભાષામાં ચેટથી સેટઅપ.", talk: "સલાહકાર સાથે વાત કરો", type: "ટાઇપ કરો", chat: "અથવા ચેટ કરો" },
+  bn: { line: "ছোট ব্যবসা, বড় কানেকশন।", sub: "আপনার দোকানের জন্য ইন্টারনেট, বিজনেস নম্বর, বিলিং ও CCTV — এক প্ল্যান, এক বিল। নিজের ভাষায় চ্যাটে সেটআপ।", talk: "পরামর্শদাতার সাথে কথা বলুন", type: "টাইপ করুন", chat: "অথবা চ্যাট করুন" },
+  ml: { line: "ചെറിയ ബിസിനസ്, വലിയ കണക്ഷൻ.", sub: "നിങ്ങളുടെ കടയ്ക്ക് ഇന്റർനെറ്റ്, ബിസിനസ് നമ്പർ, ബില്ലിംഗ്, CCTV — ഒരു പ്ലാൻ, ഒരു ബിൽ. നിങ്ങളുടെ ഭാഷയിൽ ചാറ്റ് വഴി സെറ്റപ്പ്.", talk: "ഉപദേഷ്ടാവിനോട് സംസാരിക്കൂ", type: "ടൈപ്പ് ചെയ്യൂ", chat: "അല്ലെങ്കിൽ ചാറ്റ് ചെയ്യൂ" },
+  pa: { line: "ਛੋਟਾ ਕਾਰੋਬਾਰ, ਵੱਡਾ ਕਨੈਕਸ਼ਨ।", sub: "ਤੁਹਾਡੀ ਦੁਕਾਨ ਲਈ ਇੰਟਰਨੈੱਟ, ਬਿਜ਼ਨਸ ਨੰਬਰ, ਬਿਲਿੰਗ ਅਤੇ CCTV — ਇੱਕ ਪਲਾਨ, ਇੱਕ ਬਿੱਲ। ਆਪਣੀ ਭਾਸ਼ਾ ਵਿੱਚ ਚੈਟ ਰਾਹੀਂ ਸੈੱਟਅੱਪ।", talk: "ਸਲਾਹਕਾਰ ਨਾਲ ਗੱਲ ਕਰੋ", type: "ਟਾਈਪ ਕਰੋ", chat: "ਜਾਂ ਚੈਟ ਕਰੋ" },
 };
 
 const SHOWCASE = ["P01", "P19", "P07", "P23", "P15", "P22", "P16", "P17"];
@@ -50,10 +53,12 @@ const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 const ease = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
 
 /**
- * Two swipes. The landing page scrolls away as normal, leaving its two side phones behind, while the centre phone
- * lifts out of it: the first swipe brings the phone to the middle of the screen, the second opens the "come alive"
- * section out of its screen. That section sits right below the landing page and is pinned while it opens.
+ * Two swipes. First swipe: the words lift away and blur, the side phones swing out and fade, the night sky dissolves
+ * to white, and the centre phone straightens up and rises to the middle of the screen. Second swipe: its screen opens
+ * into the "come alive" section while the titanium frame dissolves, so the hardware never sits on top of the page.
  * Scroll-snap stops (see .zoom-snap) make each swipe land on a step. Progress goes straight to inline styles.
+ *
+ * Everywhere (phones included), the three phones stand in perspective and lean gently towards the pointer.
  */
 function useHeroZoom() {
   const runway = useRef<HTMLDivElement>(null);
@@ -62,6 +67,11 @@ function useHeroZoom() {
   const fly = useRef<HTMLDivElement>(null);
   const screen = useRef<HTMLDivElement>(null);
   const layer = useRef<HTMLElement>(null);
+  const copy = useRef<HTMLDivElement>(null);
+  const sideL = useRef<HTMLDivElement>(null);
+  const sideR = useRef<HTMLDivElement>(null);
+  const veil = useRef<HTMLDivElement>(null);
+  const frameEl = useRef<HTMLDivElement>(null);
   const [enhanced, setEnhanced] = useState(false);
   const [revealed, setRevealed] = useState(false);
 
@@ -73,9 +83,35 @@ function useHeroZoom() {
     return () => mq.removeEventListener("change", on);
   }, []);
 
+  // Pointer tilt: the phones lean a few degrees towards the pointer, eased so they glide rather than jitter.
+  useEffect(() => {
+    const rw = runway.current;
+    if (!rw || !window.matchMedia("(pointer: fine) and (prefers-reduced-motion: no-preference)").matches) return;
+    let raf = 0;
+    const cur = { x: 0, y: 0 }, tgt = { x: 0, y: 0 };
+    const tick = () => {
+      cur.x += (tgt.x - cur.x) * 0.08;
+      cur.y += (tgt.y - cur.y) * 0.08;
+      rw.style.setProperty("--tx", cur.x.toFixed(3));
+      rw.style.setProperty("--ty", cur.y.toFixed(3));
+      raf = Math.abs(tgt.x - cur.x) + Math.abs(tgt.y - cur.y) > 0.01 ? requestAnimationFrame(tick) : 0;
+    };
+    const move = (e: PointerEvent) => {
+      tgt.x = (e.clientX / window.innerWidth - 0.5) * 12;
+      tgt.y = (e.clientY / window.innerHeight - 0.5) * 8;
+      if (!raf) raf = requestAnimationFrame(tick);
+    };
+    window.addEventListener("pointermove", move, { passive: true });
+    return () => {
+      window.removeEventListener("pointermove", move);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
+
   useEffect(() => {
     const rw = runway.current, ov = overlay.current, sl = slot.current, fl = fly.current, sc = screen.current, ly = layer.current;
     if (!enhanced || !rw || !ov || !sl || !fl || !sc || !ly) return;
+    const moved = [copy.current, sideL.current, sideR.current, veil.current, frameEl.current];
     let raf = 0;
     let shown = false;
     let size = { w: 0, h: 0 };
@@ -87,6 +123,22 @@ function useHeroZoom() {
       const p = clamp01(-rw.getBoundingClientRect().top / Math.max(1, vh));
       const a = ease(clamp01(p / 0.5));
       const b = ease(clamp01((p - 0.5) / 0.5));
+      const lift = ease(clamp01(p / 0.32));
+
+      // the words and the side phones leave first; the sky dissolves to white behind the rising phone
+      const cp = copy.current;
+      if (cp) {
+        cp.style.opacity = (1 - lift).toFixed(3);
+        cp.style.transform = `translateY(${(-lift * 56).toFixed(1)}px) scale(${(1 - lift * 0.04).toFixed(4)})`;
+        cp.style.filter = lift > 0.001 ? `blur(${(lift * 8).toFixed(1)}px)` : "";
+      }
+      for (const [el, dir] of [[sideL.current, -1], [sideR.current, 1]] as const) {
+        if (!el) continue;
+        el.style.transform = `perspective(1400px) translateX(${(dir * lift * 16).toFixed(2)}vw) rotateY(${(-dir * lift * 55).toFixed(2)}deg)`;
+        el.style.opacity = (1 - lift).toFixed(3);
+      }
+      if (veil.current) veil.current.style.opacity = ease(clamp01((p - 0.06) / 0.4)).toFixed(3);
+      if (frameEl.current) frameEl.current.style.opacity = (1 - clamp01(b * 1.7)).toFixed(3);
 
       // where the phone sits in the landing page right now (it scrolls up with the page)
       const s = sl.getBoundingClientRect();
@@ -98,7 +150,8 @@ function useHeroZoom() {
       const k = 1 + ((vh * 0.84) / s.height - 1) * a;
       const x0 = s.left - box.left, y0 = s.top - box.top;
       const x1 = box.width / 2 - s.width / 2, y1 = vh / 2 - s.height / 2;
-      fl.style.transform = `translate3d(${(x0 + (x1 - x0) * a).toFixed(1)}px, ${(y0 + (y1 - y0) * a).toFixed(1)}px, 0) scale(${k.toFixed(4)})`;
+      // it starts tipped back like the side phones and straightens up as it rises
+      fl.style.transform = `translate3d(${(x0 + (x1 - x0) * a).toFixed(1)}px, ${(y0 + (y1 - y0) * a).toFixed(1)}px, 0) perspective(1600px) rotateX(calc(${(9 * (1 - a)).toFixed(2)}deg - var(--ty, 0) * ${(1 - a).toFixed(3)}deg)) rotateY(calc(var(--tx, 0) * ${(1 - a).toFixed(3)}deg)) scale(${(k * (1 + 0.1 * b)).toFixed(4)})`;
 
       // the section opens out of wherever the phone's screen is
       const sr = sc.getBoundingClientRect();
@@ -125,11 +178,12 @@ function useHeroZoom() {
       cancelAnimationFrame(raf);
       ly.style.clipPath = "";
       ly.style.opacity = "";
+      for (const el of moved) if (el) el.removeAttribute("style");
       setRevealed(false);
     };
   }, [enhanced]);
 
-  return { runway, overlay, slot, fly, screen, layer, enhanced, revealed };
+  return { runway, overlay, slot, fly, screen, layer, copy, sideL, sideR, veil, frameEl, enhanced, revealed };
 }
 
 type Greeting = (typeof GREETING)[string];
@@ -189,11 +243,16 @@ export default function Home() {
             {/* the two corners: brand on the left, menu on the right, on the same baseline and the same inset */}
             <header className="flex h-[4.5rem] w-full items-center justify-between px-[clamp(1rem,3vw,2.75rem)]">
               <Logo onDark />
-              <HeroMenu lang={lang} onLang={setLang} telegram={TELEGRAM} />
+              <div className="flex items-center gap-2">
+                <LangPicker lang={lang} onLang={setLang} onDark />
+                <AccountButton onDark />
+                <HeroMenu lang={lang} onLang={setLang} telegram={TELEGRAM} />
+              </div>
             </header>
 
             {/* the message sits in the middle, just above the stage; the background does the rest of the talking */}
-            <div className="zoom-copy flex flex-1 flex-col items-center justify-end px-4 pb-[clamp(1.25rem,4.5dvh,3rem)] text-center">
+            <div ref={z.copy} className="zoom-copy flex flex-1 flex-col items-center justify-end px-4 pb-[clamp(1.25rem,4.5dvh,3rem)] text-center">
+              <WelcomeBack />
               <h1 key={lang} lang={lang} className="rise max-w-[22ch] text-[clamp(1.9rem,5.2vw,3.6rem)] leading-[1.08] font-extrabold tracking-tight text-balance [text-shadow:0_2px_30px_rgb(0_0_0/0.7)]" style={{ ["--i" as string]: 1 }}>
                 {g.line}
               </h1>
@@ -212,6 +271,15 @@ export default function Home() {
                   <MessageSquareText size={17} /> {g.type}
                 </Link>
               </div>
+              <div className="rise mt-3 flex flex-wrap items-center justify-center gap-2 text-sm" style={{ ["--i" as string]: 4 }}>
+                <span lang={lang} className="text-white/65">{g.chat}</span>
+                <Link href={`/whatsapp?lang=${lang}`} className="inline-flex h-9 items-center gap-2 rounded-full bg-white py-1 pr-3.5 pl-1.5 font-bold text-[#0b3d2e] shadow-[0_8px_24px_-12px_rgb(0_0_0/0.6)] transition-transform hover:-translate-y-0.5">
+                  <WhatsAppLogo className="h-6 w-6" /> WhatsApp
+                </Link>
+                <a href={`https://t.me/${TELEGRAM}`} target="_blank" rel="noreferrer" className="inline-flex h-9 items-center gap-2 rounded-full bg-white py-1 pr-3.5 pl-1.5 font-bold text-[#0b3550] shadow-[0_8px_24px_-12px_rgb(0_0_0/0.6)] transition-transform hover:-translate-y-0.5">
+                  <TelegramLogo className="h-6 w-6" /> Telegram
+                </a>
+              </div>
             </div>
 
             {/* ------------------------------------------- the stage: a low white arc, three phones standing on it, sized from one number */}
@@ -228,24 +296,30 @@ export default function Home() {
                 />
               </div>
               <div className="absolute inset-x-0 flex items-end justify-center" style={{ bottom: "calc(var(--ph) * -0.14)", gap: "calc(var(--ph) * 0.07)" }}>
-                <div className="zoom-side-l">
-                  <div className="phone-in" style={{ ["--i" as string]: 1, ["--r" as string]: "-7deg", rotate: "-7deg", height: "calc(var(--ph) * 0.8)", transform: "translateY(calc(var(--ph) * 0.02))" }}>
-                    <PhoneMock className="h-full" src="/screens/advisor.png" alt="The advisor recommends a bundle with a clear monthly price" />
+                <div ref={z.sideL} className="zoom-side-l">
+                  <div className="phone-in" style={{ ["--i" as string]: 1, height: "calc(var(--ph) * 0.8)", transform: "translateY(calc(var(--ph) * 0.02))" }}>
+                    <div className="hero-float h-full" style={{ ["--fd" as string]: "-1.5s", transform: "perspective(1400px) rotateY(calc(24deg + var(--tx, 0) * 1deg)) rotateX(calc(6deg - var(--ty, 0) * 1deg)) rotateZ(-2deg)" }}>
+                      <PhoneMock className="h-full" src="/screens/advisor.png" alt="The advisor recommends a plan with a clear monthly price" />
+                    </div>
                   </div>
                 </div>
                 {/* the centre phone's place; on wide screens the phone itself flies from here (see the overlay below) */}
                 <div ref={z.slot} className="relative z-10" style={{ height: "var(--ph)", aspectRatio: "0.475" }}>
                   {!z.enhanced && (
                     <div className="phone-in h-full" style={{ ["--i" as string]: 0 }}>
-                      <PhoneMock className="h-full">
-                        <MiniAlive g={g} items={items} latest={latest} />
-                      </PhoneMock>
+                      <div className="h-full" style={{ transform: "perspective(1600px) rotateX(calc(9deg - var(--ty, 0) * 1deg)) rotateY(calc(var(--tx, 0) * 1deg))" }}>
+                        <PhoneMock className="h-full">
+                          <MiniAlive g={g} items={items} latest={latest} />
+                        </PhoneMock>
+                      </div>
                     </div>
                   )}
                 </div>
-                <div className="zoom-side-r">
-                  <div className="phone-in" style={{ ["--i" as string]: 2, ["--r" as string]: "7deg", rotate: "7deg", height: "calc(var(--ph) * 0.8)", transform: "translateY(calc(var(--ph) * 0.02))" }}>
-                    <PhoneMock className="h-full" src="/screens/shield.png" alt="Scam Shield flags a fake KYC message and says what to do" />
+                <div ref={z.sideR} className="zoom-side-r">
+                  <div className="phone-in" style={{ ["--i" as string]: 2, height: "calc(var(--ph) * 0.8)", transform: "translateY(calc(var(--ph) * 0.02))" }}>
+                    <div className="hero-float h-full" style={{ ["--fd" as string]: "-4s", transform: "perspective(1400px) rotateY(calc(-24deg + var(--tx, 0) * 1deg)) rotateX(calc(6deg - var(--ty, 0) * 1deg)) rotateZ(2deg)" }}>
+                      <PhoneMock className="h-full" src="/screens/shield.png" alt="Scam Shield flags a fake message asking for your documents and says what to do" />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -258,10 +332,11 @@ export default function Home() {
               screen, and the phone flies here from its place in the landing page; elsewhere it simply follows the hero. */}
           <div className="zoom-track">
           <div ref={z.overlay} className="zoom-overlay">
+            {z.enhanced && <div ref={z.veil} aria-hidden className="pointer-events-none absolute inset-0 bg-white opacity-0" />}
             {z.enhanced && (
               <div ref={z.fly} aria-hidden className="zoom-fly pointer-events-none absolute top-0 left-0 z-10">
                 <div className="phone-in h-full" style={{ ["--i" as string]: 0 }}>
-                  <PhoneMock className="h-full" screenRef={z.screen}>
+                  <PhoneMock className="h-full" screenRef={z.screen} frameRef={z.frameEl}>
                     <MiniAlive g={g} items={items} latest={latest} />
                   </PhoneMock>
                 </div>

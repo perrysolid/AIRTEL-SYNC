@@ -125,6 +125,21 @@ export async function sendWhatsApp(to: string, msg: BotMessage) {
   }
 }
 
+/**
+ * A pre-approved template, the only kind of message WhatsApp delivers more than
+ * 24 hours after the customer last wrote to us. Parameters can't contain line
+ * breaks, so multi-line updates are joined.
+ */
+export async function sendWhatsAppTemplate(to: string, name: string, params: string[], language = process.env.WHATSAPP_TEMPLATE_LANG ?? "en") {
+  const text = (v: string) => clip(v.replace(/\s*\n+\s*/g, " · ").replace(/\s{4,}/g, "   "), 900);
+  await graph(`${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
+    messaging_product: "whatsapp",
+    to,
+    type: "template",
+    template: { name, language: { code: language }, components: params.length ? [{ type: "body", parameters: params.map((v) => ({ type: "text", text: text(v) })) }] : [] },
+  });
+}
+
 /** Blue ticks plus a typing indicator while the advisor thinks. */
 export async function markReadTyping(messageId: string) {
   await graph(`${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`, { messaging_product: "whatsapp", status: "read", message_id: messageId, typing_indicator: { type: "text" } }).catch(() => {});

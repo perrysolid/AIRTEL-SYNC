@@ -4,6 +4,7 @@ import { aiProviders } from "../ai";
 import { transcribeAudio as geminiTranscribe } from "../gemini";
 import { transcribeAudio as groqTranscribe } from "../groq";
 import { transcribeAudio as sarvamTranscribe } from "../sarvam";
+import { customerForChat } from "../customers";
 import { createOrder } from "../orders";
 import { store, type AdvisorSession, type BotChat, type Order } from "../store";
 import { liveDay, stepStatus } from "../tracker";
@@ -143,7 +144,8 @@ export async function botTurn(input: BotInput): Promise<BotMessage[]> {
   // A win-back lead is answered in the language the CRM says they prefer.
   const language = resumeNote && s ? s.language : input.language && /^(hi|mr|ta|te|bn|gu|kn|ml|pa|en)$/.test(input.language) ? input.language : /[ऀ-ॿ]/.test(message) ? "hi" : (s?.language ?? "en");
 
-  const session = await advisorTurn({ sessionId: s?.id, message, channel: input.chat.channel, language }, (e: AdvisorEvent) => {
+  const customerId = customerForChat(input.chat)?.id;
+  const session = await advisorTurn({ sessionId: s?.id, message, channel: input.chat.channel, language, customerId }, (e: AdvisorEvent) => {
     if (e.type === "text") text += e.delta;
     if (e.type === "chips") chips = { text: "", options: e.options, multi: e.mode === "multi" };
     if (e.type === "bundle") quoted = true;

@@ -5,6 +5,7 @@ import { ADVISOR_MODEL, aiProvider, aiProviders, anthropic, pauseProvider, type 
 import { GEMINI_MODEL, GeminiError, streamGenerate, thinking, type GeminiPart } from "./gemini";
 import { GROQ, GROQ_MODEL, GroqError, streamChat, type ChatEndpoint, type GroqTool } from "./groq";
 import { DEEPSEEK, DEEPSEEK_MODEL } from "./deepseek";
+import { memoryBrief, rememberSession, seedProfile } from "./customers";
 import { catalogue, product } from "./catalogue";
 import { buildQuote, type Term } from "./pricing";
 import { inferSegment, NEEDS, ProfileSchema, tierForCity } from "./profile";
@@ -66,6 +67,11 @@ This is ${channel === "whatsapp" ? "WhatsApp" : "Telegram"} on the owner's phone
 - Use only prices and products from tools. Never invent offers, discounts or launch dates.`;
   }
   return `${lang}\nThis is a chat on a phone screen: short paragraphs, **bold** for product names and prices, bullets for the bundle.`;
+}
+
+/** Channel rules plus, for a signed-in owner, what we remember about them (fixed when the conversation began). */
+function sessionRules(s: AdvisorSession): string {
+  return channelRules(s.channel, s.language) + (s.memoryBrief ? `\n\n${s.memoryBrief}` : "");
 }
 
 const ProfilePatch = ProfileSchema.partial().extend({ needs: z.array(z.enum(NEEDS)).optional() });
@@ -247,7 +253,7 @@ async function runClaudeTurn(s: AdvisorSession, userText: string, emit: (e: Advi
       cache_control: { type: "ephemeral" },
       system: [
         { type: "text", text: SYSTEM + "\n\nCatalogue (for understanding requests only — prices and eligibility come from tools):\n" + CATALOGUE_BRIEF(), cache_control: { type: "ephemeral" } },
-        { type: "text", text: channelRules(s.channel, s.language) },
+        { type: "text", text: sessionRules(s) },
       ],
       tools: TOOLS,
       messages: s.messages,
@@ -304,7 +310,7 @@ async function runGeminiTurn(s: AdvisorSession, userText: string, emit: (e: Advi
     let finish: string | undefined;
     let blocked: string | undefined;
     for await (const chunk of streamGenerate(GEMINI_MODEL, {
-      systemInstruction: { parts: [{ text: SYSTEM + "\n\n" + channelRules(s.channel, s.language) + "\n\nCatalogue (for understanding requests only — prices and eligibility come from tools):\n" + CATALOGUE_BRIEF() }] },
+      systemInstruction: { parts: [{ text: SYSTEM + "\n\n" + sessionRules(s) + "\n\nCatalogue (for understanding requests only — prices and eligibility come from tools):\n" + CATALOGUE_BRIEF() }] },
       contents,
       tools: GEMINI_TOOLS,
       generationConfig: { thinkingConfig: thinking(GEMINI_MODEL), maxOutputTokens: 4000 },
@@ -360,7 +366,7 @@ async function runGroqTurn(s: AdvisorSession, userText: string, emit: (e: Adviso
   s.profile = mergeParsed(s.profile, parseUtterance(userText));
   const history = (s.groqMessages ??= []);
   history.push({ role: "user", content: userText || OPENING });
-  const system = SYSTEM + "\n\n" + channelRules(s.channel, s.language) + "\n\nCatalogue (for understanding requests only — prices and eligibility come from tools):\n" + CATALOGUE_BRIEF();
+  const system = SYSTEM + "\n\n" + sessionRules(s) + "\n\nCatalogue (for understanding requests only — prices and eligibility come from tools):\n" + CATALOGUE_BRIEF();
   let assistantText = "";
 
   for (let step = 0; step < 8; step++) {
@@ -450,9 +456,24 @@ export function newSession(channel: Channel, language: string): AdvisorSession {
 }
 
 /** One owner turn. Emits events as they happen; persists the session at the end. */
-export async function advisorTurn(opts: { sessionId?: string; message: string; channel: Channel; language: string; forceGuided?: boolean }, emit: (e: AdvisorEvent) => void) {
+export async function advisorTurn(opts: { sessionId?: string; message: string; channel: Channel; language: string; forceGuided?: boolean; customerId?: string }, emit: (e: AdvisorEvent) => void) {
   let s = opts.sessionId ? store.getSession(opts.sessionId) : undefined;
-  if (!s) s = newSession(opts.channel, opts.language);
+  if (s && opts.customerId && s.customerId && s.customerId !== opts.customerId) s = undefined; // someone else's conversation
+  const customer = opts.customerId ? store.getCustomer(opts.customerId) : undefined;
+  if (!s) {
+    s = newSession(opts.channel, opts.language);
+    // A signed-in owner starts from everything we already know about them.
+    if (customer) {
+      s.customerId = customer.id;
+      s.profile = seedProfile(customer);
+      s.requestedProducts = [...customer.requestedProducts];
+      s.declinedProducts = [...customer.declinedProducts];
+      s.memoryBrief = memoryBrief(customer) || undefined;
+    }
+  } else if (customer && !s.customerId) {
+    // Signed in mid-conversation: remember it from now on (the prompt stays as it began).
+    s.customerId = customer.id;
+  }
   s.language = opts.language || s.language;
   s.channel = opts.channel;
   const provider = opts.forceGuided || s.guidedStep ? undefined : aiProvider();
@@ -493,6 +514,7 @@ export async function advisorTurn(opts: { sessionId?: string; message: string; c
     runGuidedTurn(s, message, emit);
   }
   if (s.status === "handoff" && s.handoff) s.handoff.summary = summarize(s);
+  if (customer && s.customerId === customer.id) rememberSession(customer, s);
   store.saveSession(s);
   emit({ type: "done" });
   return s;

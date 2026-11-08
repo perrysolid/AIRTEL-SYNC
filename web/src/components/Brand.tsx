@@ -7,7 +7,7 @@ export function Logo({ small = false, onDark = false }: { small?: boolean; onDar
         <rect width="64" height="64" rx="16" fill="var(--brand)" />
         <path d="M43 22v22M43 33a11 11 0 1 1-4.2-8.7" fill="none" stroke="#fff" strokeWidth="6.5" strokeLinecap="round" />
       </svg>
-      <span className={small ? "text-lg leading-none tracking-tight" : "text-xl leading-none tracking-tight"}>
+      <span className={`whitespace-nowrap ${small ? "text-lg leading-none tracking-tight" : "text-xl leading-none tracking-tight"}`}>
         <span className={`font-extrabold ${onDark ? "text-white" : "text-brand"}`}>accel</span> <span className={`font-medium ${onDark ? "text-white/70" : "text-ink-soft"}`}>business</span>
       </span>
     </Link>

@@ -10,7 +10,7 @@ import type { Quote, Term } from "./pricing";
 import type { KycResult } from "./kyc-types";
 import type { Purpose } from "./privacy";
 import type { OrderTimeline } from "./tracker";
-import { dbEnabled, insertAudit, loadAudit, loadRecords, migrate, upsertRecords, type RecordKind } from "./db";
+import { dbEnabled, deleteRecord, insertAudit, loadAudit, loadRecords, migrate, upsertRecords, type RecordKind } from "./db";
 
 /**
  * In-memory store with durable write-through. With DATABASE_URL (Neon
@@ -65,6 +65,35 @@ export interface AdvisorSession {
   nudgedAt?: string;
   /** Owner tapped "Order" in chat but we still need their mobile number. */
   pendingOrder?: boolean;
+  /** Signed-in customer this conversation belongs to. */
+  customerId?: string;
+  /** What we remembered about the customer when the conversation began (fixed for the session, so the prompt cache holds). */
+  memoryBrief?: string;
+}
+
+/** A customer who signed in with their mobile number (OTP). Their memory follows them across visits and channels. */
+export interface Customer {
+  id: string;
+  /** Verified mobile, 91XXXXXXXXXX. Order updates go to WhatsApp on this number. */
+  phone: string;
+  name?: string;
+  createdAt: string;
+  lastSeenAt: string;
+  language?: string;
+  /** Everything learned in conversations, merged: business, city, team, needs, budget, current spend. */
+  profile: Profile;
+  requestedProducts: string[];
+  declinedProducts: string[];
+  /** The latest plan we priced for them. */
+  lastPlan?: { monthly: number; monthlyWithGst: number; term: number; lines: string[]; at: string; sessionId: string };
+  sessionIds: string[];
+  orderIds: string[];
+  notify: { whatsapp: boolean; telegram: boolean };
+  telegramChatId?: string;
+  /** Last message they sent the WhatsApp bot: free-form updates are allowed for 24 h after it. */
+  whatsappInboundAt?: string;
+  /** A "Continue with demo" account: no real number behind it, so nothing is ever sent to WhatsApp. */
+  demo?: boolean;
 }
 
 export interface ConsentRecord {
@@ -173,6 +202,7 @@ export interface BotFlow {
 
 interface DB {
   flows?: Record<string, BotFlow>;
+  customers?: Record<string, Customer>;
   sessions: Record<string, AdvisorSession>;
   orders: Record<string, Order>;
   consents: ConsentRecord[];
@@ -224,7 +254,7 @@ export async function flush() {
   const rows = [...dirty.values()].map(({ kind, id }) => ({
     kind,
     id,
-    data: kind === "session" ? db.sessions[id] : kind === "order" ? db.orders[id] : db.consents.find((c) => c.id === id),
+    data: kind === "session" ? db.sessions[id] : kind === "order" ? db.orders[id] : kind === "customer" ? db.customers?.[id] : db.consents.find((c) => c.id === id),
   }));
   const audit = auditQueue;
   dirty.clear();
@@ -250,6 +280,7 @@ export async function hydrateStore() {
   for (const r of records) {
     if (r.kind === "session") db.sessions[(r.data as AdvisorSession).id] = r.data as AdvisorSession;
     else if (r.kind === "order") db.orders[(r.data as Order).id] = r.data as Order;
+    else if (r.kind === "customer") (db.customers ??= {})[(r.data as Customer).id] = r.data as Customer;
     else db.consents.push(r.data as ConsentRecord);
   }
   g.__udyamStore = db;
@@ -288,6 +319,23 @@ export const store = {
     return o;
   },
   listOrders: () => Object.values(load().orders),
+
+  getCustomer: (id: string) => load().customers?.[id],
+  saveCustomer(c: Customer) {
+    (load().customers ??= {})[c.id] = c;
+    persist("customer", c.id);
+    return c;
+  },
+  listCustomers: () => Object.values(load().customers ?? {}),
+  /** "Forget me": removes the account and its memory. Orders stay (they are contracts) but lose the link. */
+  deleteCustomer(id: string) {
+    const db = load();
+    if (!db.customers?.[id]) return;
+    delete db.customers[id];
+    dirty.delete(`customer:${id}`);
+    if (dbEnabled()) void deleteRecord("customer", id).catch((e) => console.warn(`[store] delete failed: ${(e as Error).message}`));
+    else persist();
+  },
 
   addConsent(rec: Omit<ConsentRecord, "hash" | "prevHash">): ConsentRecord {
     const db = load();

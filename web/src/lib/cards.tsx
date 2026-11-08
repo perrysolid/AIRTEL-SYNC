@@ -11,7 +11,8 @@ import { publicUrl } from "./bots/types";
  * They carry no personal data (no name, phone or registration numbers).
  */
 
-const C = { paper: "#f5f6fa", sheet: "#ffffff", ink: "#161a33", soft: "#565b78", rule: "#e3e5ee", marigold: "#f2a900", signal: "#12a39a", mist: "#eef0f6" };
+// The website's palette (globals.css), so a card in chat looks like the site it links to.
+const C = { paper: "#f6f6f6", sheet: "#ffffff", ink: "#1f1f1f", soft: "#666666", rule: "#e8e8e8", brand: "#e40000", brandSoft: "#fff0f0", marigold: "#f2a900", signal: "#12a05e", mist: "#f3f3f3" };
 // 1080 wide; height follows the content (chat apps show portrait images uncropped).
 const SIZE = { width: 1080 };
 
@@ -49,13 +50,14 @@ function Header({ right }: { right: string }) {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-        <div style={{ display: "flex", width: 64, height: 64, borderRadius: 16, background: C.ink, alignItems: "center", justifyContent: "center" }}>
-          <svg width={34} height={34} viewBox="0 0 24 24">
-            <path d="M12 3L21 20H16.2L12 11.6L7.8 20H3L12 3Z" fill={C.marigold} />
-          </svg>
-        </div>
-        <div style={{ display: "flex", fontSize: 40, fontWeight: 800, color: C.ink }}>
-          Accel<span style={{ fontWeight: 400, color: C.soft, marginLeft: 10 }}>Business</span>
+        {/* the Accel mark and wordmark, exactly as in the site header (components/Brand.tsx) */}
+        <svg width={64} height={64} viewBox="0 0 64 64">
+          <rect width="64" height="64" rx="16" fill={C.brand} />
+          <path d="M43 22v22M43 33a11 11 0 1 1-4.2-8.7" fill="none" stroke="#fff" strokeWidth="6.5" strokeLinecap="round" />
+        </svg>
+        <div style={{ display: "flex", fontSize: 42, letterSpacing: -1, lineHeight: 1 }}>
+          <span style={{ fontWeight: 800, color: C.brand }}>accel</span>
+          <span style={{ fontWeight: 400, color: C.soft, marginLeft: 10 }}>business</span>
         </div>
       </div>
       <div style={{ display: "flex", fontSize: 28, color: C.soft, background: C.mist, padding: "8px 20px", borderRadius: 999 }}>{right}</div>
@@ -65,7 +67,7 @@ function Header({ right }: { right: string }) {
 
 function Frame({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", width: "100%", height: "100%", background: `linear-gradient(160deg, ${C.paper} 0%, #fff7e0 100%)`, padding: 56, fontFamily: "Mukta" }}>
+    <div style={{ display: "flex", flexDirection: "column", width: "100%", height: "100%", background: `linear-gradient(160deg, ${C.paper} 0%, ${C.brandSoft} 100%)`, padding: 56, fontFamily: "Mukta" }}>
       <div style={{ display: "flex", flexDirection: "column", flex: 1, background: C.sheet, borderRadius: 40, padding: 52, boxShadow: "0 20px 60px rgba(22,26,51,0.10)" }}>{children}</div>
     </div>
   );
@@ -160,7 +162,7 @@ export function orderCard(o: Order) {
                     <div style={{ display: "flex", fontSize: 22, color: C.soft }}>{st === "live" ? "Live and working" : next ? `${next.label} · day ${next.dueDay}` : ""}</div>
                   </div>
                 </div>
-                <div style={{ display: "flex", fontSize: 24, fontWeight: 800, color: st === "upcoming" ? C.soft : C.ink, background: st === "live" ? "#d6f2ef" : st === "active" ? "#fdefc4" : C.sheet, padding: "6px 18px", borderRadius: 999 }}>
+                <div style={{ display: "flex", fontSize: 24, fontWeight: 800, color: st === "upcoming" ? C.soft : C.ink, background: st === "live" ? "#dcf3e6" : st === "active" ? "#fdefc4" : C.sheet, padding: "6px 18px", borderRadius: 999 }}>
                   {st === "live" ? "Live" : st === "active" ? "Setting up" : "Waiting"}
                 </div>
               </div>
@@ -214,11 +216,11 @@ export function quoteCard(s: AdvisorSession) {
   const who = [s.profile.businessType, s.profile.city].filter(Boolean).join(" · ");
   const pills: [string, string][] = [
     ...(q.firstLiveInDays === q.allLiveInDays
-      ? ([[`All live ${days(q.allLiveInDays)}`, "#d6f2ef"]] as [string, string][])
-      : ([[`First service live ${days(q.firstLiveInDays)}`, "#d6f2ef"], [`All live ${days(q.allLiveInDays)}`, "#d6f2ef"]] as [string, string][])),
+      ? ([[`All live ${days(q.allLiveInDays)}`, "#dcf3e6"]] as [string, string][])
+      : ([[`First service live ${days(q.firstLiveInDays)}`, "#dcf3e6"], [`All live ${days(q.allLiveInDays)}`, "#dcf3e6"]] as [string, string][])),
     [q.setupTotal > 0 ? `Setup ${inr(q.setupTotal)} one-time` : "No setup fee", "#fdefc4"],
   ];
-  if (q.savingsVsToday && q.savingsVsToday > 0) pills.unshift([`Save ${inr(q.savingsVsToday)}/month vs today`, "#d6f2ef"]);
+  if (q.savingsVsToday && q.savingsVsToday > 0) pills.unshift([`Save ${inr(q.savingsVsToday)}/month vs today`, "#dcf3e6"]);
   // Height follows the content, so a one-line plan isn't a mostly blank card.
   const height = 700 + shown.length * 122 + (lines.length > shown.length ? 44 : 0) + (pills.length > 3 ? 70 : 0);
 

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ArrowUp, Menu, X } from "lucide-react";
 import { Logo } from "./Brand";
+import { AccountButton } from "./Account";
 
 const PROMOS: { icon: string; text: string; cta: string; href: string }[] = [
   { icon: "🛡️", text: "New: Scam Shield. Check any suspicious message, link or screenshot, free.", cta: "Check now", href: "/shield" },
@@ -83,7 +84,8 @@ export function SiteNav() {
           ))}
         </nav>
         <div className="flex items-center gap-2">
-          <Link href="/advisor" className="rounded-full bg-brand px-4 py-2 text-sm font-extrabold text-white shadow-[0_8px_20px_-10px_var(--brand-deep)] transition-transform hover:-translate-y-0.5">Get my plan</Link>
+          <AccountButton />
+          <Link href="/advisor" className="rounded-full bg-brand px-4 py-2 text-sm font-extrabold whitespace-nowrap text-white shadow-[0_8px_20px_-10px_var(--brand-deep)] transition-transform hover:-translate-y-0.5">Get my plan</Link>
           <button className="grid h-10 w-10 place-items-center rounded-full border border-rule lg:hidden" aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} onClick={() => setOpen(!open)}>
             {open ? <X size={18} /> : <Menu size={18} />}
           </button>

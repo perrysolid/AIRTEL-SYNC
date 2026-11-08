@@ -6,7 +6,7 @@ import { DROP_FIXES } from "@/lib/site-content";
 export const metadata = { title: "How it works — Accel Business", description: "From “I need internet” to live, in one sitting: six stages, each designed to remove a delay we can see in the data." };
 
 const STAGES: [string, string, string, string[]][] = [
-  ["🤖", "Discover", "Chat or speak to the advisor in your language. It asks about your business, size, location and current setup, then recommends a bundle from the catalogue and explains why. Eligibility rules (city, size, GSTIN, dependencies) are applied by code, so you are never shown something we can't sell.", ["AI Business Advisor", "Voice in 10 languages", "Web, WhatsApp or Telegram"]],
+  ["💬", "Discover", "Chat or speak to the advisor in your language. It asks about your business, size, location and current setup, then recommends a bundle from the catalogue and explains why. Eligibility rules (city, size, GSTIN, dependencies) are applied by code, so you are never shown something we can't sell.", ["AI Business Advisor", "Voice in 10 languages", "Web, WhatsApp or Telegram"]],
   ["💰", "Price", "One transparent monthly price with GST. Switch add-ons on and off, choose 12, 24 or 36 months, and check your pincode. If fibre has not reached you, the bundle switches to 5G AirFiber automatically.", ["Instant quote", "Network Reality Check", "Savings vs list price"]],
   ["🪪", "Verify", "Consent first, then DigiLocker or photos, registry checks and cross-document checks. You see exactly what passed and what needs a fix. Sign with an OTP and set up auto-pay.", ["Smart KYC", "DPDP consent", "e-Sign"]],
   ["📅", "Activate", "Pick your own installation slot. SIM and cloud products activate immediately while hardware ships. Everything shows on a live tracker and arrives in your chat.", ["Slot scheduler", "Live tracker", "Day-0 activation"]],
@@ -53,7 +53,7 @@ export default function HowItWorksPage() {
       </section>
 
       <section className="mt-6 grid gap-4 sm:grid-cols-2">
-        <div className="card p-5"><h3 className="text-lg font-bold">Rules the AI cannot break</h3><p className="mt-1 text-ink-soft">The advisor understands free text and explains in your language, but eligibility, dependencies and prices always come from the catalogue rules. If a product needs a GSTIN or an internet plan, it is left out with the reason, never silently sold.</p></div>
+        <div className="card p-5"><h3 className="text-lg font-bold">Prices nobody can bend</h3><p className="mt-1 text-ink-soft">Say it however you like, in your language. Prices and what you can get always come from Accel&apos;s published price list. If something needs a GST number or an internet line first, the advisor tells you why it left it out. Nothing is added without you seeing it.</p></div>
         <div className="card p-5"><h3 className="text-lg font-bold">People stay in the loop</h3><p className="mt-1 text-ink-soft">When the advisor can&apos;t close a lead, or you ask for a person, a local partner gets the whole conversation. Dedicated links include a site-survey video call with a field engineer.</p></div>
       </section>
       <div className="mt-8 text-center"><Link href="/advisor" className="inline-block rounded-full bg-brand px-7 py-3.5 text-lg font-extrabold text-white">Start with the advisor</Link></div>

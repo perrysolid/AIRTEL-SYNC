@@ -359,7 +359,7 @@ function Advisor() {
             </form>
           )}
           <div className="mt-2 text-center text-xs text-ink-soft">
-            {mode === "ai" ? "AI advisor · prices and eligibility come from Accel's rules engine" : mode === "guided" ? "Quick mode · prices and eligibility come from Accel's rules engine" : " "}
+            {mode === "ai" || mode === "guided" ? "Prices are Accel's published prices. Nobody can bend them, not even the advisor." : " "}
           </div>
         </div>
       </div>

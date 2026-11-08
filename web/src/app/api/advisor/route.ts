@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { advisorTurn } from "@/lib/advisor";
 import type { AdvisorEvent } from "@/lib/advisor-types";
+import { currentCustomer } from "@/lib/customer-session";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,12 +19,13 @@ export async function POST(req: Request) {
   const parsed = Body.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) return Response.json({ error: parsed.error.message }, { status: 400 });
 
+  const customerId = (await currentCustomer())?.id;
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
       const emit = (e: AdvisorEvent) => controller.enqueue(encoder.encode(`data: ${JSON.stringify(e)}\n\n`));
       try {
-        await advisorTurn(parsed.data, emit);
+        await advisorTurn({ ...parsed.data, customerId }, emit);
       } catch (err) {
         console.error("[api/advisor]", err);
         emit({ type: "error", message: "Something went wrong. Please try again." });

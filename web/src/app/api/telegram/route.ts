@@ -3,6 +3,8 @@ import { botTurn, currentSession, documentRedirect, transcribeVoice, VOICE_UNAVA
 import { downloadTelegramFile, keyboard, sendTelegram, telegramHtml, tg } from "@/lib/bots/telegram";
 import type { BotMessage } from "@/lib/bots/types";
 import { store, type BotChat } from "@/lib/store";
+import { readTelegramLinkCode } from "@/lib/auth";
+import { linkTelegram } from "@/lib/customers";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -55,6 +57,12 @@ async function handle(update: Update) {
     return reply(m.chat.id, await botTurn({ ...base, text: transcript }));
   }
   if (m.photo || m.document) return reply(m.chat.id, [documentRedirect(chat)]);
+  const link = typeof m.text === "string" ? /^\/start\s+l_(\S+)$/.exec(m.text.trim()) : null;
+  if (link) {
+    const id = readTelegramLinkCode(link[1]);
+    const c = id ? linkTelegram(id, chat.chatId) : undefined;
+    return reply(m.chat.id, [{ text: c ? `✅ Linked${c.name ? `, ${c.name}` : ""}! Updates on your Accel Business orders will now come here too. Ask me anything, any time.` : "That link has expired. Open your account page and tap “Get updates on Telegram” again." }]);
+  }
   if (typeof m.text === "string") return reply(m.chat.id, await botTurn({ ...base, text: m.text }));
 }
 

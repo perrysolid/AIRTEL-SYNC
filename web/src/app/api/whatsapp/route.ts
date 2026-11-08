@@ -4,6 +4,7 @@ import { botTurn, documentRedirect, transcribeVoice, VOICE_UNAVAILABLE } from "@
 import { downloadWhatsAppMedia, markReadTyping, sendWhatsApp, validMetaSignature } from "@/lib/bots/whatsapp-cloud";
 import type { BotMessage } from "@/lib/bots/types";
 import { chatText } from "@/lib/bots/types";
+import { noteWhatsAppInbound } from "@/lib/customers";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -57,6 +58,7 @@ async function handleCloudMessage(m: any, name?: string) {
   const to: string = m.from;
   const chat = { channel: "whatsapp" as const, chatId: to };
   const base = { chat, firstName: name?.split(" ")[0], phone: to };
+  noteWhatsAppInbound(to);
   await markReadTyping(m.id);
   const send = async (msgs: BotMessage[]) => {
     for (const msg of msgs) await sendWhatsApp(to, msg);

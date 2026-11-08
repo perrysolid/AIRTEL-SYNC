@@ -23,7 +23,7 @@ export async function migrate() {
   await pool().query(sql);
 }
 
-export type RecordKind = "session" | "order" | "consent";
+export type RecordKind = "session" | "order" | "consent" | "customer";
 
 export async function loadRecords(): Promise<{ kind: RecordKind; data: unknown }[]> {
   const { rows } = await pool().query<{ kind: RecordKind; data: unknown }>("SELECT kind, data FROM records ORDER BY seq");
@@ -47,6 +47,10 @@ export async function upsertRecords(rows: { kind: RecordKind; id: string; data: 
      ON CONFLICT (kind, id) DO UPDATE SET data = EXCLUDED.data, updated_at = now()`,
     [rows.map((r) => r.kind), rows.map((r) => r.id), rows.map((r) => JSON.stringify(r.data))],
   );
+}
+
+export async function deleteRecord(kind: RecordKind, id: string) {
+  await pool().query("DELETE FROM records WHERE kind = $1 AND id = $2", [kind, id]);
 }
 
 export async function insertAudit(rows: { at: string; actor: string; action: string; ref: string; detail: string }[]) {

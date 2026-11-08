@@ -9,7 +9,7 @@ type Tool = { icon: typeof ShieldCheck; title: string; text: string; href: strin
 const LEFT: Tool[] = [
   { icon: ShieldCheck, title: "Scam Shield", text: "Forward a suspicious message, link or screenshot. Get a verdict and what to do next.", href: "/shield", rot: -6, shift: 0 },
   { icon: HeartPulse, title: "Health & backup", text: "Live status, automatic tickets with an SLA, and a backup link that keeps billing running.", href: "/solutions", rot: 3, shift: 1 },
-  { icon: Store, title: "Branch-in-a-Box", text: "Opening a second shop? Copy your setup and reuse your KYC in one tap.", href: "/solutions", rot: -4, shift: 0.5 },
+  { icon: Store, title: "Branch-in-a-Box", text: "Opening a second shop? Copy your setup and reuse your business documents in one tap.", href: "/solutions", rot: -4, shift: 0.5 },
 ];
 const RIGHT: Tool[] = [
   { icon: Radar, title: "Network Reality Check", text: "See what can be installed at your pincode before you pay. No fibre? We switch you to 5G AirFiber.", href: "/network", rot: 5, shift: 0 },

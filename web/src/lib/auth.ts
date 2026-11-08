@@ -56,12 +56,55 @@ export function readToken(token: string | undefined, now = Date.now()): StaffSes
   const got = Buffer.from(mac);
   if (want.length !== got.length || !crypto.timingSafeEqual(want, got)) return undefined;
   try {
-    const s = JSON.parse(Buffer.from(body, "base64url").toString()) as StaffSession;
-    return s.exp * 1000 > now ? s : undefined;
+    const s = JSON.parse(Buffer.from(body, "base64url").toString()) as StaffSession & { aud?: string };
+    // Customer tokens share the key; they never count as a staff session.
+    return s.exp * 1000 > now && !s.aud && s.role ? s : undefined;
   } catch {
     return undefined;
   }
 }
+
+// ---- Customers: signed in with an OTP to their mobile, for 30 days ----
+
+export const CUSTOMER_COOKIE = "accel_customer";
+const CUSTOMER_TTL_S = 30 * 24 * 60 * 60;
+
+export function issueCustomerToken(customerId: string, now = Date.now()): string {
+  const body = Buffer.from(JSON.stringify({ sub: customerId, aud: "customer", exp: Math.floor(now / 1000) + CUSTOMER_TTL_S })).toString("base64url");
+  return `${body}.${sign(body)}`;
+}
+
+export function readCustomerToken(token: string | undefined, now = Date.now()): string | undefined {
+  if (!token) return undefined;
+  const [body, mac] = token.split(".");
+  if (!body || !mac) return undefined;
+  const want = Buffer.from(sign(body));
+  const got = Buffer.from(mac);
+  if (want.length !== got.length || !crypto.timingSafeEqual(want, got)) return undefined;
+  try {
+    const t = JSON.parse(Buffer.from(body, "base64url").toString()) as { sub: string; aud?: string; exp: number };
+    return t.aud === "customer" && t.exp * 1000 > now ? t.sub : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Short signed code for a Telegram deep link (t.me/bot?start=…): which account to link, valid 15 minutes. */
+export function telegramLinkCode(customerId: string, now = Date.now()): string {
+  const body = `${customerId}_${Math.floor(now / 1000 + 900).toString(36)}`;
+  return `${body}_${sign(`tg:${body}`).slice(0, 16)}`;
+}
+
+export function readTelegramLinkCode(code: string, now = Date.now()): string | undefined {
+  const m = /^(cus_[0-9a-f]{16})_([0-9a-z]+)_([\w-]{16})$/.exec(code);
+  if (!m) return undefined;
+  const body = `${m[1]}_${m[2]}`;
+  const want = Buffer.from(sign(`tg:${body}`).slice(0, 16));
+  if (!crypto.timingSafeEqual(want, Buffer.from(m[3])) || parseInt(m[2], 36) * 1000 < now) return undefined;
+  return m[1];
+}
+
+export const customerCookieOptions = () => ({ httpOnly: true, sameSite: "lax" as const, secure: process.env.NODE_ENV === "production", path: "/", maxAge: CUSTOMER_TTL_S });
 
 export const cookieOptions = () => ({
   httpOnly: true,

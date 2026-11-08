@@ -176,6 +176,9 @@ body {
   @keyframes twinkle { 50% { opacity: 0.12; } }
   .phone-in { animation: phone-rise 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both; animation-delay: calc(var(--i, 0) * 140ms + 200ms); }
   @keyframes phone-rise { from { opacity: 0; transform: translateY(70px) rotate(var(--r, 0deg)); } }
+  /* side phones drift slowly up and down, out of step with each other */
+  .hero-float { animation: hero-float 7s ease-in-out infinite; animation-delay: var(--fd, 0s); }
+  @keyframes hero-float { 50% { translate: 0 -12px; } }
 }
 @media (prefers-reduced-motion: reduce) { .flow { stroke-dasharray: 5 16; } }
 
