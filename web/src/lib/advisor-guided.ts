@@ -119,8 +119,11 @@ function applyChip(p: Profile, value: string): Profile {
 
 export function runGuidedTurn(s: AdvisorSession, input: string, emit: (e: AdvisorEvent) => void) {
   const lang: Lang = s.language === "hi" ? "hi" : "en";
+  // Several lines in one turn stream into one bubble: keep them apart with a paragraph break.
+  let said = false;
   const say = (text: string) => {
-    emit({ type: "text", delta: text });
+    emit({ type: "text", delta: said ? `\n\n${text}` : text });
+    said = true;
     s.transcript.push({ role: "assistant", text, at: new Date().toISOString() });
   };
 

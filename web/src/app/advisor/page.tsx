@@ -132,6 +132,10 @@ function Advisor() {
               break;
             case "bundle":
               setMsgs((m) => [...m, { kind: "bundle", quote: e.quote, recommendation: e.recommendation }]);
+              // Remember the plan on this device so the landing page can offer "continue" instead of starting over.
+              try {
+                if (sessionRef.current) localStorage.setItem("accel:plan", JSON.stringify({ id: sessionRef.current, monthly: e.quote?.monthlyWithGst, at: Date.now() }));
+              } catch {}
               botIndex = -1; // text after the bill starts a new bubble
               break;
             case "handoff":
@@ -163,8 +167,10 @@ function Advisor() {
   useEffect(() => {
     if (started.current) return;
     started.current = true;
-    void send("");
-  }, [send]);
+    // One-tap starts from the landing page (?q=I run a kirana store, or a GSTIN) skip the opening questions.
+    const q = params.get("q")?.trim().slice(0, 200);
+    void send(q ?? "");
+  }, [send, params]);
 
   const startListening = () => voice.listen((text) => void send(text));
   const lastBot = [...msgs].reverse().find((m) => m.kind === "bot") as Extract<Msg, { kind: "bot" }> | undefined;

@@ -14,6 +14,16 @@ export function Logo({ small = false, onDark = false }: { small?: boolean; onDar
   );
 }
 
+/** Just the Accel mark (red tile with the white "a"), for places that need the logo without the wordmark. */
+export function LogoMark({ className = "h-6 w-6" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 64 64" className={className} aria-hidden>
+      <rect width="64" height="64" rx="16" fill="var(--brand)" />
+      <path d="M43 22v22M43 33a11 11 0 1 1-4.2-8.7" fill="none" stroke="#fff" strokeWidth="6.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export function TopBar({ children, wide = false }: { children?: React.ReactNode; wide?: boolean }) {
   return (
     <header className="sticky top-0 z-20 border-b border-rule bg-sheet/75 backdrop-blur-md">

@@ -10,6 +10,8 @@ import { HeroMenu } from "@/components/HeroMenu";
 import { NetworkBackdrop } from "@/components/NetworkBackdrop";
 import { Reveal } from "@/components/Reveal";
 import { NewsFlashes } from "@/components/NewsFlashes";
+import { PlanDock } from "@/components/PlanDock";
+import { QuickStart } from "@/components/QuickStart";
 import { StepsCarousel } from "@/components/StepsCarousel";
 import { ToolsStage } from "@/components/ToolsStage";
 import { PhoneMock } from "@/components/PhoneMock";
@@ -43,7 +45,7 @@ function useShowcase() {
 }
 
 /** Where the scroll zoom runs: wide and tall enough to hold the section in one screen, and motion allowed. Same query as globals.css. */
-const ZOOM_QUERY = "(min-width: 1024px) and (min-height: 640px) and (prefers-reduced-motion: no-preference)";
+const ZOOM_QUERY = "(min-width: 1024px) and (min-height: 720px) and (prefers-reduced-motion: no-preference)";
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 const ease = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
 
@@ -294,11 +296,12 @@ export default function Home() {
                     <Link href={`/whatsapp?lang=${lang}`} className="inline-flex items-center gap-1.5 text-wa underline-offset-4 hover:underline"><MessageCircle size={16} /> Continue on WhatsApp</Link>
                     <a href={`https://t.me/${TELEGRAM}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-[#0a6fb0] underline-offset-4 hover:underline"><Send size={16} /> Chat on Telegram</a>
                   </div>
+                  <QuickStart lang={lang} />
                 </Reveal>
                 <Reveal show={show} delay={360}>
                   <form
                     id="track"
-                    className="card mt-8 max-w-lg scroll-mt-24 p-4"
+                    className="card mt-6 max-w-lg scroll-mt-24 p-4"
                     onSubmit={(e) => {
                       e.preventDefault();
                       if (orderId.trim()) router.push(`/order/${orderId.trim().toUpperCase()}`);
@@ -350,6 +353,8 @@ export default function Home() {
       </section>
 
       <NewsFlashes />
+
+      <PlanDock lang={lang} />
 
       <SiteFooter />
     </div>
