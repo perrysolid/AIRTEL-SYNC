@@ -93,7 +93,7 @@ export async function botTurn(input: BotInput): Promise<BotMessage[]> {
 
   if (["help", "menu"].includes(cmd)) return [HELP];
   // "Hi! Send me updates for ACC-…" (the website's Say hi button) or STATUS: link the order and show where it stands.
-  const named = raw.match(/ACC-[A-Z0-9]{6,}/i)?.[0].toUpperCase();
+  const named = raw.match(/(?<!REF-)\bACC-[A-Z0-9]{6,}/i)?.[0].toUpperCase(); // not a referral code (REF-ACC-…)
   if (named || ["status", "track", "स्टेटस"].includes(cmd)) {
     const phone = input.phone ?? (input.chat.channel === "whatsapp" ? input.chat.chatId : undefined);
     const o = (named && store.getOrder(named)) || latestOrder(input.chat, phone);
