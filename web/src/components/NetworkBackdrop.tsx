@@ -29,7 +29,7 @@ export function NetworkBackdrop({ className = "" }: { className?: string }) {
         x: ((i + 0.15 + r() * 0.7) / cols) * W,
         y: ((j + 0.15 + r() * 0.7) / rows) * H,
         s: 1.8 + r() * 2.4,
-        hot: r() > 0.86,
+        hot: r() > 0.8,
       });
     }
   }
@@ -62,22 +62,22 @@ export function NetworkBackdrop({ className = "" }: { className?: string }) {
             <stop offset="1" stopColor="#ffd9a0" stopOpacity="0" />
           </radialGradient>
         </defs>
-        <g stroke="#9fc6ff" strokeOpacity="0.22" strokeWidth="1" fill="none">
+        <g stroke="#9fc6ff" strokeOpacity="0.32" strokeWidth="1" fill="none">
           {links.map((l, i) => <path key={i} d={l.d} />)}
         </g>
         {/* travelling light pulses */}
-        <g fill="none" strokeLinecap="round" strokeWidth="2.2">
+        <g fill="none" strokeLinecap="round" strokeWidth="2.8">
           {links.map((l, i) =>
-            i % 3 === 0 ? (
+            i % 2 === 0 ? (
               <path key={i} d={l.d} pathLength={100} stroke={i % 6 === 0 ? "#ff8a8a" : "#ffe2b8"} className="net-pulse" style={{ animationDelay: `${(i % 9) * -0.9}s`, animationDuration: `${3.2 + (i % 5) * 0.6}s` }} />
             ) : null,
           )}
         </g>
         {nodes.map((n, i) => (
           <g key={i}>
-            <circle cx={n.x} cy={n.y} r={n.s * 5} fill="url(#nb-halo)" opacity={n.hot ? 0.7 : 0.35} className={i % 4 === 0 ? "twinkle" : undefined} style={i % 4 === 0 ? { animationDelay: `${(i % 7) * 0.5}s` } : undefined} />
+            <circle cx={n.x} cy={n.y} r={n.s * 5} fill="url(#nb-halo)" opacity={n.hot ? 0.85 : 0.5} className={i % 4 === 0 ? "twinkle" : undefined} style={i % 4 === 0 ? { animationDelay: `${(i % 7) * 0.5}s` } : undefined} />
             <circle cx={n.x} cy={n.y} r={n.s} fill={n.hot ? "#ff5a5a" : "#fff1d6"} />
-            {n.hot && <circle cx={n.x} cy={n.y} r="12" fill="none" stroke="#ff6b6b" strokeWidth="1.4" className="ring" style={{ animationDelay: `${(i % 5) * 0.8}s` }} />}
+            {n.hot && <circle cx={n.x} cy={n.y} r="14" fill="none" stroke="#ff6b6b" strokeWidth="1.8" className="ring" style={{ animationDelay: `${(i % 5) * 0.8}s` }} />}
           </g>
         ))}
       </svg>
