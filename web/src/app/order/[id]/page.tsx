@@ -9,6 +9,7 @@ import { ConsentStep } from "./ConsentStep";
 import { KycStep } from "./KycStep";
 import { EsignStep, PayStep } from "./SignPay";
 import { Tracker } from "./Tracker";
+import { Pipeline } from "@/components/motion/Pipeline";
 import { WhatsAppFeed } from "./WhatsAppFeed";
 
 export default function OrderPage() {
@@ -38,20 +39,12 @@ export default function OrderPage() {
         <span className="font-mono text-xs text-ink-soft">{order.id}</span>
       </TopBar>
       <main className="mx-auto max-w-xl px-4">
-        <h1 className="mt-6 text-3xl font-extrabold tracking-tight">{order.businessName}</h1>
+        <h1 className="rise mt-8 text-4xl font-extrabold">{order.businessName}</h1>
         <p className="text-ink-soft">{order.city}{order.city && " · "}{order.lines.length} services · {order.term} months</p>
 
-        <ol className="mt-5 grid grid-cols-5 gap-1" aria-label="Progress">
-          {order.steps.map((s, i) => {
-            const current = order.steps.findIndex((x) => !x.done) === i;
-            return (
-              <li key={s.key} className="text-center" aria-current={current ? "step" : undefined}>
-                <div className={`h-1.5 rounded-full ${s.done ? "bg-ok" : current ? "bg-marigold" : "bg-rule"}`} />
-                <div className={`mt-1.5 text-[11px] leading-tight ${current ? "font-bold" : "text-ink-soft"}`}>{s.label}</div>
-              </li>
-            );
-          })}
-        </ol>
+        <div className="mt-6">
+          <Pipeline steps={order.steps.map((st) => ({ key: st.key, label: st.label, done: st.done }))} />
+        </div>
 
         <div className="mt-6">
           {stage === "consent" && <ConsentStep orderId={order.id} onDone={refresh} />}

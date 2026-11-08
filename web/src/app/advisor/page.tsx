@@ -230,7 +230,7 @@ function Advisor() {
                   </div>
                 )}
                 <Bill quote={m.quote} businessName={profile?.businessName} compact />
-                <Link href={`/quote/${sessionRef.current}`} className="mt-2 flex items-center justify-center rounded-xl bg-marigold px-4 py-3 text-center font-bold text-ink">
+                <Link href={`/quote/${sessionRef.current}`} className="mt-2 flex items-center justify-center btn-primary px-4 py-3 text-center">
                   Review and adjust my plan
                 </Link>
               </div>
@@ -267,7 +267,7 @@ function Advisor() {
               {chips.mode === "multi" && (
                 <button
                   onClick={() => void send(`needs:${multi.join(",")}`, multi.length ? chips.options.filter((o) => multi.includes(o.value)).map((o) => o.label).join(", ") : "Just internet")}
-                  className="rounded-full bg-marigold px-4 py-2 font-bold text-ink"
+                  className="btn-primary rounded-full px-4 py-2"
                 >
                   {multi.length ? `Done (${multi.length})` : "Just internet for now"}
                 </button>
@@ -308,7 +308,7 @@ function Advisor() {
                 onClick={() => (voice.listening ? voice.stopListening() : startListening())}
                 disabled={!voice.supported || busy}
                 aria-label={voice.listening ? "Stop listening" : "Speak"}
-                className={`grid h-16 w-16 place-items-center rounded-full bg-marigold text-ink disabled:opacity-40 ${voice.listening ? "mic-live" : ""}`}
+                className={`grid h-16 w-16 place-items-center rounded-full btn-primary disabled:opacity-40 ${voice.listening ? "mic-live" : ""}`}
               >
                 {voice.listening ? <Square size={26} fill="currentColor" /> : <Mic size={30} />}
               </button>

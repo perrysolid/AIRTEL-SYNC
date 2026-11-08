@@ -18,17 +18,20 @@ export interface ShopSceneProps {
   /** When given (tracker), these items are live; the rest show as installing. */
   live?: string[];
   className?: string;
+  /** Red rim light for dark backgrounds (landing hero). */
+  glow?: boolean;
 }
 
 const C = {
   plinth: "#e7eaf3",
   floor: "#f4ead8",
-  wall: "#cdeeea",
-  wallSide: "#b9e3de",
+  wall: "#f3f0ea",
+  wallSide: "#e6e1d8",
   wood: "#c48a52",
   counter: "#ffffff",
   ink: "#161a33",
-  marigold: "#f2a900",
+  marigold: "#ffb400",
+  brand: "#e4002b",
   signal: "#12a39a",
   coral: "#e5484d",
   white: "#ffffff",
@@ -141,12 +144,12 @@ function Shop() {
         </RoundedBox>
         <mesh position={[-0.62, 0, 0.04]} rotation-z={0}>
           <coneGeometry args={[0.15, 0.26, 3]} />
-          <meshStandardMaterial color={C.marigold} roughness={0.4} />
+          <meshStandardMaterial color={C.brand} roughness={0.4} />
         </mesh>
         {[0, 1, 2].map((i) => (
           <mesh key={i} position={[-0.2 + i * 0.36, 0, 0.04]}>
             <boxGeometry args={[0.28, 0.07, 0.01]} />
-            <meshStandardMaterial color={i === 0 ? C.marigold : "#c9cde0"} />
+            <meshStandardMaterial color={i === 0 ? C.brand : "#c9cde0"} />
           </mesh>
         ))}
       </group>
@@ -155,7 +158,7 @@ function Shop() {
         {Array.from({ length: 9 }, (_, i) => (
           <mesh key={i} position={[-2.15 + i * 0.48 + 0.24, 0, 0]} castShadow>
             <boxGeometry args={[0.48, 0.05, 0.62]} />
-            <meshStandardMaterial color={i % 2 ? C.white : C.marigold} roughness={0.7} />
+            <meshStandardMaterial color={i % 2 ? C.white : C.brand} roughness={0.7} />
           </mesh>
         ))}
       </group>
@@ -179,7 +182,7 @@ function Shop() {
         </RoundedBox>
         <mesh position={[0, 0.5, 0.365]}>
           <boxGeometry args={[2.2, 0.12, 0.01]} />
-          <meshStandardMaterial color={C.marigold} />
+          <meshStandardMaterial color={C.brand} />
         </mesh>
         <mesh position={[0, 0.95, 0]} castShadow receiveShadow>
           <boxGeometry args={[2.42, 0.06, 0.82]} />
@@ -649,7 +652,7 @@ function Rig({ children }: { children: ReactNode }) {
   return <group ref={group}>{children}</group>;
 }
 
-export default function ShopScene({ items, live, className }: ShopSceneProps) {
+export default function ShopScene({ items, live, className, glow }: ShopSceneProps) {
   const set = useMemo(() => new Set(items), [items]);
   const liveSet = useMemo(() => (live ? new Set(live) : undefined), [live]);
   return (
@@ -658,6 +661,8 @@ export default function ShopScene({ items, live, className }: ShopSceneProps) {
         <hemisphereLight args={["#ffffff", "#dfe3f0", 1.6]} />
         <directionalLight position={[5, 9, 6]} intensity={2.2} castShadow shadow-mapSize={[1024, 1024]} shadow-camera-left={-6} shadow-camera-right={6} shadow-camera-top={6} shadow-camera-bottom={-6} shadow-bias={-0.0004} />
         <directionalLight position={[-6, 4, -2]} intensity={0.5} color="#cfe8ff" />
+        {glow && <pointLight position={[-3, 2.5, -4]} intensity={60} color="#ff3b4f" distance={14} />}
+        {glow && <pointLight position={[4, 1, 3]} intensity={18} color="#ff8a5c" distance={9} />}
         <Rig>
           <group position={[-0.2, 0, 0]}>
             <Shop />

@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { FileSignature, IndianRupee } from "lucide-react";
+import { FileSignature, IndianRupee, Loader2 } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { CountUp } from "@/components/motion/CountUp";
 import type { PublicOrder } from "@/lib/order-view";
 import { inr } from "@/lib/format";
 
@@ -18,7 +20,7 @@ export function EsignStep({ order, onUpdate }: { order: PublicOrder; onUpdate: (
   const [error, setError] = useState("");
   return (
     <section>
-      <h2 className="text-2xl font-extrabold">Sign your agreement</h2>
+      <h2 className="text-3xl font-extrabold">Sign your agreement</h2>
       <p className="mt-1 text-ink-soft">One page, in plain words: {order.lines.length} services for {inr(order.quote.monthlyWithGst)}/month incl. GST, {order.term} months. Signed with an Aadhaar OTP — no printing, no courier.</p>
       <div className="mt-4 rounded-xl border border-rule bg-sheet p-4">
         <ul className="space-y-1 text-[15px]">
@@ -29,7 +31,7 @@ export function EsignStep({ order, onUpdate }: { order: PublicOrder; onUpdate: (
         <p className="mt-3 text-sm text-ink-soft">Cancel within 7 days of activation for a full refund. After that, early exit costs the setup discount you received, nothing more.</p>
       </div>
       {!otpSent ? (
-        <button onClick={() => setOtpSent(true)} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-marigold px-4 py-3.5 text-lg font-extrabold text-ink">
+        <button onClick={() => setOtpSent(true)} className="mt-4 flex w-full items-center justify-center gap-2 btn-primary px-4 py-3.5 text-lg">
           <FileSignature size={20} /> Send OTP to my Aadhaar-linked mobile
         </button>
       ) : (
@@ -57,26 +59,77 @@ export function EsignStep({ order, onUpdate }: { order: PublicOrder; onUpdate: (
 }
 
 export function PayStep({ order, onUpdate }: { order: PublicOrder; onUpdate: (o: PublicOrder) => void }) {
-  const [busy, setBusy] = useState(false);
+  const [phase, setPhase] = useState<"idle" | "paying" | "paid">("idle");
+  const [error, setError] = useState("");
+  const reduce = useReducedMotion();
   const due = order.quote.monthlyWithGst + order.quote.setupTotal;
+  const pay = async () => {
+    setPhase("paying");
+    setError("");
+    try {
+      const next = await act(order.id, { action: "pay", method: "upi_autopay" });
+      setPhase("paid");
+      // Let the success moment land before the tracker takes over.
+      setTimeout(() => onUpdate(next), reduce ? 0 : 2200);
+    } catch (e) {
+      setError((e as Error).message);
+      setPhase("idle");
+    }
+  };
+
   return (
     <section>
-      <h2 className="text-2xl font-extrabold">Start your services</h2>
-      <p className="mt-1 text-ink-soft">Pay the first month{order.quote.setupTotal ? " and setup" : ""} now. Set up UPI AutoPay so future bills never bounce — you can cancel it any time from your UPI app.</p>
-      <div className="mt-4 flex items-baseline justify-between rounded-xl border border-rule bg-sheet p-4">
-        <span>Due today</span>
-        <span className="text-3xl font-extrabold tabular-nums">{inr(due)}</span>
+      <h2 className="text-3xl font-extrabold">Start your services</h2>
+      <p className="mt-2 text-ink-soft">Pay the first month{order.quote.setupTotal ? " and setup" : ""} now. Set up UPI AutoPay so future bills never bounce — you can cancel it any time from your UPI app.</p>
+
+      <div className="night relative mt-5 overflow-hidden rounded-[24px] p-6">
+        <AnimatePresence mode="wait">
+          {phase !== "paid" ? (
+            <motion.div key="due" exit={{ opacity: 0, scale: 0.96 }}>
+              <div className="text-white/70">Due today</div>
+              <div className="mt-1 text-5xl font-extrabold"><CountUp value={due} duration={1.2} /></div>
+              <ul className="mt-4 space-y-1 text-sm text-white/70">
+                <li className="flex justify-between"><span>First month incl. GST</span><span className="tabular-nums">{inr(order.quote.monthlyWithGst)}</span></li>
+                {order.quote.setupTotal > 0 && <li className="flex justify-between"><span>One-time setup</span><span className="tabular-nums">{inr(order.quote.setupTotal)}</span></li>}
+                <li className="flex justify-between"><span>Then every month</span><span className="tabular-nums">{inr(order.quote.monthlyWithGst)}</span></li>
+              </ul>
+              {phase === "paying" && (
+                <div className="mt-5 flex items-center gap-3 text-white/85">
+                  <Loader2 className="animate-spin" size={18} /> Waiting for approval in your UPI app…
+                </div>
+              )}
+            </motion.div>
+          ) : (
+            <motion.div key="paid" className="py-2 text-center" initial={reduce ? false : { opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
+              <div className="relative mx-auto grid h-24 w-24 place-items-center">
+                {!reduce && [0, 1].map((k) => (
+                  <motion.span key={k} className="absolute inset-0 rounded-full bg-signal/30" initial={{ scale: 0.5, opacity: 0.9 }} animate={{ scale: 1.9, opacity: 0 }} transition={{ delay: 0.15 + k * 0.35, duration: 1.2 }} />
+                ))}
+                <motion.span className="grid h-20 w-20 place-items-center rounded-full bg-signal" initial={reduce ? false : { scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 320, damping: 14 }}>
+                  <svg viewBox="0 0 24 24" className="h-10 w-10" fill="none" stroke="#fff" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+                    <motion.path d="M5 12.5 10 17 19 7" initial={reduce ? false : { pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ delay: 0.3, duration: 0.4 }} />
+                  </svg>
+                </motion.span>
+                {!reduce && Array.from({ length: 14 }, (_, k) => {
+                  const a = (k / 14) * Math.PI * 2;
+                  return (
+                    <motion.span key={k} className="absolute h-2 w-2 rounded-full" style={{ background: ["#ffb400", "#e4002b", "#00a87e", "#ffffff"][k % 4] }} initial={{ x: 0, y: 0, opacity: 1 }} animate={{ x: Math.cos(a) * 90, y: Math.sin(a) * 90, opacity: 0 }} transition={{ delay: 0.25, duration: 0.9, ease: "easeOut" }} />
+                  );
+                })}
+              </div>
+              <div className="mt-4 text-2xl font-extrabold">{inr(due)} received</div>
+              <div className="mt-1 text-white/70">AutoPay is on. Switching on your services…</div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-      <button
-        disabled={busy}
-        onClick={async () => {
-          setBusy(true);
-          onUpdate(await act(order.id, { action: "pay", method: "upi_autopay" }));
-        }}
-        className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-marigold px-4 py-3.5 text-lg font-extrabold text-ink disabled:opacity-60"
-      >
-        <IndianRupee size={20} /> {busy ? "Confirming…" : "Pay with UPI AutoPay"}
-      </button>
+
+      {phase !== "paid" && (
+        <button disabled={phase === "paying"} onClick={pay} className="btn-primary mt-4 flex w-full items-center justify-center gap-2 px-4 py-3.5 text-lg">
+          <IndianRupee size={20} /> {phase === "paying" ? "Confirming…" : `Pay ${inr(due)} with UPI AutoPay`}
+        </button>
+      )}
+      {error && <p role="alert" className="mt-2 text-bad">{error}</p>}
       <p className="mt-2 text-center text-sm text-ink-soft">Demo payment — no money moves.</p>
     </section>
   );

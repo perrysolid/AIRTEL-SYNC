@@ -9,7 +9,7 @@ import { Bill } from "@/components/Bill";
 import type { Quote, Term } from "@/lib/pricing";
 import type { Recommendation } from "@/lib/recommend";
 import type { Profile } from "@/lib/profile";
-import { inr } from "@/lib/format";
+import { CountUp } from "@/components/motion/CountUp";
 import { Shop3D, VISUAL_LABEL } from "@/components/shop/Shop3D";
 
 interface State {
@@ -67,7 +67,7 @@ export default function QuotePage() {
       </TopBar>
       <main className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] gap-8 px-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,36rem)]">
         <aside className="lg:sticky lg:top-20 lg:h-[calc(100dvh-6rem)]">
-          <h1 className="rise mt-6 text-3xl font-extrabold tracking-tight lg:text-4xl">Your plan, line by line</h1>
+          <h1 className="rise mt-8 text-4xl font-extrabold lg:text-5xl">Your plan, line by line</h1>
           <p className="rise mt-1 max-w-md text-ink-soft" style={{ ["--i" as string]: 1 }}>Switch add-ons on or off, change quantities, and pick how long you want to commit. Your shop and the total update instantly.</p>
           <div className="rise card relative mt-5 h-64 overflow-hidden sm:h-80 lg:h-[calc(100%-9.5rem)]" style={{ ["--i" as string]: 2 }}>
             <Shop3D items={quote.lines.filter((l) => l.active && !l.blockedReason).map((l) => l.productId)} className="absolute inset-0" />
@@ -77,9 +77,9 @@ export default function QuotePage() {
                   <li key={l.productId} className="chip-in rounded-full border border-rule bg-sheet/90 px-2.5 py-0.5 text-xs font-semibold backdrop-blur">{VISUAL_LABEL[l.productId] ?? l.name}</li>
                 ))}
               </ul>
-              <div className="shrink-0 rounded-2xl bg-ink px-4 py-2 text-right text-white shadow-[var(--shadow-lift)]">
+              <div className="shrink-0 rounded-2xl bg-night px-4 py-2 text-right text-white shadow-[var(--shadow-lift)]">
                 <div className="text-xs opacity-70">per month + GST</div>
-                <div key={quote.monthly} className="chip-in text-2xl font-extrabold tabular-nums">{inr(quote.monthly)}</div>
+                <CountUp value={quote.monthly} className="block text-2xl font-extrabold" />
               </div>
             </div>
           </div>
@@ -97,7 +97,7 @@ export default function QuotePage() {
                   disabled={!allowed}
                   onClick={() => setTerm(t)}
                   aria-pressed={quote.term === t}
-                  className={`rounded-xl border px-2 py-2.5 text-center disabled:opacity-40 ${quote.term === t ? "border-ink bg-ink text-white" : "border-rule bg-sheet"}`}
+                  className={`rounded-xl border px-2 py-2.5 text-center disabled:opacity-40 ${quote.term === t ? "border-brand bg-brand text-white shadow-[var(--shadow-brand)]" : "border-rule bg-sheet hover:border-ink-soft"} transition-all duration-200`}
                 >
                   <div className="text-lg font-bold">{t} months</div>
                   <div className={`text-xs ${quote.term === t ? "text-white/80" : "text-ink-soft"}`}>{t === 12 ? "standard price" : t === 24 ? "lower price, ½ setup" : "lowest price, no setup"}</div>
@@ -148,8 +148,8 @@ export default function QuotePage() {
           <p className="mt-3 text-sm text-ink-soft">{recommendation.assumptions.join(". ")}.</p>
         )}
 
-        <form onSubmit={placeOrder} className="mt-8 rounded-xl border-2 border-ink bg-sheet p-4">
-          <h2 className="text-xl font-extrabold">Get started for {inr(quote.monthlyWithGst)}/month</h2>
+        <form onSubmit={placeOrder} className="card mt-8 p-5 ring-2 ring-brand/20">
+          <h2 className="text-2xl font-extrabold">Get started for <CountUp value={quote.monthlyWithGst} />/month</h2>
           <p className="text-sm text-ink-soft">Next you&apos;ll verify your business in about 2 minutes. Nothing is charged until you approve.</p>
           <div className="mt-4 space-y-3">
             <label className="block">
@@ -166,7 +166,7 @@ export default function QuotePage() {
             </label>
           </div>
           {error && <p role="alert" className="mt-3 text-sm font-medium text-bad">{error}</p>}
-          <button disabled={placing} className="mt-4 w-full rounded-xl bg-marigold px-4 py-3.5 text-lg font-extrabold text-ink disabled:opacity-60">
+          <button disabled={placing} className="mt-4 w-full btn-primary px-4 py-3.5 text-lg disabled:opacity-60">
             {placing ? "Creating your order…" : "Continue to verification"}
           </button>
         </form>

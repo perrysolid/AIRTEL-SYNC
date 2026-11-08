@@ -5,6 +5,7 @@ import { CheckCircle2, Circle, CircleDot, FastForward, RadioTower } from "lucide
 import type { PublicOrder } from "@/lib/order-view";
 import { act } from "./SignPay";
 import { Shop3D } from "@/components/shop/Shop3D";
+import { motion } from "motion/react";
 
 function status(dueDay: number, doneAtDay: number | undefined, clock: number) {
   if (doneAtDay !== undefined || dueDay <= clock) return "done";
@@ -29,11 +30,11 @@ export function Tracker({ order, onUpdate }: { order: PublicOrder; onUpdate: (o:
 
   return (
     <section>
-      <h2 className="text-2xl font-extrabold">{allLive ? "Everything is live" : `Day ${t.clockDay} of ${order.liveDay}`}</h2>
-      <div className="card relative mt-4 h-64 overflow-hidden sm:h-72">
-        <Shop3D items={order.lines.map((l) => l.productId)} live={live} className="absolute inset-0" />
-        <div className="absolute top-3 left-3 flex gap-2 text-xs font-semibold">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-sheet/90 px-2.5 py-1 backdrop-blur"><span className="h-2 w-2 rounded-full bg-signal" /> Live</span>
+      <h2 className="text-3xl font-extrabold">{allLive ? "Everything is live" : `Day ${t.clockDay} of ${order.liveDay}`}</h2>
+      <div className="night relative mt-4 h-72 overflow-hidden rounded-[24px] sm:h-80">
+        <Shop3D items={order.lines.map((l) => l.productId)} live={live} glow className="absolute inset-0" />
+        <div className="absolute top-3 left-3 flex gap-2 text-xs font-semibold text-ink">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-sheet/90 px-2.5 py-1 backdrop-blur"><span className="live-dot h-2 w-2 rounded-full bg-signal" /> Live</span>
           <span className="inline-flex items-center gap-1.5 rounded-full bg-sheet/90 px-2.5 py-1 backdrop-blur"><span className="h-2 w-2 rounded-full bg-marigold" /> Setting up</span>
         </div>
       </div>
@@ -42,11 +43,17 @@ export function Tracker({ order, onUpdate }: { order: PublicOrder; onUpdate: (o:
       <div className="mt-4 space-y-3">
         {t.tracks.map((tr) => {
           const done = tr.steps.every((s) => status(s.dueDay, s.doneAtDay, t.clockDay) === "done");
+          const share = tr.steps.filter((s) => status(s.dueDay, s.doneAtDay, t.clockDay) === "done").length / tr.steps.length;
           return (
-            <div key={tr.key} className={`rounded-xl border bg-sheet p-4 ${done ? "border-ok/40" : "border-rule"}`}>
+            <div key={tr.key} className={`card p-4 ${done ? "ring-1 ring-ok/40" : ""}`}>
               <div className="flex items-center justify-between">
                 <h3 className="font-bold">{tr.title}</h3>
                 <span className={`text-sm font-semibold ${done ? "text-ok" : "text-ink-soft"}`}>{done ? "Live" : `by day ${Math.max(...tr.steps.map((s) => s.dueDay))}`}</span>
+              </div>
+              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-rule">
+                <motion.div className={`relative h-full overflow-hidden rounded-full ${done ? "bg-signal" : "bg-brand"}`} initial={{ width: 0 }} animate={{ width: `${Math.max(share, 0.04) * 100}%` }} transition={{ duration: 0.9, ease: [0.2, 0.8, 0.2, 1] }}>
+                  {!done && <div className="flow absolute inset-0" />}
+                </motion.div>
               </div>
               <ol className="mt-3 space-y-2">
                 {tr.steps.map((s) => {

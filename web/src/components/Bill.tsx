@@ -94,7 +94,7 @@ function Line({ l, compact, onToggle, onQty }: { l: QuoteLine; compact: boolean;
               onChange={(e) => onToggle(l.productId, e.target.checked)}
               aria-label={`${l.active ? "Remove" : "Add"} ${l.name}`}
             />
-            <span className="relative h-5 w-9 rounded-full bg-rule transition-colors peer-checked:bg-ink peer-focus-visible:outline-3 peer-focus-visible:outline-marigold after:absolute after:top-0.5 after:left-0.5 after:h-4 after:w-4 after:rounded-full after:bg-sheet after:transition-transform peer-checked:after:translate-x-4" />
+            <span className="relative h-5 w-9 rounded-full bg-rule transition-colors peer-checked:bg-brand peer-focus-visible:outline-3 peer-focus-visible:outline-brand after:absolute after:top-0.5 after:left-0.5 after:h-4 after:w-4 after:rounded-full after:bg-sheet after:transition-transform peer-checked:after:translate-x-4" />
           </label>
         )}
         <span className="font-semibold">{l.name}</span>

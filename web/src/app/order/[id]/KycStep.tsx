@@ -114,7 +114,7 @@ export function KycStep({ order, onUpdate }: { order: PublicOrder; onUpdate: (o:
       {error && <p role="alert" className="mt-3 font-medium text-bad">{error}</p>}
       {busy && <p className="mt-3 flex items-center gap-2 text-ink-soft"><Loader2 size={16} className="animate-spin" /> {busy}</p>}
 
-      <button onClick={verify} disabled={readCount === 0 || !!busy || Object.values(slots).some((s) => s.status === "reading")} className="mt-4 w-full rounded-xl bg-marigold px-4 py-3.5 text-lg font-extrabold text-ink disabled:opacity-50">
+      <button onClick={verify} disabled={readCount === 0 || !!busy || Object.values(slots).some((s) => s.status === "reading")} className="mt-4 w-full btn-primary px-4 py-3.5 text-lg disabled:opacity-50">
         Verify {readCount > 0 ? `${readCount} document${readCount > 1 ? "s" : ""}` : "documents"}
       </button>
     </section>
