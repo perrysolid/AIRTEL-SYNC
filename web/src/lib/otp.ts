@@ -43,6 +43,8 @@ async function twoFactor(path: string): Promise<{ Status: string; Details: strin
 
 export type OtpVia = "sms" | "call";
 const ROUTE: Record<OtpVia, string> = { sms: "SMS", call: "VOICE" };
+/** SMS takes the international form (+91XXXXXXXXXX); voice calls take only the 10 digits. */
+const dialFor = (via: OtpVia, phone: string) => (via === "call" ? phone.slice(2) : `+${phone}`);
 
 export type SendResult = { requestId: string } | { error: string; status: number };
 
@@ -51,7 +53,7 @@ export async function sendOtp(phone: string, ip: string, at = Date.now(), via: O
   if (!otpEnabled()) return { error: "Calls aren't switched on yet. Use WhatsApp below, or the demo.", status: 503 };
   if (!allow(`ip:${ip}`, LIMITS.perIp, at)) return { error: "Too many codes requested from this network. Try again in an hour.", status: 429 };
   if (!allow(`ph:${phone}`, LIMITS.perPhone, at)) return { error: "We've sent 3 codes to this number. Wait 10 minutes and try again.", status: 429 };
-  const j = await twoFactor(`${ROUTE[via]}/+${phone}/AUTOGEN`).catch((e: Error) => ({ Status: "Error", Details: e.message }));
+  const j = await twoFactor(`${ROUTE[via]}/${dialFor(via, phone)}/AUTOGEN`).catch((e: Error) => ({ Status: "Error", Details: e.message }));
   if (j.Status !== "Success") {
     console.warn(`[otp] 2Factor send failed: ${j.Details}`);
     return { error: "We couldn't send the code just now. Check the number and try again.", status: 502 };

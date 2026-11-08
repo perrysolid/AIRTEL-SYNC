@@ -80,7 +80,7 @@ describe("OTP sign-in through 2Factor", () => {
     }));
     const sent = await sendOtp("919812345670", "1.2.3.5", Date.now(), "call");
     if (!("requestId" in sent)) throw new Error("not sent");
-    expect(urls[0]).toContain("/VOICE/+919812345670/AUTOGEN");
+    expect(urls[0]).toContain("/VOICE/9812345670/AUTOGEN"); // 2Factor rejects +91 on voice: "Length Mismatch(Expected: 10)"
     expect(await verifyOtp(sent.requestId, "1234")).toEqual({ phone: "919812345670" });
     expect(urls[1]).toContain("/VOICE/VERIFY/voice-1/1234");
   });
