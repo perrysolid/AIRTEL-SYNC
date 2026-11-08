@@ -159,7 +159,7 @@ ok(!JSON.stringify(con).includes("9876501234"), "console still masks phone numbe
 // (The console only *lists* a quoted lead after a 2-minute grace period, so take the session id from the bot's quote link.)
 const rescueChat = "919800077788";
 let last = "";
-for (const m of ["Hi", "c:type:Kirana store", "c:city:Jaipur", "c:emp:2", "c:gst:no", "c:cur:Home broadband", "needs:pos_billing"]) last = await wa(rescueChat, m);
+for (const m of ["Hi", "c:type:Kirana store", "c:city:Jaipur", "c:emp:2", "c:gst:no", "c:cur:Home broadband", "needs:pos_billing", "a:adjust"]) last = await wa(rescueChat, m);
 const leadId = last.match(/\/quote\/([a-z]+_[a-f0-9]+)/)?.[1];
 ok(!!leadId, `chat lead has a saved quote (${leadId})`);
 if (leadId) {
