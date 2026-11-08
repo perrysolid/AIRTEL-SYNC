@@ -4,7 +4,6 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, PlayCircle } from "lucide-react";
 import { PageShell } from "@/components/SiteNav";
-import { WhatsAppLogo } from "@/components/BrandIcons";
 
 type Step = "phone" | "call" | "whatsapp";
 
@@ -164,11 +163,6 @@ function Login() {
       {step === "phone" && (
         <>
           <div className="flex items-center gap-3 text-sm text-ink-soft"><span className="h-px flex-1 bg-rule" /> or <span className="h-px flex-1 bg-rule" /></div>
-          {waLink && (
-            <a href={waLink} target="_blank" rel="noreferrer" onClick={() => go("whatsapp")} className="flex items-center justify-center gap-2.5 rounded-full border border-rule bg-sheet px-4 py-3.5 text-lg font-bold hover:bg-paper">
-              <WhatsAppLogo className="h-6 w-6" /> Get the code on WhatsApp
-            </a>
-          )}
           <button type="button" disabled={busy} onClick={() => void demo()} className="flex items-center justify-center gap-2.5 rounded-full border border-rule bg-sheet px-4 py-3.5 text-lg font-bold hover:bg-paper disabled:opacity-50">
             <PlayCircle size={22} className="text-brand" /> Continue with demo
           </button>
