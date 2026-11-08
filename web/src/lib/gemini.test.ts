@@ -21,7 +21,7 @@ function sse(...parts: GeminiPart[]) {
 describe("Gemini advisor", () => {
   it("runs a function-calling round trip and the rules engine prices the bundle", async () => {
     const turns = [
-      sse({ functionCall: { id: "c1", name: "update_profile", args: { businessType: "Kirana store", city: "Jaipur", employees: 2, hasGstin: false, needs: ["pos_billing", "cctv"] } }, thoughtSignature: "sig-1" }),
+      sse({ functionCall: { id: "c1", name: "update_profile", args: { businessType: "Kirana store", city: "Jaipur", employees: 2, sites: 1, hasGstin: false, currentInternet: "Mobile hotspot", needs: ["pos_billing", "cctv"] } }, thoughtSignature: "sig-1" }),
       sse({ functionCall: { id: "c2", name: "recommend_bundle", args: {} } }),
       sse({ text: "Here is your plan: " }, { text: "**Biz Fibre 100** and billing." }),
     ];

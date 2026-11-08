@@ -56,3 +56,15 @@ describe("guided advisor (no LLM)", () => {
     expect(text).toMatch(/don't offer business connections in Manali/);
   });
 });
+
+describe("discovery before the first plan", () => {
+  it("lists what the advisor still has to learn", async () => {
+    const { stillToLearn } = await import("./advisor");
+    expect(stillToLearn({ businessType: "Kirana store", city: "Kanpur", employees: 2, needs: ["internet", "pos_billing"] })).toEqual([
+      "how many shops or branches",
+      "whether it has GST",
+      "what they use for internet today (and roughly what they pay)",
+    ]);
+    expect(stillToLearn({ businessType: "Kirana store", city: "Kanpur", employees: 2, sites: 1, hasGstin: false, currentInternet: "Mobile hotspot", needs: ["internet"] })).toEqual([]);
+  });
+});

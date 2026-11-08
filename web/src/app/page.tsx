@@ -35,43 +35,19 @@ const GREETING: Record<string, { line: string; sub: string; talk: string; type: 
 
 const TELEGRAM = process.env.NEXT_PUBLIC_TELEGRAM_BOT ?? "UdyamAdvisorBot";
 
-/** Where the scroll zoom runs: wide and tall enough to hold the section in one screen, and motion allowed. Same query as globals.css. */
-const ZOOM_QUERY = "(min-width: 1024px) and (min-height: 720px) and (prefers-reduced-motion: no-preference)";
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
-const ease = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
 
 /**
- * Two swipes. First swipe: the words lift away and blur, the side phones swing out and fade, the night sky dissolves
- * to white, and the centre phone straightens up and rises to the middle of the screen. Second swipe: its screen opens
- * into the "come alive" section while the titanium frame dissolves, so the hardware never sits on top of the page.
- * Scroll-snap stops (see .zoom-snap) make each swipe land on a step. Progress goes straight to inline styles.
- *
- * Everywhere (phones included), the three phones stand in perspective and lean gently towards the pointer.
+ * The landing page scrolls like any page: nothing is pinned and no swipe is spent on an animation.
+ * The phones lean a few degrees towards the pointer, and as the page scrolls the words drift up a little
+ * faster than the phones, so the stage has depth without slowing anyone down.
  */
-function useHeroZoom() {
+function useHeroMotion() {
   const runway = useRef<HTMLDivElement>(null);
-  const overlay = useRef<HTMLDivElement>(null);
-  const slot = useRef<HTMLDivElement>(null);
-  const fly = useRef<HTMLDivElement>(null);
-  const screen = useRef<HTMLDivElement>(null);
-  const layer = useRef<HTMLElement>(null);
   const copy = useRef<HTMLDivElement>(null);
-  const sideL = useRef<HTMLDivElement>(null);
-  const sideR = useRef<HTMLDivElement>(null);
-  const veil = useRef<HTMLDivElement>(null);
-  const frameEl = useRef<HTMLDivElement>(null);
-  const [enhanced, setEnhanced] = useState(false);
-  const [revealed, setRevealed] = useState(false);
+  const stage = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const mq = window.matchMedia(ZOOM_QUERY);
-    const on = () => setEnhanced(mq.matches);
-    on();
-    mq.addEventListener("change", on);
-    return () => mq.removeEventListener("change", on);
-  }, []);
-
-  // Pointer tilt: the phones lean a few degrees towards the pointer, eased so they glide rather than jitter.
+  // Pointer tilt, eased so the phones glide rather than jitter.
   useEffect(() => {
     const rw = runway.current;
     if (!rw || !window.matchMedia("(pointer: fine) and (prefers-reduced-motion: no-preference)").matches) return;
@@ -96,82 +72,36 @@ function useHeroZoom() {
     };
   }, []);
 
+  // Parallax while the hero is on screen. Transforms only, so scrolling stays at full speed.
   useEffect(() => {
-    const rw = runway.current, ov = overlay.current, sl = slot.current, fl = fly.current, sc = screen.current, ly = layer.current;
-    if (!enhanced || !rw || !ov || !sl || !fl || !sc || !ly) return;
-    const moved = [copy.current, sideL.current, sideR.current, veil.current, frameEl.current];
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const cp = copy.current, st = stage.current;
     let raf = 0;
-    let shown = false;
-    let size = { w: 0, h: 0 };
-
     const frame = () => {
       raf = 0;
-      const box = ov.getBoundingClientRect();
-      const vh = box.height;
-      const p = clamp01(-rw.getBoundingClientRect().top / Math.max(1, vh));
-      const a = ease(clamp01(p / 0.5));
-      const b = ease(clamp01((p - 0.5) / 0.5));
-      const lift = ease(clamp01(p / 0.32));
-
-      // the words and the side phones leave first; the sky dissolves to white behind the rising phone
-      const cp = copy.current;
+      const y = window.scrollY, vh = window.innerHeight;
+      if (y > vh * 1.2) return;
+      const p = clamp01(y / vh);
       if (cp) {
-        cp.style.opacity = (1 - lift).toFixed(3);
-        cp.style.transform = `translateY(${(-lift * 56).toFixed(1)}px) scale(${(1 - lift * 0.04).toFixed(4)})`;
-        cp.style.filter = lift > 0.001 ? `blur(${(lift * 8).toFixed(1)}px)` : "";
+        cp.style.transform = `translate3d(0, ${(-y * 0.25).toFixed(1)}px, 0)`;
+        cp.style.opacity = (1 - p * 1.4).toFixed(3);
       }
-      for (const [el, dir] of [[sideL.current, -1], [sideR.current, 1]] as const) {
-        if (!el) continue;
-        el.style.transform = `perspective(1400px) translateX(${(dir * lift * 16).toFixed(2)}vw) rotateY(${(-dir * lift * 55).toFixed(2)}deg)`;
-        el.style.opacity = (1 - lift).toFixed(3);
-      }
-      if (veil.current) veil.current.style.opacity = ease(clamp01((p - 0.06) / 0.4)).toFixed(3);
-      if (frameEl.current) frameEl.current.style.opacity = (1 - clamp01(b * 1.7)).toFixed(3);
-
-      // where the phone sits in the landing page right now (it scrolls up with the page)
-      const s = sl.getBoundingClientRect();
-      if (s.width !== size.w || s.height !== size.h) {
-        size = { w: s.width, h: s.height };
-        fl.style.width = `${s.width}px`;
-        fl.style.height = `${s.height}px`;
-      }
-      const k = 1 + ((vh * 0.6) / s.height - 1) * a; // rises to a little over half the screen, never fills it
-      const x0 = s.left - box.left, y0 = s.top - box.top;
-      const x1 = box.width / 2 - s.width / 2, y1 = vh / 2 - s.height / 2;
-      // it starts tipped back like the side phones and straightens up as it rises
-      fl.style.transform = `translate3d(${(x0 + (x1 - x0) * a).toFixed(1)}px, ${(y0 + (y1 - y0) * a).toFixed(1)}px, 0) perspective(1600px) rotateX(calc(${(9 * (1 - a)).toFixed(2)}deg - var(--ty, 0) * ${(1 - a).toFixed(3)}deg)) rotateY(calc(var(--tx, 0) * ${(1 - a).toFixed(3)}deg)) scale(${(k * (1 + 0.1 * b)).toFixed(4)})`;
-
-      // the section opens out of wherever the phone's screen is
-      const sr = sc.getBoundingClientRect();
-      const inset = [sr.top - box.top, box.right - sr.right, box.bottom - sr.bottom, sr.left - box.left].map((v) => `${(Math.max(0, v) * (1 - b)).toFixed(1)}px`);
-      ly.style.clipPath = b >= 1 ? "none" : `inset(${inset.join(" ")} round ${(sr.width * 0.13 * (1 - b)).toFixed(1)}px)`;
-      ly.style.opacity = clamp01(b * 3).toFixed(3);
-      fl.style.opacity = b >= 1 ? "0" : "1";
-
-      const now = p > 0.7;
-      if (now !== shown) {
-        shown = now;
-        setRevealed(now);
-      }
+      if (st) st.style.transform = `translate3d(0, ${(y * 0.08).toFixed(1)}px, 0)`;
     };
     const onScroll = () => {
       if (!raf) raf = requestAnimationFrame(frame);
     };
     window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
     onScroll();
     return () => {
       window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
       cancelAnimationFrame(raf);
-      ly.style.clipPath = "";
-      ly.style.opacity = "";
-      for (const el of moved) if (el) el.removeAttribute("style");
-      setRevealed(false);
+      for (const el of [cp, st]) el?.style.removeProperty("transform");
+      cp?.style.removeProperty("opacity");
     };
-  }, [enhanced]);
+  }, []);
 
-  return { runway, overlay, slot, fly, screen, layer, copy, sideL, sideR, veil, frameEl, enhanced, revealed };
+  return { runway, copy, stage };
 }
 
 
@@ -236,19 +166,16 @@ export default function Home() {
   const router = useRouter();
   const g = GREETING[lang] ?? GREETING.en;
   const [shop, setShop] = useState(-1);
-  const z = useHeroZoom();
-  const show = z.enhanced ? z.revealed : undefined;
+  const z = useHeroMotion();
 
   return (
     <div id="top" className="min-h-dvh">
       <PromoBar />
 
-      <div ref={z.runway} className="zoom-runway relative">
-        {/* scroll-snap stops: the top of the page, the phone in the middle, the section fully open */}
-        {["-2rem", "50dvh", "100dvh"].map((top) => <div key={top} aria-hidden className="zoom-snap" style={{ top }} />)}
+      <div ref={z.runway} className="relative">
           {/* ---------------------------------------------------------------- hero: a live network, one line, three phones on a stage */}
-          <section className="zoom-hero relative isolate flex min-h-[calc(100dvh-2rem)] flex-col overflow-hidden bg-[#050a1c] text-white">
-            <div className="zoom-bg absolute inset-0 -z-20"><NetworkBackdrop className="absolute inset-0" /></div>
+          <section className="relative isolate flex min-h-[calc(100dvh-2rem)] flex-col overflow-hidden bg-[#050a1c] text-white">
+            <div className="absolute inset-0 -z-20"><NetworkBackdrop className="absolute inset-0" /></div>
             <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-b from-[#050a1c]/70 via-[#050a1c]/20 to-[#050a1c]/80" />
             <div aria-hidden className="absolute inset-0 -z-10 bg-[radial-gradient(48rem_20rem_at_50%_52%,rgb(5_10_28/0.8),transparent_72%)]" />
 
@@ -263,7 +190,7 @@ export default function Home() {
             </header>
 
             {/* the message sits in the middle, just above the stage; the background does the rest of the talking */}
-            <div ref={z.copy} className="zoom-copy flex flex-1 flex-col items-center justify-end px-4 pb-[clamp(1.25rem,4.5dvh,3rem)] text-center">
+            <div ref={z.copy} className="flex flex-1 flex-col items-center justify-end px-4 pb-[clamp(1.25rem,4.5dvh,3rem)] text-center">
               <WelcomeBack />
               <h1 key={lang} lang={lang} className="rise max-w-[22ch] text-[clamp(1.9rem,5.2vw,3.6rem)] leading-[1.08] font-extrabold tracking-tight text-balance [text-shadow:0_2px_30px_rgb(0_0_0/0.7)]" style={{ ["--i" as string]: 1 }}>
                 {g.line}
@@ -296,38 +223,36 @@ export default function Home() {
 
             {/* ------------------------------------------- the stage: a low white arc, three phones standing on it, sized from one number */}
             <div
+              ref={z.stage}
               role="group"
               aria-label="The product on a phone"
               className="relative mx-auto w-full flex-none"
               style={{ ["--ph" as string]: "min(40dvh, 62vw, 400px)", height: "calc(var(--ph) * 0.86)" }}
             >
-              <div aria-hidden className="zoom-arc pointer-events-none absolute inset-0">
+              <div aria-hidden className="pointer-events-none absolute inset-0">
                 <div
                   className="absolute left-1/2 -translate-x-1/2 rounded-full bg-white shadow-[0_0_0_1px_rgb(255_255_255/0.55),0_-8px_60px_rgb(228_0_0/0.35)]"
                   style={{ top: "calc(var(--ph) * 0.34)", width: "calc(var(--ph) * 2.4)", height: "calc(var(--ph) * 2.4)" }}
                 />
               </div>
               <div className="absolute inset-x-0 flex items-end justify-center" style={{ bottom: "calc(var(--ph) * -0.14)", gap: "calc(var(--ph) * 0.07)" }}>
-                <div ref={z.sideL} className="zoom-side-l">
+                <div>
                   <div className="phone-in" style={{ ["--i" as string]: 1, height: "calc(var(--ph) * 0.8)", transform: "translateY(calc(var(--ph) * 0.02))" }}>
                     <div className="hero-float h-full" style={{ ["--fd" as string]: "-1.5s", transform: "perspective(1400px) rotateY(calc(24deg + var(--tx, 0) * 1deg)) rotateX(calc(6deg - var(--ty, 0) * 1deg)) rotateZ(-2deg)" }}>
                       <PhoneMock className="h-full" src="/screens/advisor.png" alt="The advisor recommends a plan with a clear monthly price" />
                     </div>
                   </div>
                 </div>
-                {/* the centre phone's place; on wide screens the phone itself flies from here (see the overlay below) */}
-                <div ref={z.slot} className="relative z-10" style={{ height: "var(--ph)", aspectRatio: "0.475" }}>
-                  {!z.enhanced && (
-                    <div className="phone-in h-full" style={{ ["--i" as string]: 0 }}>
-                      <div className="h-full" style={{ transform: "perspective(1600px) rotateX(calc(9deg - var(--ty, 0) * 1deg)) rotateY(calc(var(--tx, 0) * 1deg))" }}>
-                        <PhoneMock className="h-full">
-                          <MiniChat />
-                        </PhoneMock>
-                      </div>
+                <div className="relative z-10" style={{ height: "var(--ph)", aspectRatio: "0.475" }}>
+                  <div className="phone-in h-full" style={{ ["--i" as string]: 0 }}>
+                    <div className="h-full" style={{ transform: "perspective(1600px) rotateX(calc(9deg - var(--ty, 0) * 1deg)) rotateY(calc(var(--tx, 0) * 1deg))" }}>
+                      <PhoneMock className="h-full">
+                        <MiniChat />
+                      </PhoneMock>
                     </div>
-                  )}
+                  </div>
                 </div>
-                <div ref={z.sideR} className="zoom-side-r">
+                <div>
                   <div className="phone-in" style={{ ["--i" as string]: 2, height: "calc(var(--ph) * 0.8)", transform: "translateY(calc(var(--ph) * 0.02))" }}>
                     <div className="hero-float h-full" style={{ ["--fd" as string]: "-4s", transform: "perspective(1400px) rotateY(calc(-24deg + var(--tx, 0) * 1deg)) rotateX(calc(6deg - var(--ty, 0) * 1deg)) rotateZ(2deg)" }}>
                       <PhoneMock className="h-full" src="/screens/shield.png" alt="Scam Shield flags a fake message asking for your documents and says what to do" />
@@ -336,37 +261,23 @@ export default function Home() {
                 </div>
               </div>
             </div>
-            <div aria-hidden className="zoom-fade pointer-events-none absolute inset-x-0 bottom-0 z-20 h-[clamp(44px,8dvh,84px)] bg-gradient-to-b from-transparent to-white" />
+            <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-[clamp(44px,8dvh,84px)] bg-gradient-to-b from-transparent to-white" />
           </section>
 
-          {/* ---------------------------------------------------------------- the 3D shop that builds itself, the ways in, and order tracking.
-              It sits right below the landing page. On wide screens it is pinned while it opens out of the centre phone's
-              screen, and the phone flies here from its place in the landing page; elsewhere it simply follows the hero. */}
-          <div className="zoom-track">
-          <div ref={z.overlay} className="zoom-overlay">
-            {z.enhanced && <div ref={z.veil} aria-hidden className="pointer-events-none absolute inset-0 bg-white opacity-0" />}
-            {z.enhanced && (
-              <div ref={z.fly} aria-hidden className="zoom-fly pointer-events-none absolute top-0 left-0 z-10">
-                <div className="phone-in h-full" style={{ ["--i" as string]: 0 }}>
-                  <PhoneMock className="h-full" screenRef={z.screen} frameRef={z.frameEl}>
-                    <MiniChat />
-                  </PhoneMock>
-                </div>
-              </div>
-            )}
-          <section ref={z.layer} inert={z.enhanced && !z.revealed} aria-labelledby="alive" className="zoom-reveal bg-white">
+          {/* ---------------------------------------------------------------- the 3D shop that builds itself, the ways in, and order tracking */}
+          <section aria-labelledby="alive" className="bg-white">
             <div className="mx-auto grid w-full max-w-6xl grid-cols-[minmax(0,1fr)] items-center gap-8 px-4 pt-6 pb-[clamp(3rem,7vw,5.5rem)] lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-12">
               <div className="min-w-0">
-                <Reveal show={show}>
+                <Reveal>
                   <span aria-hidden className="mb-3 block h-1 w-12 rounded-full bg-brand" />
                   <h2 id="alive" className="text-[clamp(1.9rem,4.4vw,3rem)] leading-[1.08] font-extrabold tracking-tight text-balance">
                     One connection. <span className="sweep">Every shop</span> on the street.
                   </h2>
                 </Reveal>
-                <Reveal show={show} delay={120}>
+                <Reveal delay={120}>
                   <p className="mt-4 max-w-lg text-lg text-ink-soft">Kirana, clinic, salon or chai stall: tell us what you run and we connect what it needs. Fibre, UPI billing, business SIMs, Wi-Fi and CCTV, on one bill, with every step sent to your WhatsApp.</p>
                 </Reveal>
-                <Reveal show={show} delay={240}>
+                <Reveal delay={240}>
                   <div className="mt-7 flex flex-wrap items-center gap-3">
                     <button
                       onClick={() => router.push(`/advisor?lang=${lang}&voice=1`)}
@@ -385,7 +296,7 @@ export default function Home() {
                   </div>
                   <QuickStart lang={lang} />
                 </Reveal>
-                <Reveal show={show} delay={360}>
+                <Reveal delay={360}>
                   <form
                     id="track"
                     className="card mt-6 max-w-lg scroll-mt-24 p-4"
@@ -402,7 +313,7 @@ export default function Home() {
                   </form>
                 </Reveal>
               </div>
-              <Reveal show={show} delay={200} className="relative h-[300px] sm:h-[380px] lg:h-[480px]">
+              <Reveal delay={200} className="relative h-[300px] sm:h-[380px] lg:h-[480px]">
                 <Bazaar3D className="absolute inset-0" onStep={setShop} />
                 <div className="pointer-events-none absolute inset-x-0 bottom-2 flex justify-center">
                   {shop >= 0 && (
@@ -414,10 +325,6 @@ export default function Home() {
               </Reveal>
             </div>
           </section>
-          </div>
-          </div>
-          {/* holds the section's own screen of the page, right under the landing page, so nothing below is covered */}
-          <div aria-hidden className="zoom-spacer" />
       </div>
 
       <ToolsStage />

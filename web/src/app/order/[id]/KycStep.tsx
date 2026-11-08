@@ -81,6 +81,18 @@ export function KycStep({ order, onUpdate }: { order: PublicOrder; onUpdate: (o:
 
   const readCount = Object.values(slots).filter((s) => s.status === "read").length;
 
+  // Once all four documents are read, check them straight away: no second button to press. A retake checks again.
+  const verifyRef = useRef(verify);
+  verifyRef.current = verify;
+  const checked = useRef("");
+  const allRead = DOC_TYPES.every((t) => slots[t].status === "read");
+  const signature = allRead ? DOC_TYPES.map((t) => JSON.stringify(slots[t].doc?.fields)).join("|") : "";
+  useEffect(() => {
+    if (!signature || busy || checked.current === signature) return;
+    checked.current = signature;
+    void verifyRef.current();
+  }, [signature, busy]);
+
   return (
     <section>
       <h2 className="text-2xl font-extrabold">Verify your business</h2>

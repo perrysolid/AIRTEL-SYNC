@@ -27,7 +27,7 @@ const call = (id: string, name: string, args: string) => [
 describe("Groq advisor", () => {
   it("assembles streamed tool calls, runs the rules engine and returns results to the model", async () => {
     const turns = [
-      sse(call("t1", "update_profile", JSON.stringify({ businessType: "Kirana store", city: "Jaipur", employees: 2, hasGstin: false, needs: ["pos_billing", "cctv"] }))),
+      sse(call("t1", "update_profile", JSON.stringify({ businessType: "Kirana store", city: "Jaipur", employees: 2, sites: 1, hasGstin: false, currentInternet: "Mobile hotspot", needs: ["pos_billing", "cctv"] }))),
       sse(call("t2", "recommend_bundle", "{}")),
       sse([{ content: "Here is your plan: " }, { content: "**Biz Fibre 100** and billing." }]),
     ];

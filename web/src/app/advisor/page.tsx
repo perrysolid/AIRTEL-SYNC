@@ -21,21 +21,6 @@ type Msg =
   | { kind: "bundle"; quote: Quote; recommendation: Recommendation }
   | { kind: "handoff"; reason: string };
 
-const SEGMENT_NAMES: Record<string, string> = { micro: "Retail & services", prof: "Professional office", multi: "Multi-site", mfg: "Manufacturer" };
-
-function profileFacts(p?: Profile): string[] {
-  if (!p) return [];
-  return [
-    p.businessName ?? p.businessType,
-    p.segment && SEGMENT_NAMES[p.segment],
-    p.city,
-    p.employees && `${p.employees} people`,
-    p.sites && p.sites > 1 && `${p.sites} locations`,
-    p.hasGstin === false ? "No GST" : p.gstinActive === false ? "GST inactive" : p.hasGstin ? "GST ✓" : undefined,
-    ...p.needs.slice(0, 4).map((n) => n.replace(/_/g, " ")),
-  ].filter(Boolean) as string[];
-}
-
 async function* sse(res: Response, onData: () => void): AsyncGenerator<AdvisorEvent> {
   const reader = res.body!.getReader();
   const dec = new TextDecoder();
@@ -186,7 +171,6 @@ function Advisor() {
   const startListening = () => voice.listen((text) => void send(text));
   const lastBot = [...msgs].reverse().find((m) => m.kind === "bot") as Extract<Msg, { kind: "bot" }> | undefined;
   const chips = !busy ? lastBot?.chips : undefined;
-  const facts = profileFacts(profile);
   const hasBundle = msgs.some((m) => m.kind === "bundle");
   const lastBundle = [...msgs].reverse().find((m) => m.kind === "bundle") as Extract<Msg, { kind: "bundle" }> | undefined;
   const planIds = lastBundle ? lastBundle.quote.lines.filter((l) => l.active && !l.blockedReason).map((l) => l.productId) : [];
@@ -216,17 +200,6 @@ function Advisor() {
           {voiceMode ? <Headphones size={15} /> : <Keyboard size={15} />} {voiceMode ? "Voice" : "Text"}
         </button>
       </TopBar>
-
-      {facts.length > 0 && (
-        <div className="border-b border-rule bg-sheet">
-          <div className="no-scrollbar mx-auto flex max-w-xl items-center gap-1.5 overflow-x-auto px-4 py-2 text-[13px]">
-            <span className="shrink-0 text-ink-soft">I understood:</span>
-            {facts.map((f) => (
-              <span key={f} className="shrink-0 rounded-md bg-paper px-2 py-0.5 font-medium">{f}</span>
-            ))}
-          </div>
-        </div>
-      )}
 
       <div className="flex min-h-0 flex-1">
       <div ref={scrollRef} className="min-w-0 flex-1 overflow-y-auto">
