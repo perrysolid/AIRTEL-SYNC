@@ -20,7 +20,7 @@ export interface ShopSceneProps {
   className?: string;
 }
 
-const C = {
+export const C = {
   plinth: "#efefef",
   floor: "#f1f1f1",
   wall: "#fbe9e9",
@@ -37,17 +37,19 @@ const C = {
   brand: "#e40000",
 };
 
-const FIBRE = ["P01", "P02", "P03"];
+export const FIBRE = ["P01", "P02", "P03"];
 
 // ---------------------------------------------------------------------------
 // Animation helpers
 // ---------------------------------------------------------------------------
 
 /** Springs a prop in (with a little overshoot) when it joins the plan, out when removed. */
-function Pop({ show, children, position, delay = 0 }: { show: boolean; children: ReactNode; position: [number, number, number]; delay?: number }) {
+export function Pop({ show, children, position, delay = 0 }: { show: boolean; children: ReactNode; position: [number, number, number]; delay?: number }) {
   const ref = useRef<THREE.Group>(null);
   const state = useRef({ s: 0, v: 0, t: 0 });
-  useFrame((_, dt) => {
+  useFrame((_, frame) => {
+    // The spring is stepped explicitly, so a long frame (slow phone, tab coming back) would blow it up.
+    const dt = Math.min(frame, 1 / 30);
     const st = state.current;
     st.t = show ? st.t + dt : 0;
     const target = show && st.t > delay ? 1 : 0;
@@ -68,7 +70,7 @@ function Pop({ show, children, position, delay = 0 }: { show: boolean; children:
   );
 }
 
-function Bob({ children, speed = 1.2, amp = 0.08 }: { children: ReactNode; speed?: number; amp?: number }) {
+export function Bob({ children, speed = 1.2, amp = 0.08 }: { children: ReactNode; speed?: number; amp?: number }) {
   const ref = useRef<THREE.Group>(null);
   const phase = useMemo(() => Math.random() * Math.PI * 2, []);
   useFrame(({ clock }) => {
@@ -78,7 +80,7 @@ function Bob({ children, speed = 1.2, amp = 0.08 }: { children: ReactNode; speed
 }
 
 /** Status ring under a device on the tracker: pulsing marigold while installing, solid teal when live. */
-function StatusRing({ live }: { live?: boolean }) {
+export function StatusRing({ live }: { live?: boolean }) {
   const ref = useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => {
     if (!ref.current || live) return;
@@ -201,7 +203,7 @@ function Shop() {
   );
 }
 
-function Tower() {
+export function Tower() {
   const beacon = useRef<THREE.MeshStandardMaterial>(null);
   useFrame(({ clock }) => {
     if (beacon.current) beacon.current.emissiveIntensity = (Math.sin(clock.elapsedTime * 3) + 1) * 1.2;
@@ -283,7 +285,7 @@ function AirWaves({ show }: { show: boolean }) {
   return <Pulses curve={curve} color={C.signal} count={4} speed={0.5} size={0.07} />;
 }
 
-function Router({ backup }: { backup?: boolean }) {
+export function Router({ backup }: { backup?: boolean }) {
   return (
     <group>
       <RoundedBox args={[0.5, 0.12, 0.3]} radius={0.03} castShadow>
@@ -305,7 +307,7 @@ function Router({ backup }: { backup?: boolean }) {
   );
 }
 
-function WifiRings() {
+export function WifiRings() {
   const refs = useRef<(THREE.Mesh | null)[]>([]);
   useFrame(({ clock }) => {
     refs.current.forEach((m, i) => {
@@ -327,7 +329,7 @@ function WifiRings() {
   );
 }
 
-function Phone({ tilt = 0 }: { tilt?: number }) {
+export function Phone({ tilt = 0 }: { tilt?: number }) {
   return (
     <group rotation={[-0.35, tilt, 0]}>
       <RoundedBox args={[0.18, 0.34, 0.025]} radius={0.02} castShadow>
@@ -341,7 +343,7 @@ function Phone({ tilt = 0 }: { tilt?: number }) {
   );
 }
 
-function Pos() {
+export function Pos() {
   return (
     <group>
       <group rotation-x={-0.6} position={[0, 0.16, 0]}>
@@ -364,7 +366,7 @@ function Pos() {
   );
 }
 
-function Cctv() {
+export function Cctv() {
   const ref = useRef<THREE.Group>(null);
   const led = useRef<THREE.MeshBasicMaterial>(null);
   useFrame(({ clock }) => {
@@ -394,7 +396,7 @@ function Cctv() {
   );
 }
 
-function Cloud({ extras }: { extras: string[] }) {
+export function Cloud({ extras }: { extras: string[] }) {
   return (
     <group>
       {[
@@ -418,7 +420,7 @@ function Cloud({ extras }: { extras: string[] }) {
   );
 }
 
-function ChatBubble() {
+export function ChatBubble() {
   return (
     <group>
       <RoundedBox args={[0.7, 0.46, 0.14]} radius={0.12} castShadow>
@@ -438,7 +440,7 @@ function ChatBubble() {
   );
 }
 
-function Shield() {
+export function Shield() {
   const shape = useMemo(() => {
     const s = new THREE.Shape();
     s.moveTo(0, 0.32);
@@ -468,7 +470,7 @@ function Shield() {
   );
 }
 
-function Rack() {
+export function Rack() {
   const leds = useRef<(THREE.MeshBasicMaterial | null)[]>([]);
   useFrame(({ clock }) => {
     leds.current.forEach((m, i) => {
@@ -496,7 +498,7 @@ function Rack() {
   );
 }
 
-function IotSensor() {
+export function IotSensor() {
   const ring = useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => {
     if (!ring.current) return;
@@ -525,7 +527,7 @@ function IotSensor() {
   );
 }
 
-function Scooter() {
+export function Scooter() {
   return (
     <group rotation-y={-0.5}>
       <RoundedBox args={[0.9, 0.5, 0.5]} radius={0.08} position={[0, 0.42, 0]} castShadow>

@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import type { ShopSceneProps } from "./ShopScene";
 
 const ShopScene = dynamic(() => import("./ShopScene"), { ssr: false, loading: () => <ShopPlaceholder /> });
+const KitScene = dynamic(() => import("./KitScene"), { ssr: false, loading: () => <ShopPlaceholder /> });
+const RouteScene = dynamic(() => import("./RouteScene"), { ssr: false, loading: () => <ShopPlaceholder /> });
 
 function ShopPlaceholder() {
   return (
@@ -23,12 +25,18 @@ function webglAvailable() {
   }
 }
 
-/** The 3D shop, loaded only in the browser; falls back to a still card without WebGL. */
-export function Shop3D(props: ShopSceneProps) {
+/**
+ * The 3D picture of a plan, loaded only in the browser; falls back to a still card without WebGL.
+ * "shop" (advisor): the shop getting connected. "kit" (quote): the plan's devices on a display table.
+ * "route" (tracker): the van laying fibre from the tower to the shop as services go live.
+ */
+export function Shop3D({ variant = "shop", ...props }: ShopSceneProps & { variant?: "shop" | "kit" | "route" }) {
   const [ok, setOk] = useState<boolean>();
   useEffect(() => setOk(webglAvailable()), []);
   if (ok === undefined) return <div className={props.className}><ShopPlaceholder /></div>;
   if (!ok) return <div className={props.className}><ShopPlaceholder /></div>;
+  if (variant === "kit") return <KitScene {...props} />;
+  if (variant === "route") return <RouteScene {...props} />;
   return <ShopScene {...props} />;
 }
 

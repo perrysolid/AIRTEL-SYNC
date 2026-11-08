@@ -52,7 +52,7 @@ export function Tracker({ order, onUpdate }: { order: PublicOrder; onUpdate: (o:
       )}
       <h2 className="text-2xl font-extrabold">{allLive ? "Everything is live" : `Day ${t.clockDay} of ${order.liveDay}`}</h2>
       <div className="card relative mt-4 h-64 overflow-hidden sm:h-72">
-        <Shop3D items={order.lines.map((l) => l.productId)} live={live} className="absolute inset-0" />
+        <Shop3D variant="route" items={order.lines.map((l) => l.productId)} live={live} className="absolute inset-0" />
         <div className="absolute top-3 left-3 flex gap-2 text-xs font-semibold">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-sheet/90 px-2.5 py-1 backdrop-blur"><span className="h-2 w-2 rounded-full bg-signal" /> Live</span>
           <span className="inline-flex items-center gap-1.5 rounded-full bg-sheet/90 px-2.5 py-1 backdrop-blur"><span className="h-2 w-2 rounded-full bg-amber" /> Setting up</span>

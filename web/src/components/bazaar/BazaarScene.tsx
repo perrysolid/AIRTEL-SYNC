@@ -4,6 +4,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { ContactShadows, RoundedBox } from "@react-three/drei";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import * as THREE from "three";
+import { Cctv, Pos } from "../shop/ShopScene";
 
 /**
  * A miniature Indian market street on a floating block: a kirana, a clinic, a salon and a chai stall, with an Accel
@@ -74,7 +75,8 @@ const sinceConnect = (clock: Clock, t: number, i: number) => {
 function Pop({ on, children, position }: { on: () => boolean; children: ReactNode; position: [number, number, number] }) {
   const ref = useRef<THREE.Group>(null);
   const st = useRef({ s: 0, v: 0 });
-  useFrame((_, dt) => {
+  useFrame((_, frame) => {
+    const dt = Math.min(frame, 1 / 30); // a long frame would blow up the explicit spring
     const s = st.current;
     s.v += ((on() ? 1 : 0) - s.s) * 160 * dt;
     s.v *= Math.pow(0.002, dt);
@@ -425,6 +427,19 @@ function Shop({ i, clock }: { i: number; clock: Clock }) {
       <Pop on={isOn} position={[s.x, s.h + 0.55, SHOP_Z + 0.25]}>
         <Badge kind={s.badge} />
       </Pop>
+      {/* every shop bills on a POS once it's connected; the kirana and the chai stall also get a camera */}
+      <Pop on={isOn} position={[s.x + s.w * 0.18, 0.47, FRONT + 0.12]}>
+        <group scale={0.55}>
+          <Pos />
+        </group>
+      </Pop>
+      {(s.kind === "kirana" || s.kind === "chai") && (
+        <Pop on={isOn} position={[s.x - s.w / 2 + 0.06, s.h * 0.78, FRONT + 0.05]}>
+          <group scale={0.55}>
+            <Cctv />
+          </group>
+        </Pop>
+      )}
       <Updates i={i} s={s} clock={clock} />
     </group>
   );

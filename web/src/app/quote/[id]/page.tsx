@@ -72,7 +72,7 @@ export default function QuotePage() {
           <h1 className="rise mt-6 text-3xl font-extrabold tracking-tight lg:text-4xl">Your plan, line by line</h1>
           <p className="rise mt-1 max-w-md text-ink-soft" style={{ ["--i" as string]: 1 }}>Switch add-ons on or off, change quantities, and pick how long you want to commit. Your shop and the total update instantly.</p>
           <div className="rise card relative mt-5 h-64 overflow-hidden sm:h-80 lg:h-[calc(100%-9.5rem)]" style={{ ["--i" as string]: 2 }}>
-            <Shop3D items={quote.lines.filter((l) => l.active && !l.blockedReason).map((l) => l.productId)} className="absolute inset-0" />
+            <Shop3D variant="kit" items={quote.lines.filter((l) => l.active && !l.blockedReason).map((l) => l.productId)} className="absolute inset-0" />
             <div className="absolute inset-x-4 bottom-4 flex items-end justify-between gap-3">
               <ul className="flex flex-wrap gap-1.5">
                 {quote.lines.filter((l) => l.active && !l.blockedReason).map((l) => (
