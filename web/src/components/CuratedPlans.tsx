@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
-  ArrowRight, BrickWall, Cable, Cctv, CloudUpload, Cpu, Factory, Globe, Mail, MessageCircle, MessageSquare, Package, Phone, PhoneCall,
+  ArrowRight, BrickWall, Loader2, Cable, Cctv, CloudUpload, Cpu, Factory, Globe, Mail, MessageCircle, MessageSquare, Package, Phone, PhoneCall,
   RadioTower, Receipt, RefreshCw, Router, ShieldCheck, Smartphone, Store, Truck, Utensils, Wifi, Briefcase, Building,
 } from "lucide-react";
 import { Reveal } from "./Reveal";
@@ -71,6 +72,20 @@ export function CuratedPlans({ lang }: { lang: string }) {
   const p = plans[k];
   const look = p ? (LOOK[p.key] ?? LOOK.kirana) : LOOK.kirana;
   const Badge = look.badge;
+  const router = useRouter();
+  const [opening, setOpening] = useState<string>();
+  // Straight to the plan's editable quote; if that fails, the advisor builds it from the plan's description.
+  const open = async (plan: Plan) => {
+    setOpening(plan.key);
+    try {
+      const r = await fetch("/api/plans", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key: plan.key }) });
+      const j = await r.json();
+      if (!r.ok || !j.sessionId) throw new Error(j.error);
+      router.push(`/quote/${j.sessionId}`);
+    } catch {
+      router.push(`/advisor?lang=${lang}&q=${encodeURIComponent(plan.start)}`);
+    }
+  };
   const resume = () => {
     setPaused(false);
     setRound((r) => r + 1);
@@ -120,8 +135,16 @@ export function CuratedPlans({ lang }: { lang: string }) {
                     <div className="text-[1.75rem] leading-tight font-extrabold tabular-nums">{inr(p.priceFrom)}<span className="text-base font-semibold text-ink-soft"> /month incl. GST</span></div>
                     <div className="mt-0.5 text-sm text-ink-soft">{p.setupTo ? `Setup up to ${inr(p.setupTo)}, free on 36 months` : "No setup fee"}</div>
                   </div>
-                  <Link href={`/advisor?lang=${lang}&q=${encodeURIComponent(p.start)}`} className="inline-flex items-center gap-2 rounded-full bg-brand px-5 py-2.5 font-extrabold text-white transition-transform hover:-translate-y-0.5">
-                    Get this plan <ArrowRight size={16} />
+                  <Link
+                    href={`/advisor?lang=${lang}&q=${encodeURIComponent(p.start)}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      void open(p);
+                    }}
+                    aria-busy={opening === p.key}
+                    className="inline-flex items-center gap-2 rounded-full bg-brand px-5 py-2.5 font-extrabold text-white transition-transform hover:-translate-y-0.5"
+                  >
+                    Get this plan {opening === p.key ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />}
                   </Link>
                 </div>
               </div>

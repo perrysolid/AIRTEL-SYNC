@@ -1,6 +1,8 @@
 import { maskGstin, maskPhone, maskUdyam, maskName, maskId } from "./privacy";
 import { liveDay } from "./tracker";
 import type { Order } from "./store";
+import { customerForOrder } from "./customers";
+import { waLinkReady } from "./bots/wa-link";
 
 /** What the owner's browser gets: identifiers masked, no raw KYC fields. */
 export function publicOrder(o: Order) {
@@ -49,8 +51,9 @@ export function publicOrder(o: Order) {
     liveDay: liveDay(o.timeline),
     steps,
     notifications: o.notifications,
-    /** Updates reach the owner on WhatsApp (they said hi, or ordered there). */
-    whatsappLinked: o.botChat?.channel === "whatsapp",
+    /** Updates reach the owner on WhatsApp: they said hi or ordered there, or they signed in with this number and our
+     *  linked WhatsApp number can message them at any time. */
+    whatsappLinked: o.botChat?.channel === "whatsapp" || (waLinkReady() && !!customerWithWhatsApp(o)),
     pincode: o.pincode,
     slot: o.slot,
     reschedules: o.reschedules ?? 0,
@@ -66,3 +69,8 @@ export function publicOrder(o: Order) {
   };
 }
 export type PublicOrder = ReturnType<typeof publicOrder>;
+
+function customerWithWhatsApp(o: Order) {
+  const c = customerForOrder(o);
+  return c && !c.demo && c.notify.whatsapp ? c : undefined;
+}

@@ -22,7 +22,8 @@ export async function POST(req: Request) {
     lines: s.recommendation.lines,
     toggles: body.data.toggles,
     quantities: body.data.quantities,
-    term: body.data.term as Term | undefined,
+    // No term picked yet: keep the one the plan was quoted on (a ready-made plan is quoted on 36 months).
+    term: (body.data.term ?? s.quote?.term) as Term | undefined,
     currentMonthlySpend: s.profile.monthlySpend,
   });
   s.quote = quote;

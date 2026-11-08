@@ -2,6 +2,9 @@ import { product } from "@/lib/catalogue";
 import { buildQuote } from "@/lib/pricing";
 import { inferSegment, tierForCity, type Profile } from "@/lib/profile";
 import { recommend } from "@/lib/recommend";
+import { newSession } from "@/lib/advisor";
+import { currentCustomer } from "@/lib/customer-session";
+import { now, store } from "@/lib/store";
 
 export const runtime = "nodejs";
 
@@ -49,10 +52,16 @@ const PLANS: { key: string; name: string; for: string; tagline: string; start: s
   },
 ];
 
+/** The plan's typical business, priced for a tier-1 city (the owner checks their pincode on the quote page). */
+function planProfile(p: (typeof PLANS)[number]): Profile {
+  const profile: Profile = { ...p.profile, cityTier: tierForCity("Pune") };
+  profile.segment = inferSegment(profile);
+  return profile;
+}
+
 export async function GET() {
   const plans = PLANS.map((p) => {
-    const profile: Profile = { ...p.profile, city: "Pune", cityTier: tierForCity("Pune") };
-    profile.segment = inferSegment(profile);
+    const profile = planProfile(p);
     const rec = recommend({ profile });
     const longest = buildQuote({ lines: rec.lines, term: 36 });
     const shortest = buildQuote({ lines: rec.lines, term: 12 });
@@ -72,4 +81,24 @@ export async function GET() {
     };
   });
   return Response.json({ plans }, { headers: { "Cache-Control": "public, max-age=3600" } });
+}
+
+/**
+ * "Get this plan": opens the plan as an editable quote straight away, instead of asking the advisor to rebuild it
+ * question by question. 36 months, the term the card's "from" price is quoted on; the owner can change anything.
+ */
+export async function POST(req: Request) {
+  const key = ((await req.json().catch(() => ({}))) as { key?: string }).key;
+  const p = PLANS.find((x) => x.key === key);
+  if (!p) return Response.json({ error: "Unknown plan" }, { status: 404 });
+  const s = newSession("web", "en");
+  s.profile = { ...s.profile, ...planProfile(p) };
+  s.recommendation = recommend({ profile: s.profile });
+  s.quote = buildQuote({ lines: s.recommendation.lines, term: 36 });
+  s.status = "quoted";
+  s.transcript.push({ role: "user", text: `Chose the "${p.name}" plan on the website.`, at: now() });
+  const c = await currentCustomer();
+  if (c) s.customerId = c.id;
+  store.saveSession(s);
+  return Response.json({ sessionId: s.id });
 }
