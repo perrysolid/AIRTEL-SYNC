@@ -268,22 +268,23 @@ body {
 }
 
 /* ------------------------------------------------------------------------------------------------
- * Landing scroll zoom: the hero pins, the centre phone grows, the next section opens out of its screen.
- * Only on screens that can hold that section in one view (same query as ZOOM_QUERY in page.tsx).
- * page.tsx writes --za (0..1), --zs (target scale) and --zty (target lift) on .zoom-stage.
+ * Landing scroll zoom. The runway holds the landing page, then the "come alive" section, then a spacer.
+ * Small screens: plain order (landing page, then the section). Wide screens (same query as ZOOM_QUERY in
+ * page.tsx): the section is pinned at the top of the runway, under the scrolling landing page's place, and
+ * opens out of the centre phone as it flies in; two snap stops make it two swipes.
  * ------------------------------------------------------------------------------------------------ */
+.zoom-runway { display: flex; flex-direction: column; }
+.zoom-hero { order: 1; }
+.zoom-overlay { order: 2; }
+.zoom-spacer, .zoom-snap { display: none; }
 @media (min-width: 1024px) and (min-height: 640px) and (prefers-reduced-motion: no-preference) {
-  .zoom-runway { height: calc(100dvh + 170vh); }
-  .zoom-stage { position: sticky; top: 0; height: 100dvh; overflow: hidden; }
-  .zoom-hero { position: absolute; inset: 0; min-height: 0; }
-  .zoom-bg { transform: scale(calc(1 + var(--za, 0) * 0.08)); }
-  .zoom-copy { opacity: calc(1 - var(--za, 0) * 1.8); transform: translateY(calc(var(--za, 0) * -70px)); }
-  .zoom-side-l { opacity: calc(1 - var(--za, 0) * 1.4); transform: translateX(calc(var(--za, 0) * -26vw)) rotate(calc(var(--za, 0) * -10deg)); }
-  .zoom-side-r { opacity: calc(1 - var(--za, 0) * 1.4); transform: translateX(calc(var(--za, 0) * 26vw)) rotate(calc(var(--za, 0) * 10deg)); }
-  .zoom-arc { opacity: calc(1 - var(--za, 0) * 1.3); transform: translateY(calc(var(--za, 0) * 140px)); }
-  .zoom-fade { opacity: calc(1 - var(--za, 0) * 2); }
-  .zoom-centre { transform-origin: center; transform: translate3d(0, calc(var(--zty, 0px) * var(--za, 0)), 0) scale(calc(1 + (var(--zs, 1) - 1) * var(--za, 0))); }
-  .zoom-reveal { position: absolute; inset: 0; z-index: 30; display: flex; align-items: center; opacity: 0; will-change: clip-path, opacity; }
+  html { scroll-snap-type: y proximity; }
+  .zoom-snap { display: block; position: absolute; left: 0; height: 1px; width: 1px; scroll-snap-align: start; }
+  .zoom-hero { height: 100dvh; min-height: 0; }
+  .zoom-overlay { order: 0; position: sticky; top: 0; height: 100dvh; margin-bottom: -100dvh; z-index: 30; pointer-events: none; }
+  .zoom-spacer { display: block; order: 3; height: 100dvh; }
+  .zoom-fly { transform-origin: center; }
+  .zoom-reveal { position: absolute; inset: 0; z-index: 20; display: flex; align-items: center; opacity: 0; pointer-events: auto; will-change: clip-path, opacity; }
 }
 
 /* ------------------------------------------------------------------------------------------------
