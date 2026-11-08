@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+:root {
+  --ink: #1f1f1f;
+  --ink-soft: #666666;
+  --paper: #f6f6f6;
+  --sheet: #ffffff;
+  --rule: #e8e8e8;
+  --brand: #e40000;
+  --brand-deep: #b80000;
+  --brand-soft: #fff0f0;
+  --marigold: #f2a900;
+  --ok: #1f8a5b;
+  --wa: #0f7a5f;
+  --tg: #229ed9;
+}
+
+@theme inline {
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-paper: var(--paper);
+  --color-sheet: var(--sheet);
+  --color-rule: var(--rule);
+  --color-brand: var(--brand);
+  --color-brand-deep: var(--brand-deep);
+  --color-brand-soft: var(--brand-soft);
+  --color-marigold: var(--marigold);
+  --color-ok: var(--ok);
+  --color-wa: var(--wa);
+  --color-tg: var(--tg);
+  --font-sans: var(--font-mukta), system-ui, sans-serif;
+}
+
+body { background: var(--paper); color: var(--ink); -webkit-font-smoothing: antialiased; }
+.card { background: var(--sheet); border: 1px solid var(--rule); border-radius: 1.1rem; }
+:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.tabular { font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .fresh { animation: fresh 1.6s ease-out; }
+  @keyframes fresh { from { background: #fff4d6; } }
+}
