@@ -18,9 +18,15 @@ afterEach(() => vi.unstubAllGlobals());
 
 const sse = (text: string) => new Response(`data: ${JSON.stringify({ choices: [{ index: 0, delta: { content: text }, finish_reason: "stop" }] })}\n\ndata: [DONE]\n\n`, { headers: { "Content-Type": "text/event-stream" } });
 
-describe("DeepSeek and Sarvam", () => {
-  it("Sarvam runs the advisor chat, ahead of DeepSeek", async () => {
-    expect(aiProviders()).toEqual(["sarvam", "deepseek", "groq"]);
+describe("provider chain", () => {
+  it("Claude Haiku leads the chain; Sarvam is voice-only, not a chat provider", () => {
+    process.env.ANTHROPIC_API_KEY = "test-claude";
+    expect(aiProviders()).toEqual(["anthropic", "deepseek", "groq"]);
+    delete process.env.ANTHROPIC_API_KEY;
+  });
+
+  it("without a Claude key, DeepSeek runs the advisor chat", async () => {
+    expect(aiProviders()).toEqual(["deepseek", "groq"]);
     const calls: { url: string; body: { model: string } }[] = [];
     vi.stubGlobal("fetch", vi.fn(async (url: string, init: RequestInit) => {
       calls.push({ url, body: JSON.parse(init.body as string) });
@@ -28,8 +34,8 @@ describe("DeepSeek and Sarvam", () => {
     }));
     const events: AdvisorEvent[] = [];
     await advisorTurn({ message: "", channel: "web", language: "hi" }, (e) => events.push(e));
-    expect(calls[0].url).toBe("https://api.sarvam.ai/v1/chat/completions");
-    expect(calls[0].body.model).toBe("sarvam-105b");
+    expect(calls[0].url).toBe("https://api.deepseek.com/v1/chat/completions");
+    expect(calls[0].body.model).toBe("deepseek-flash");
     expect(events.filter((e) => e.type === "text").map((e) => e.type === "text" && e.delta).join("")).toContain("नमस्ते");
   });
 
@@ -37,20 +43,20 @@ describe("DeepSeek and Sarvam", () => {
     const urls: string[] = [];
     vi.stubGlobal("fetch", vi.fn(async (url: string, init: RequestInit) => {
       urls.push(url);
-      if (url.includes("sarvam")) return Response.json({ error: { message: "busy" } }, { status: 503 });
+      if (url.includes("deepseek")) return Response.json({ error: { message: "busy" } }, { status: 503 });
       const body = JSON.parse(init.body as string) as { messages: { role: string }[] };
       expect(body.messages.filter((m) => m.role === "user")).toHaveLength(1);
-      return sse("Hello from DeepSeek");
+      return sse("Hello from Groq");
     }));
     const events: AdvisorEvent[] = [];
     const s = await advisorTurn({ message: "", channel: "web", language: "en" }, (e) => events.push(e));
-    expect(urls.map((u) => new URL(u).host)).toEqual(["api.sarvam.ai", "api.deepseek.com"]);
+    expect(urls.map((u) => new URL(u).host)).toEqual(["api.deepseek.com", "api.groq.com"]);
     expect(events.some((e) => e.type === "chips")).toBe(false);
-    expect(s.transcript.at(-1)?.text).toBe("Hello from DeepSeek");
+    expect(s.transcript.at(-1)?.text).toBe("Hello from Groq");
     expect(s.guidedStep).toBeUndefined();
   });
 
-  it("DeepSeek reads KYC documents from the image (Sarvam has no vision)", async () => {
+  it("DeepSeek reads KYC documents from the image", async () => {
     const doc = { docType: "gst_certificate", legible: true, qualityIssues: [], confidence: 0.95, fields: { gstin: "27AAPFU0939F1ZV", legalName: "Woodcraft Furniture" } };
     const bodies: { model: string; messages: { content: { type: string }[] }[] }[] = [];
     vi.stubGlobal("fetch", vi.fn(async (url: string, init: RequestInit) => {

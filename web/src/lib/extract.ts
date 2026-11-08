@@ -1,5 +1,4 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
 import { aiProviders, anthropic, EXTRACT_MODEL, pauseProvider } from "./ai";
 import { GEMINI_EXTRACT_MODEL, GeminiError, generate, thinking } from "./gemini";
@@ -35,22 +34,28 @@ Read the attached image and return the fields you can see, exactly as printed.
 The document may carry "specimen" watermarks — ignore them.`;
 
 async function extractWithClaude(image: Buffer, mediaType: "image/png" | "image/jpeg" | "image/webp"): Promise<ExtractedDoc | undefined> {
-  const response = await anthropic().messages.parse({
+  // Haiku rejects this schema as a structured-output format ("Schema is too complex"),
+  // so the schema goes in the prompt and the reply is validated here, as for Groq.
+  const response = await anthropic().messages.create({
     model: EXTRACT_MODEL,
     max_tokens: 4000,
-    output_config: { effort: "low", format: zodOutputFormat(ExtractedDocSchema) },
+    output_config: { effort: "low" },
     messages: [
       {
         role: "user",
         content: [
           { type: "image", source: { type: "base64", media_type: mediaType, data: image.toString("base64") } },
-          { type: "text", text: PROMPT },
+          { type: "text", text: `${PROMPT}\n\nReply with only one JSON object matching this JSON Schema:\n${JSON.stringify(EXTRACT_JSON_SCHEMA)}` },
         ],
       },
     ],
   });
   if (response.stop_reason === "refusal") return undefined;
-  return response.parsed_output ?? undefined;
+  const text = response.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join("");
+  const json = text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1);
+  if (!json) return undefined;
+  const parsed = ExtractedDocSchema.safeParse(JSON.parse(json));
+  return parsed.success ? parsed.data : undefined;
 }
 
 // Gemini takes plain JSON Schema; drop the draft marker.
@@ -190,8 +195,7 @@ async function extractWithTesseract(image: Buffer): Promise<ExtractedDoc> {
 
 export async function extractDocument(image: Buffer, mediaType: "image/png" | "image/jpeg" | "image/webp", hint?: DocType): Promise<ExtractionResult> {
   const t0 = Date.now();
-  // Sarvam has no vision model, so documents start at the next provider.
-  for (const provider of aiProviders().filter((p): p is keyof typeof ENGINES => p in ENGINES)) {
+  for (const provider of aiProviders()) {
     try {
       const [extract, engine] = ENGINES[provider];
       const doc = await extract(image, mediaType);

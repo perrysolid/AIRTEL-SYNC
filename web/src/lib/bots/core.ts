@@ -172,7 +172,9 @@ export async function botTurn(input: BotInput): Promise<BotMessage[]> {
 
 /** Voice notes: transcribe with Sarvam (or Gemini, Groq Whisper), then treat like typed text. */
 export async function transcribeVoice(data: Buffer, mimeType: string): Promise<string | undefined> {
-  for (const p of aiProviders()) {
+  // Sarvam is voice-only, so it sits outside the chat provider chain.
+  const engines = [...(process.env.SARVAM_API_KEY ? ["sarvam" as const] : []), ...aiProviders()];
+  for (const p of engines) {
     const transcribe = p === "sarvam" ? sarvamTranscribe : p === "groq" ? groqTranscribe : p === "gemini" ? geminiTranscribe : undefined;
     if (!transcribe) continue;
     try {
