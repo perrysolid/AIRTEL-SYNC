@@ -196,7 +196,7 @@ async function handle(sock: Socket, b: Baileys, m: any) {
   else if (x.audioMessage) {
     const data = (await b.downloadMediaMessage(m, "buffer", {})) as Buffer;
     const heard = await transcribeVoice(data, x.audioMessage.mimetype ?? "audio/ogg");
-    replies = heard ? [{ text: `🎙️ _${heard}_` }, ...(await botTurn({ ...base, text: heard }))] : [VOICE_UNAVAILABLE];
+    replies = heard ? await botTurn({ ...base, text: heard }) : [VOICE_UNAVAILABLE];
   } else if (x.imageMessage || x.documentMessage) replies = [documentRedirect(chat)];
   else replies = [{ text: "Sorry, I can read text and voice notes. Type HELP to see what I can do." }];
 

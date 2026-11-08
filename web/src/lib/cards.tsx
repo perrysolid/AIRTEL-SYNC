@@ -4,6 +4,8 @@ import { ImageResponse } from "next/og";
 import type { AdvisorSession, Order } from "./store";
 import { liveDay, stepStatus, type Track } from "./tracker";
 import { publicUrl } from "./bots/types";
+import { product } from "./catalogue";
+import { ONE_BILL_DISCOUNT, unitPrice } from "./pricing";
 
 /**
  * Chat cards: PNGs that WhatsApp and Telegram fetch by URL and show above the
@@ -267,5 +269,66 @@ export function quoteCard(s: AdvisorSession) {
       </Frame>
     ),
     { width: SIZE.width, height, fonts: loadFonts() },
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Welcome card: what we sell and the offers that are really in the price rules
+// ---------------------------------------------------------------------------
+
+/** Typical starter plans per segment (3+ product categories each, so the One Bill discount applies). */
+export const STARTER_PLANS = [
+  { who: "Shops & kirana", ids: ["P01", "P19", "P23"], short: "Fibre 100 · POS & billing · CCTV", category: "Connectivity" },
+  { who: "Clinics & offices", ids: ["P02", "P16", "P20"], short: "Fibre 300 · Email & Office · Security", category: "Cloud & Productivity" },
+  { who: "Multi-store chains", ids: ["P02", "P09", "P19", "P23"], short: "Fibre 300 · Backup line · POS · CCTV", category: "IoT & Physical" },
+  { who: "Small factories", ids: ["P05", "P24", "P20"], short: "Leased line · Machine IoT · Security", category: "Security" },
+].map((p) => {
+  // 36-month prices, one of each item; three or more categories earn the One Bill discount, as in a real quote.
+  const sum = p.ids.reduce((n, id) => n + unitPrice(id, 36), 0);
+  const categories = new Set(p.ids.map((id) => product(id).category)).size;
+  return { ...p, from: Math.round(sum * (categories >= 3 ? 1 - ONE_BILL_DISCOUNT : 1)) };
+});
+
+export const welcomeCardUrl = () => publicUrl("/api/card/welcome?v=1");
+
+export function welcomeCard() {
+  const offers = [`${Math.round(ONE_BILL_DISCOUNT * 100)}% off with 3+ services on one bill`, "No setup fee on 36-month plans", "Pay only after everything is live"];
+  return new ImageResponse(
+    (
+      <Frame>
+        <Header right="For small business" />
+        <div style={{ display: "flex", flexDirection: "column", marginTop: 40 }}>
+          <div style={{ display: "flex", fontSize: 64, fontWeight: 800, color: C.ink, lineHeight: 1.08, letterSpacing: -1 }}>Internet, phones & apps.</div>
+          <div style={{ display: "flex", fontSize: 64, fontWeight: 800, color: C.brand, lineHeight: 1.08, letterSpacing: -1 }}>One monthly bill.</div>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", marginTop: 34 }}>
+          {STARTER_PLANS.map((p) => (
+            <div key={p.who} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 4px", borderBottom: `2px solid ${C.rule}` }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 20, flex: 1, minWidth: 0 }}>
+                <CategoryIcon category={p.category} />
+                <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", fontSize: 34, fontWeight: 800, color: C.ink }}>{p.who}</div>
+                  <div style={{ display: "flex", fontSize: 25, color: C.soft }}>{p.short}</div>
+                </div>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", flexShrink: 0, marginLeft: 16 }}>
+                <div style={{ display: "flex", fontSize: 22, color: C.soft }}>from</div>
+                <div style={{ display: "flex", alignItems: "baseline" }}>
+                  <span style={{ fontSize: 38, fontWeight: 800, color: C.ink }}>{inr(p.from)}</span>
+                  <span style={{ fontSize: 24, fontWeight: 600, color: C.soft, marginLeft: 4 }}>/mo</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 14, marginTop: 30 }}>
+          {offers.map((t, i) => (
+            <div key={t} style={{ display: "flex", fontSize: 26, fontWeight: 600, color: C.ink, background: i === 0 ? "#fdefc4" : "#dcf3e6", padding: "10px 22px", borderRadius: 999 }}>{t}</div>
+          ))}
+        </div>
+        <div style={{ display: "flex", fontSize: 24, color: C.soft, marginTop: "auto", paddingTop: 24 }}>Prices per month + GST on a 36-month plan. Your exact plan depends on your business and city.</div>
+      </Frame>
+    ),
+    { width: SIZE.width, height: 1300, fonts: loadFonts() },
   );
 }

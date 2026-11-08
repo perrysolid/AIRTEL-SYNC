@@ -53,7 +53,6 @@ async function handle(update: Update) {
     const v = m.voice ?? m.audio;
     const transcript = await transcribeVoice(await downloadTelegramFile(v.file_id), v.mime_type ?? "audio/ogg");
     if (!transcript) return reply(m.chat.id, [VOICE_UNAVAILABLE]);
-    await tg("sendMessage", { chat_id: m.chat.id, text: `🎙️ <i>${transcript.replace(/</g, "&lt;")}</i>`, parse_mode: "HTML", reply_to_message_id: m.message_id });
     return reply(m.chat.id, await botTurn({ ...base, text: transcript }));
   }
   if (m.photo || m.document) return reply(m.chat.id, [documentRedirect(chat)]);

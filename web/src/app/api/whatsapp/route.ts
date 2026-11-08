@@ -83,7 +83,7 @@ async function handleCloudMessage(m: any, name?: string) {
       const media = await downloadWhatsAppMedia(m.audio.id);
       const transcript = await transcribeVoice(media.data, media.mimeType);
       if (!transcript) return send([VOICE_UNAVAILABLE]);
-      return send([{ text: `🎙️ _${transcript}_` }, ...(await botTurn({ ...base, text: transcript }))]);
+      return send(await botTurn({ ...base, text: transcript }));
     }
     case "image":
     case "document":

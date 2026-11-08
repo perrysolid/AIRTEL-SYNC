@@ -13,7 +13,7 @@ import { inr } from "../format";
 import { featureTurn } from "./features";
 import { contactKey, currentSession, latestOrder } from "./lookup";
 import { publicUrl, type BotMessage } from "./types";
-import { orderCardUrl, quoteCardUrl } from "../cards";
+import { orderCardUrl, quoteCardUrl, welcomeCardUrl } from "../cards";
 import { profileFromLead } from "../registry";
 import { botLinks, startCode } from "../winback";
 
@@ -66,6 +66,15 @@ export function statusMessage(order: Order): BotMessage {
 const HELP: BotMessage = {
   text: "🙏 Namaste! I'm **Udyam**, your Accel Business advisor.\n\nTell me about your business — type or send a 🎤 voice note, in any language — and in about a minute you'll get the right internet, phone and digital tools on **one monthly bill**.\n\n📦 **STATUS** — track your order\n🛡️ **SHIELD** — check a suspicious message\n📶 **NETWORK 411016** — is my area covered?\n🗓️ **SCHEDULE** — book your install slot\n🔧 **TROUBLE** — slow or no internet\n🏢 **BRANCH** — open a new location\n🔌 **BACKUP** — add a backup link\n🔄 **NEW** — start over\n📞 **HUMAN** — talk to a person",
 };
+
+const GREETING = /^\/?(hi+|hello+|hey+|helo|namaste|namaskar|नमस्ते|start|new|restart|hii+)\W*$/i;
+
+function welcome(): BotMessage {
+  return {
+    text: `🙏 **Welcome to Accel Business**\n\nInternet, business mobile and digital tools for your shop, clinic or office, all on **one monthly bill**.\n\n🎤 **Send a voice note** or type, in any language: Hindi, English, Marathi, Tamil and more.\n💰 **Pay only after** everything is installed and working.\n🌐 **Explore plans:** ${publicUrl("")}\n\nType **MENU** any time to track an order, check coverage or talk to a person.`,
+    image: welcomeCardUrl(),
+  };
+}
 
 function placeOrder(s: AdvisorSession, input: BotInput): BotMessage[] {
   if (!s.quote) return [{ text: "Let's find your plan first — what kind of business do you run?" }];
@@ -156,6 +165,13 @@ Enter it on the website. It works for 10 minutes. Never share it with anyone, no
     return [{ text: "⌛ That quote has expired. Tell me about your business again and I'll rebuild it in seconds." }];
   }
 
+  // A new conversation that opens with hello: introduce Accel properly (offers card, voice notes, website), then the
+  // advisor asks its first question without greeting a second time.
+  if (!resumeNote && !code.referral && (!s || ["start", "new", "restart"].includes(cmd)) && GREETING.test(raw)) {
+    prefix.push(welcome());
+    const lang = /[ऀ-ॿ]/.test(raw) ? "Hindi in Devanagari" : /namaste|namaskar/i.test(raw) ? "Hinglish" : "English";
+    resumeNote = `(The owner said hello and has already been sent our welcome: who we are, the offers, the website and that voice notes work. Don't greet or introduce yourself again. In one short line in ${lang}, ask what business they run, with an example.)`;
+  }
   let message = resumeNote || raw;
   if (!resumeNote && (["start", "new", "restart"].includes(cmd) || code.referral)) message = "";
   if (cmd === "human") message = "I want to talk to a person, please call me";
@@ -166,7 +182,7 @@ Enter it on the website. It works for 10 minutes. Never share it with anyone, no
   let chips: BotMessage | undefined;
   let quoted = false;
   // A win-back lead is answered in the language the CRM says they prefer.
-  const language = resumeNote && s ? s.language : input.language && /^(hi|mr|ta|te|bn|gu|kn|ml|pa|en)$/.test(input.language) ? input.language : /[ऀ-ॿ]/.test(message) ? "hi" : (s?.language ?? "en");
+  const language = resumeNote && s ? s.language : input.language && /^(hi|mr|ta|te|bn|gu|kn|ml|pa|en)$/.test(input.language) ? input.language : /[ऀ-ॿ]/.test(message + raw) ? "hi" : (s?.language ?? "en");
 
   const customerId = customerForChat(input.chat)?.id;
   const session = await advisorTurn({ sessionId: s?.id, message, channel: input.chat.channel, language, customerId }, (e: AdvisorEvent) => {
