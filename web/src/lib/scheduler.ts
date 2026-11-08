@@ -17,7 +17,7 @@ export interface Slot {
   label: string;
 }
 
-const baseDate = (o: Order) => new Date(o.payment?.at ?? o.createdAt);
+const baseDate = (o: Order) => new Date(o.esign?.at ?? o.createdAt);
 const addDays = (d: Date, n: number) => new Date(d.getTime() + n * 86_400_000);
 const iso = (d: Date) => d.toISOString().slice(0, 10);
 const fmt = (d: Date) => d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });

@@ -39,7 +39,7 @@ export async function POST(req: Request) {
     case "withdraw": {
       const p = body.data.purpose as Purpose;
       if (!o.consentId || !(p in PURPOSES)) return Response.json({ error: "Unknown purpose" }, { status: 400 });
-      if (PURPOSES[p].required && o.payment) {
+      if (PURPOSES[p].required && o.esign) {
         return Response.json({ error: "This consent is needed to keep your services running. To stop it, close your account and we'll erase your data after the legal retention period." }, { status: 409 });
       }
       store.withdrawConsent(o.consentId, p);
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
       return Response.json({ ok: true, consent: store.getConsent(o.consentId) });
     }
     case "erase": {
-      if (o.payment) return Response.json({ error: "Active services: erasure is scheduled for when you close your account (statutory retention applies)." }, { status: 409 });
+      if (o.esign) return Response.json({ error: "Active services: erasure is scheduled for when you close your account (statutory retention applies)." }, { status: 409 });
       if (o.kyc) o.kyc.docs = o.kyc.docs.map((d) => ({ ...d, fields: {} }));
       o.contactName = "[erased]";
       o.phone = "";

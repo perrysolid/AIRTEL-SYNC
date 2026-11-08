@@ -13,8 +13,7 @@ export async function ordersFor(staff: SignedInStaff): Promise<Order[]> {
 }
 
 export function orderStage(o: Order) {
-  if (o.payment) return o.timeline.clockDay >= liveDay(o.timeline) ? "Live" : `Activating, day ${o.timeline.clockDay} of ${liveDay(o.timeline)}`;
-  if (o.esign) return "Awaiting payment";
+  if (o.timeline.clockDay >= 0) return o.timeline.clockDay >= liveDay(o.timeline) ? (o.payment ? "Live" : "Live, first bill due") : `Activating, day ${o.timeline.clockDay} of ${liveDay(o.timeline)}`;
   if (o.kyc?.result.verdict === "verified") return "Awaiting e-sign";
   if (o.kyc) return "KYC needs attention";
   return o.consentId ? "Uploading documents" : "Awaiting consent";
@@ -68,7 +67,7 @@ export async function dashboard(staff: SignedInStaff, now = new Date()) {
       connected7: acts.filter((a) => a.at >= weekAgo && a.outcome === "Connected").length,
       won: leads.filter((l) => l.status === "won").length,
       orders: orders.length,
-      orderMrr: orders.filter((o) => o.payment).reduce((s, o) => s + o.quote.monthly, 0),
+      orderMrr: orders.filter((o) => o.esign).reduce((s, o) => s + o.quote.monthly, 0),
     },
     callsByDay,
     funnel,

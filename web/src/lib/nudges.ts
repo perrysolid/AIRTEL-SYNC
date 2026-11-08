@@ -1,3 +1,4 @@
+import { liveDay } from "./tracker";
 import { quoteCardUrl } from "./cards";
 import { notifyOrder, deliver } from "./notify";
 import { store, now, type AdvisorSession, type Order } from "./store";
@@ -21,13 +22,15 @@ function lastOwnerMessage(s?: AdvisorSession) {
 export function waitingStep(o: Order): "kyc" | "esign" | "pay" | undefined {
   if (o.payment) return undefined;
   if (o.kyc?.result.verdict !== "verified") return "kyc";
-  return o.esign ? "pay" : "esign";
+  if (!o.esign) return "esign";
+  // Installation runs without the owner; only a first bill left unpaid after go-live needs a reminder.
+  return o.timeline.clockDay >= liveDay(o.timeline) ? "pay" : undefined;
 }
 
 const ORDER_NUDGE = {
   kyc: "⏳ **One quick step and we start activating.**\n\nVerify your business on our secure page: about 2 minutes with DigiLocker or phone photos. 🔒 Your documents are checked, never stored.",
-  esign: "✍️ **You're verified! Just sign and we're off.**\n\nE-sign your agreement with an Aadhaar OTP: it takes 30 seconds.",
-  pay: "💳 **Last step: set up UPI AutoPay.**\n\nYour mobile lines go live the same day you pay. No card, no cheque.",
+  esign: "✍️ **You're verified! Just sign and installation starts.**\n\nSign your agreement in 30 seconds. Nothing to pay until your services are live.",
+  pay: "🧾 **Your first bill is ready.**\n\nEverything is live. Pay by UPI in your tracker, and turn on AutoPay so you never have to think about it again.",
 };
 
 export async function runNudges(at = Date.now()) {

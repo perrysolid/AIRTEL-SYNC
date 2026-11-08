@@ -10,7 +10,7 @@ import { ConsentStep } from "./ConsentStep";
 import { KycStep } from "./KycStep";
 import { EsignStep, PayStep } from "./SignPay";
 import { Tracker } from "./Tracker";
-import { WhatsAppFeed } from "./WhatsAppFeed";
+import { WhatsAppLink } from "./WhatsAppFeed";
 
 export default function OrderPage() {
   const { id } = useParams<{ id: string }>();
@@ -31,7 +31,8 @@ export default function OrderPage() {
   if (error) return <main className="mx-auto max-w-xl px-4 py-16 text-center text-lg">{error}. Check the order ID in your WhatsApp message.</main>;
   if (!order) return <div className="grid h-dvh place-items-center text-ink-soft"><Loader2 className="animate-spin" /></div>;
 
-  const stage = !order.consentId ? "consent" : order.kyc?.verdict !== "verified" ? "kyc" : !order.esign ? "esign" : !order.payment ? "pay" : "track";
+  const stage = !order.consentId ? "consent" : order.kyc?.verdict !== "verified" ? "kyc" : !order.esign ? "esign" : "track";
+  const billDue = !!order.esign && !order.payment && order.timeline.clockDay >= order.liveDay;
 
   return (
     <div className="min-h-dvh pb-16">
@@ -64,11 +65,11 @@ export default function OrderPage() {
           {stage === "consent" && <ConsentStep orderId={order.id} onDone={refresh} />}
           {stage === "kyc" && <KycStep order={order} onUpdate={setOrder} />}
           {stage === "esign" && <EsignStep order={order} onUpdate={setOrder} />}
-          {stage === "pay" && <PayStep order={order} onUpdate={setOrder} />}
+          {billDue && <div className="mb-8"><PayStep order={order} onUpdate={setOrder} /></div>}
           {stage === "track" && <Tracker order={order} onUpdate={setOrder} />}
         </div>
 
-        <WhatsAppFeed order={order} />
+        <WhatsAppLink order={order} />
       </main>
     </div>
   );

@@ -8,8 +8,8 @@ export function publicOrder(o: Order) {
     { key: "order", label: "Order placed", done: true },
     { key: "kyc", label: "Business verified", done: o.kyc?.result.verdict === "verified" },
     { key: "esign", label: "Agreement e-signed", done: !!o.esign },
-    { key: "payment", label: "First payment", done: !!o.payment },
     { key: "live", label: "All services live", done: o.timeline.clockDay >= 0 && o.timeline.clockDay >= liveDay(o.timeline) },
+    { key: "payment", label: "First bill paid", done: !!o.payment },
   ];
   return {
     id: o.id,

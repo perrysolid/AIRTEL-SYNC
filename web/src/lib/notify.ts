@@ -16,7 +16,7 @@ export function notifyOrder(o: Order, update: string | string[]) {
   const lines = (Array.isArray(update) ? update : [update]).filter(Boolean);
   if (!lines.length) return;
   for (const text of lines) o.notifications.push({ at: now(), channel: o.botChat?.channel ?? "whatsapp", text });
-  const started = !!o.payment;
+  const started = o.timeline.clockDay >= 0;
   const allLive = started && o.timeline.clockDay >= liveDay(o.timeline);
   // Referrals convert best of all lead sources (14.8%): ask at the happiest moment.
   const msg: BotMessage = {

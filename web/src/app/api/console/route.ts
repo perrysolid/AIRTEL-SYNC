@@ -72,7 +72,7 @@ export async function GET() {
       monthly: o.quote.monthly,
       kyc: o.kyc?.result.verdict ?? "pending",
       kycIssues: o.kyc?.result.checks?.filter((c) => c.status === "fail").map((c) => c.title) ?? [],
-      stage: o.payment ? (o.timeline.clockDay >= liveDay(o.timeline) ? "Live" : `Activating (day ${o.timeline.clockDay}/${liveDay(o.timeline)})`) : o.esign ? "Awaiting payment" : o.kyc?.result.verdict === "verified" ? "Awaiting e-sign" : "KYC",
+      stage: o.timeline.clockDay >= 0 ? (o.timeline.clockDay >= liveDay(o.timeline) ? (o.payment ? "Live" : "Live, first bill due") : `Activating (day ${o.timeline.clockDay}/${liveDay(o.timeline)})`) : o.kyc?.result.verdict === "verified" ? "Awaiting e-sign" : "KYC",
     })),
     service: {
       activeOutages: orders.filter((o) => o.outageActive).length,

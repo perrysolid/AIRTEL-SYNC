@@ -99,7 +99,7 @@ export function createBranch(parent: Order, input: BranchInput): { ok: true; ord
     kyc: parent.kyc,
     esign: { at: now(), method: "aadhaar-otp-mock", docHash: sha256(`branch-addendum:${parent.id}:${id}`) },
     payment: { at: now(), method: "Added to your existing bill", amount: pv.quote.monthlyWithGst + pv.quote.setupTotal, ref: `BR${id.slice(-6)}` },
-    timeline: buildTimeline(active.map((l) => l.productId)),
+    timeline: buildTimeline(active.map((l) => l.productId), id),
     notifications: [],
     botChat: parent.botChat,
     pincode: pv.pincode,

@@ -12,6 +12,8 @@ export interface TrackStep {
   label: string;
   dueDay: number;
   doneAtDay?: number;
+  /** What the owner is told when this step completes; the label is used when there is none. */
+  note?: string;
 }
 
 export interface Track {
@@ -22,7 +24,7 @@ export interface Track {
 }
 
 export interface OrderTimeline {
-  /** Demo clock: days elapsed since KYC + payment completed. -1 = not started. */
+  /** Demo clock: days since the agreement was signed (activation starts then; the first bill comes when all is live). -1 = not started. */
   clockDay: number;
   tracks: Track[];
   events: { day: number; text: string }[];
@@ -43,51 +45,74 @@ const TITLES: Record<Track["key"], string> = {
   comms: "Customer messaging & calling",
 };
 
-export function buildTimeline(productIds: string[]): OrderTimeline {
+// Field technicians for the demo, picked per order so the same order always shows the same person.
+const TECHNICIANS = [
+  { name: "Ravi Kumar", phone: "98•••• 4312" },
+  { name: "Imran Shaikh", phone: "97•••• 8820" },
+  { name: "Suresh Yadav", phone: "99•••• 1047" },
+  { name: "Manoj Patil", phone: "90•••• 6635" },
+  { name: "Arun Nair", phone: "94•••• 2290" },
+];
+const pick = <T,>(xs: T[], seed: string) => xs[[...seed].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % xs.length];
+const speedOf = (ids: string[]) => {
+  const mbps = Math.max(...ids.map((id) => Number(product(id).name.match(/(\d+)\s*(G)?\b/)?.[1] ?? 0) * (/\dG\b/.test(product(id).name) ? 1000 : 1)));
+  return mbps ? Math.round(mbps * 0.96) : undefined;
+};
+
+export function buildTimeline(productIds: string[], seed = productIds.join("")): OrderTimeline {
   const groups = new Map<Track["key"], string[]>();
   for (const id of productIds) {
     const k = TRACK_OF[id] ?? "devices";
     groups.set(k, [...(groups.get(k) ?? []), id]);
   }
   const maxDays = (ids: string[]) => Math.max(...ids.map((id) => product(id).installDays));
+  const tech = pick(TECHNICIANS, seed);
   const tracks: Track[] = [];
   for (const key of ["mobile", "internet", "comms", "devices"] as Track["key"][]) {
     const ids = groups.get(key);
     if (!ids) continue;
     const d = maxDays(ids);
+    const speed = speedOf(ids);
     const steps: TrackStep[] =
       key === "mobile"
         ? [
-            { key: "provisioned", label: "Numbers and accounts created", dueDay: 0 },
-            { key: "live", label: "SIMs delivered & live, app logins sent", dueDay: Math.min(d, 1) },
+            { key: "provisioned", label: "Numbers and accounts created", dueDay: 0, note: "📱 Your business numbers are reserved and your cloud app logins are created." },
+            { key: "delivery", label: "SIMs out for delivery", dueDay: Math.min(d, 1), note: "🛵 Your SIMs are out for delivery today. Keep any photo ID handy for a one-minute check at the door." },
+            { key: "live", label: "SIMs live, app logins sent", dueDay: Math.min(d, 1), note: "✅ SIMs are live and your app logins are on your email. Calls and data work now." },
           ]
         : key === "internet"
           ? ids.some((id) => ["P01", "P02", "P03"].includes(id))
             ? [
-                { key: "feasibility", label: "Fibre feasibility confirmed at your address", dueDay: 1 },
-                { key: "scheduled", label: "Technician visit booked", dueDay: 1 },
-                { key: "installed", label: "Fibre installed and tested", dueDay: Math.max(2, d - 1) },
-                { key: "live", label: "Internet live", dueDay: d },
+                { key: "feasibility", label: "Fibre confirmed at your address", dueDay: 1, note: "📍 Survey done: fibre reaches your street, so we can install a wired line." },
+                { key: "assigned", label: `Technician assigned: ${tech.name}`, dueDay: 1, note: `👷 ${tech.name} (${tech.phone}) is your installation technician. They'll call 30 minutes before arriving.` },
+                { key: "scheduled", label: "Technician visit booked", dueDay: 1, note: "📅 Installation visit booked. Pick a different time in your tracker if it doesn't suit you." },
+                { key: "onway", label: "Technician on the way", dueDay: Math.max(2, d - 1), note: `🚐 ${tech.name} is on the way and should reach you in about 30 minutes.` },
+                { key: "installed", label: "Fibre installed and tested", dueDay: Math.max(2, d - 1), note: `🔧 Fibre installed and tested at your counter${speed ? `: ${speed} Mbps` : ""}. The Wi-Fi name and password are on the router sticker.` },
+                { key: "live", label: "Internet live", dueDay: d, note: "🌐 Your internet is live. UPI, billing and cameras can use it from now." },
               ]
             : [
-                { key: "dispatched", label: "Router dispatched", dueDay: 0 },
-                { key: "installed", label: "Installed and tested", dueDay: Math.max(1, d - 1) },
-                { key: "live", label: "Internet live", dueDay: d },
+                { key: "dispatched", label: "Router dispatched", dueDay: 0, note: "📦 Your 5G AirFiber router is packed and on its way." },
+                { key: "installed", label: "Installed and tested", dueDay: Math.max(1, d - 1), note: `🔧 AirFiber set up and tested${speed ? `: ${speed} Mbps` : ""}. The Wi-Fi name and password are on the router sticker.` },
+                { key: "live", label: "Internet live", dueDay: d, note: "🌐 Your internet is live." },
               ]
           : key === "comms"
             ? [
-                { key: "submitted", label: "Sender ID / WhatsApp verification filed", dueDay: 0 },
-                { key: "approved", label: "Approved by operator / Meta", dueDay: Math.max(1, d - 1) },
-                { key: "live", label: "Ready to message customers", dueDay: d },
+                { key: "submitted", label: "Sender ID / WhatsApp verification filed", dueDay: 0, note: "📝 We've filed your business name for SMS sender ID and WhatsApp verification. Nothing for you to do." },
+                { key: "approved", label: "Approved by operator / Meta", dueDay: Math.max(1, d - 1), note: "✅ Approved: your business name is verified for SMS and WhatsApp." },
+                { key: "live", label: "Ready to message customers", dueDay: d, note: "💬 You can now send offers and order updates to your customers." },
               ]
             : [
-                { key: "dispatched", label: "Devices dispatched", dueDay: 1 },
-                { key: "installed", label: "Installed and app connected", dueDay: d },
+                { key: "dispatched", label: "Devices dispatched", dueDay: 1, note: "📦 Your devices are dispatched." },
+                { key: "installed", label: "Installed and app connected", dueDay: d, note: "🧰 Devices installed and set up. Your team can start using them today." },
               ];
     tracks.push({ key, title: TITLES[key], productIds: ids, steps });
   }
   return { clockDay: -1, tracks, events: [] };
 }
+
+/** Installation starts when the agreement is signed; payment comes after everything is live. */
+export const activationStarted = (t: OrderTimeline) => t.clockDay >= 0;
+export const allLive = (t: OrderTimeline) => t.clockDay >= 0 && t.clockDay >= liveDay(t);
 
 export function stepStatus(step: TrackStep, clockDay: number): "done" | "active" | "upcoming" {
   if (step.doneAtDay !== undefined || (clockDay >= 0 && step.dueDay <= clockDay)) return "done";
@@ -111,11 +136,11 @@ export function advance(t: OrderTimeline, days: number): string[] {
     for (const s of tr.steps) {
       if (s.dueDay > from && s.dueDay <= t.clockDay) {
         s.doneAtDay = s.dueDay;
-        msgs.push(`✅ ${tr.title}: ${s.label}.`);
+        msgs.push(s.note ?? `✅ ${tr.title}: ${s.label}.`);
       }
     }
   }
-  if (t.clockDay === liveDay(t) && from < t.clockDay) msgs.push("🎉 Everything is live. One bill, one support number: 121 or reply HELP here.");
+  if (t.clockDay === liveDay(t) && from < t.clockDay) msgs.push("🎉 Everything is live. One bill, one support number: 121, or reply HELP here.");
   for (const m of msgs) t.events.push({ day: t.clockDay, text: m });
   return msgs;
 }

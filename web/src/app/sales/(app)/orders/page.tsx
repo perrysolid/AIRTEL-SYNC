@@ -8,8 +8,8 @@ import { Kpi, PageHead } from "../ui";
 export default async function Orders() {
   const staff = await requireStaff();
   const orders = await ordersFor(staff);
-  const paid = orders.filter((o) => o.payment);
-  const stuck = orders.filter((o) => !o.payment && Date.now() - new Date(o.createdAt).getTime() > 2 * 3_600_000);
+  const paid = orders.filter((o) => o.esign);
+  const stuck = orders.filter((o) => !o.esign && Date.now() - new Date(o.createdAt).getTime() > 2 * 3_600_000);
   return (
     <div className="mx-auto max-w-6xl">
       <PageHead title="Orders" sub={staff.role === "partner" ? `Orders placed with your partner code ${staff.partnerCode} or from your leads` : "Every digital order, from the web advisor, WhatsApp and Telegram"} />

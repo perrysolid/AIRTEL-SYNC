@@ -4,6 +4,7 @@ import { customerForOrder } from "./customers";
 import { withinWhatsAppWindow } from "./notify";
 import { maskPhone } from "./privacy";
 import { orderStage } from "./sales-data";
+import { allLive } from "./tracker";
 import { currentStaff, type SignedInStaff } from "./staff-session";
 import type { Order } from "./store";
 
@@ -70,7 +71,7 @@ export function orderRow(o: Order) {
     monthly: o.quote.monthly,
     monthlyWithGst: o.quote.monthlyWithGst,
     stage: orderStage(o),
-    live: !!o.payment && o.timeline.clockDay >= 0,
+    live: allLive(o.timeline),
     lastUpdate: o.notifications.at(-1) ?? null,
     updates: o.notifications.length,
   };

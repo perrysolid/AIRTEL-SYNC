@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { NEED_LABELS, type Profile } from "./profile";
+import { liveDay } from "./tracker";
 import { now, store, type AdvisorSession, type Customer, type Order } from "./store";
 
 /**
@@ -153,7 +154,7 @@ const needLabel = (n: string) => NEED_LABELS[n as keyof typeof NEED_LABELS] ?? n
 function orderLine(id: string) {
   const o = store.getOrder(id);
   if (!o) return id;
-  const stage = o.payment ? "paid, activation in progress" : o.esign ? "signed, payment pending" : o.kyc ? "verified, signature pending" : "verification pending";
+  const stage = o.esign ? (o.timeline.clockDay >= liveDay(o.timeline) ? (o.payment ? "live, paid" : "live, first bill due") : "signed, installation in progress") : o.kyc ? "verified, signature pending" : "verification pending";
   return `${id} (${stage})`;
 }
 

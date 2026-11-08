@@ -1,9 +1,9 @@
 import crypto from "node:crypto";
 import { z } from "zod";
-import { now, store } from "@/lib/store";
+import { now, store, type Order } from "@/lib/store";
 import { notifyOrder } from "@/lib/notify";
 import { publicOrder } from "@/lib/order-view";
-import { advance, fallbackToAirFiber } from "@/lib/tracker";
+import { advance, fallbackToAirFiber, liveDay } from "@/lib/tracker";
 import { sha256 } from "@/lib/privacy";
 import { unitPrice } from "@/lib/pricing";
 import { product } from "@/lib/catalogue";
@@ -19,6 +19,18 @@ const Body = z.discriminatedUnion("action", [
   z.object({ action: z.literal("next_day") }),
   z.object({ action: z.literal("fibre_not_feasible") }),
 ]);
+
+/** When the updates include going live, the first bill follows them, then a request for feedback. */
+function withBill(o: Order, msgs: string[]): string[] {
+  if (!msgs.length || o.timeline.clockDay < liveDay(o.timeline) || o.payment) return msgs;
+  const q = o.quote;
+  const setup = q.setupTotal ? ` + one-time setup ₹${q.setupTotal.toLocaleString("en-IN")}` : "";
+  return [
+    ...msgs,
+    `🧾 Your first bill: ₹${(q.monthlyWithGst + q.setupTotal).toLocaleString("en-IN")} (first month ₹${q.monthlyWithGst.toLocaleString("en-IN")} incl. GST${setup}). Pay by UPI in your tracker; turn on AutoPay and the months after pay themselves.`,
+    "⭐ How did the installation go? Reply with a number from 1 (poor) to 5 (great).",
+  ];
+}
 
 /** Owner actions (e-sign, pay) and demo-clock controls for the tracker. */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -43,21 +55,26 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       }
       const agreement = JSON.stringify({ order: o.id, lines: o.lines.map((l) => [l.productId, l.qty, l.unitPrice]), term: o.term, monthly: o.quote.monthly });
       o.esign = { at: now(), method, docHash: sha256(agreement) };
-      notify("✍️ Agreement e-signed. A copy is in your email. Next: set up UPI AutoPay for the first bill.");
+      // Installation starts the moment they sign. Nothing is charged until every service is live.
+      // Moving the clock from "not started" to day 0 sends today's updates too (numbers reserved, router packed…).
+      notifyOrder(o, [
+        `✍️ Agreement signed. A copy is in your email.\n\nInstallation starts today and you pay nothing until everything is live. We'll message you at every step, so there's no need to call.`,
+        ...withBill(o, o.timeline.clockDay < 0 ? advance(o.timeline, 1) : []),
+      ]);
       break;
     }
     case "pay": {
-      if (!o.esign) return Response.json({ error: "E-sign the agreement first" }, { status: 409 });
+      if (!o.esign) return Response.json({ error: "Sign the agreement first" }, { status: 409 });
+      if (o.timeline.clockDay < liveDay(o.timeline)) return Response.json({ error: "Your first bill comes once everything is live." }, { status: 409 });
+      if (o.payment) return Response.json(publicOrder(o));
       const amount = o.quote.monthlyWithGst + o.quote.setupTotal;
       o.payment = { at: now(), method: body.data.method, amount, ref: `UPI${crypto.randomInt(1e9, 9e9)}` };
-      o.timeline.clockDay = 0;
-      // One chat message per event: payment + whatever goes live today.
-      notifyOrder(o, [`💳 Payment of ₹${amount.toLocaleString("en-IN")} received. Activation has started — your mobile lines go live today.`, ...advance(o.timeline, 0)]);
+      notify(`💳 Paid ₹${amount.toLocaleString("en-IN")}, thank you. Receipt ${o.payment.ref} is in your email.${body.data.method === "upi_autopay" ? " AutoPay is on, so future bills pay themselves; you can stop it any time from your UPI app." : ""}`);
       break;
     }
     case "next_day": {
-      if (o.timeline.clockDay < 0) return Response.json({ error: "Activation hasn't started" }, { status: 409 });
-      notifyOrder(o, advance(o.timeline, 1));
+      if (o.timeline.clockDay < 0) return Response.json({ error: "Installation hasn't started" }, { status: 409 });
+      notifyOrder(o, withBill(o, advance(o.timeline, 1)));
       break;
     }
     case "fibre_not_feasible": {

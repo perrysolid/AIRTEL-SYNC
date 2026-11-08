@@ -20,7 +20,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (!parent) return Response.json({ error: "Order not found" }, { status: 404 });
   const body = Body.safeParse(await req.json().catch(() => ({})));
   if (!body.success) return Response.json({ error: body.error.issues[0]?.message ?? "Invalid input" }, { status: 400 });
-  if (!parent.payment) return Response.json({ error: "Finish your first order before adding a branch." }, { status: 409 });
+  if (!parent.esign) return Response.json({ error: "Finish your first order before adding a branch." }, { status: 409 });
   const { confirm, ...input } = body.data;
   if (!confirm) {
     const r = previewBranch(parent, input);

@@ -23,7 +23,7 @@ export function createOrder(s: AdvisorSession, contact: { contactName: string; p
     lines: active,
     term: quote.term,
     quote,
-    timeline: buildTimeline(active.map((l) => l.productId)),
+    timeline: buildTimeline(active.map((l) => l.productId), id),
     notifications: [],
     botChat: contact.botChat ?? s.botChat,
     leadId: s.leadId,

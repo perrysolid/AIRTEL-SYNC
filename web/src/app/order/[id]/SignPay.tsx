@@ -34,7 +34,7 @@ export function EsignStep({ order, onUpdate }: { order: PublicOrder; onUpdate: (
   return (
     <section>
       <h2 className="text-2xl font-extrabold">Sign your agreement</h2>
-      <p className="mt-1 text-ink-soft">One page, in plain words: {order.lines.length} services for {inr(order.quote.monthlyWithGst)}/month incl. GST, {order.term} months. No printing, no courier.</p>
+      <p className="mt-1 text-ink-soft">One page, in plain words: {order.lines.length} services for {inr(order.quote.monthlyWithGst)}/month incl. GST, {order.term} months. Installation starts as soon as you sign, and you pay nothing until everything is live.</p>
       <div className="mt-4 rounded-xl border border-rule bg-sheet p-4">
         <ul className="space-y-1 text-[15px]">
           {order.lines.map((l) => (
@@ -80,26 +80,34 @@ export function EsignStep({ order, onUpdate }: { order: PublicOrder; onUpdate: (
 
 export function PayStep({ order, onUpdate }: { order: PublicOrder; onUpdate: (o: PublicOrder) => void }) {
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
   const due = order.quote.monthlyWithGst + order.quote.setupTotal;
   return (
     <section>
-      <h2 className="text-2xl font-extrabold">Start your services</h2>
-      <p className="mt-1 text-ink-soft">Pay the first month{order.quote.setupTotal ? " and setup" : ""} now. Set up UPI AutoPay so future bills never bounce — you can cancel it any time from your UPI app.</p>
+      <h2 className="text-2xl font-extrabold">Your first bill</h2>
+      <p className="mt-1 text-ink-soft">Everything is live. Pay the first month{order.quote.setupTotal ? " and setup" : ""} by UPI and turn on AutoPay, so the months after pay themselves. You can stop it any time from your UPI app.</p>
       <div className="mt-4 flex items-baseline justify-between rounded-xl border border-rule bg-sheet p-4">
-        <span>Due today</span>
+        <span>Due now</span>
         <span className="text-3xl font-extrabold tabular-nums">{inr(due)}</span>
       </div>
       <button
         disabled={busy}
         onClick={async () => {
           setBusy(true);
-          onUpdate(await act(order.id, { action: "pay", method: "upi_autopay" }));
+          setError("");
+          try {
+            onUpdate(await act(order.id, { action: "pay", method: "upi_autopay" }));
+          } catch (err) {
+            setError((err as Error).message);
+          }
+          setBusy(false);
         }}
         className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-brand px-4 py-3.5 text-lg font-extrabold text-white disabled:opacity-60"
       >
-        <IndianRupee size={20} /> {busy ? "Confirming…" : "Pay with UPI AutoPay"}
+        <IndianRupee size={20} /> {busy ? "Paying…" : "Pay with UPI AutoPay"}
       </button>
-      <p className="mt-2 text-center text-sm text-ink-soft">Demo payment — no money moves.</p>
+      {error && <p role="alert" className="mt-2 text-center text-bad">{error}</p>}
+      <p className="mt-2 text-center text-sm text-ink-soft">Demo payment, no money moves.</p>
     </section>
   );
 }

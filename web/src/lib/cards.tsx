@@ -89,9 +89,8 @@ export function orderHeadline(o: Order): { title: string; sub: string } {
   const t = o.timeline;
   const total = liveDay(t);
   const live = t.tracks.filter((tr) => trackState(tr, t.clockDay) === "live").length;
-  if (t.clockDay >= 0 && t.clockDay >= total) return { title: "Everything is live", sub: "One bill · one support number · reply HELP anytime" };
-  if (o.payment) return { title: `Day ${t.clockDay} of ${total}`, sub: `${live} of ${t.tracks.length} services live · no need to call, updates come here` };
-  if (o.esign) return { title: "Agreement signed", sub: "Next: set up UPI AutoPay to start activation" };
+  if (t.clockDay >= 0 && t.clockDay >= total) return o.payment ? { title: "Everything is live", sub: "One bill · one support number · reply HELP anytime" } : { title: "Everything is live", sub: "Your first bill is ready to pay in the tracker" };
+  if (t.clockDay >= 0) return { title: `Day ${t.clockDay} of ${total}`, sub: `${live} of ${t.tracks.length} services live · no need to call, updates come here` };
   if (o.kyc?.result.verdict === "verified") return { title: "Business verified", sub: "Next: e-sign with Aadhaar OTP" };
   if (o.kyc?.result.verdict === "needs_attention") return { title: "One thing to fix", sub: o.kyc.result.actions[0] ?? "Re-upload one document" };
   if (o.kyc?.result.verdict === "rejected") return { title: "Under review", sub: "Our team will call within 4 working hours" };
@@ -105,8 +104,8 @@ export function orderCard(o: Order) {
     ["Ordered", true],
     ["Verified", o.kyc?.result.verdict === "verified"],
     ["Signed", !!o.esign],
-    ["Paid", !!o.payment],
     ["Live", allLive],
+    ["Paid", !!o.payment],
   ] as const;
   const current = stages.findIndex(([, done]) => !done);
   const { title, sub } = orderHeadline(o);

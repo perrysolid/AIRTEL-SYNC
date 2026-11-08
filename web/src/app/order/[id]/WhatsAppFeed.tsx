@@ -1,28 +1,25 @@
-"use client";
-
-import { useEffect, useRef } from "react";
-import { MessageCircle } from "lucide-react";
+import { WhatsAppLogo } from "@/components/BrandIcons";
 import type { PublicOrder } from "@/lib/order-view";
 
-/** The proactive updates the owner receives — the reason they never need to call. */
-export function WhatsAppFeed({ order }: { order: PublicOrder }) {
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    ref.current?.scrollTo({ top: ref.current.scrollHeight, behavior: "smooth" });
-  }, [order.notifications.length]);
+const NUMBER = (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "15551369092").replace(/\D/g, "");
 
+/**
+ * WhatsApp lets a business message someone freely only after they have written to it. One message from the owner
+ * links this order to their chat, and every update after that reaches them there.
+ */
+export function WhatsAppLink({ order }: { order: PublicOrder }) {
   return (
-    <section className="mt-10" aria-label="Updates sent to your WhatsApp">
-      <h2 className="flex items-center gap-2 font-bold"><MessageCircle size={18} className="text-wa" /> Updates on your WhatsApp ({order.phone})</h2>
-      <div ref={ref} className="mt-2 max-h-80 space-y-2 overflow-y-auto rounded-xl bg-wa/10 p-3">
-        {order.notifications.map((n, i) => (
-          <div key={i} className="max-w-[90%] rounded-lg rounded-tl-none bg-sheet px-3 py-2 text-[15px] shadow-[0_1px_0_var(--rule)]">
-            {n.text}
-            <div className="mt-0.5 text-right text-[11px] text-ink-soft">{new Date(n.at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</div>
-          </div>
-        ))}
-      </div>
-      <p className="mt-2 text-sm text-ink-soft">Reply STATUS on WhatsApp any time for a live summary.</p>
-    </section>
+    <a
+      href={`https://wa.me/${NUMBER}?text=${encodeURIComponent(`STATUS ${order.id}`)}`}
+      target="_blank"
+      rel="noreferrer"
+      className="mt-10 flex items-center gap-3 rounded-2xl border border-rule bg-sheet p-4 hover:bg-paper"
+    >
+      <WhatsAppLogo className="h-8 w-8 shrink-0" />
+      <span>
+        <span className="block font-bold">Get every update on WhatsApp</span>
+        <span className="block text-sm text-ink-soft">Send us one message and we&apos;ll tell you at each step.</span>
+      </span>
+    </a>
   );
 }

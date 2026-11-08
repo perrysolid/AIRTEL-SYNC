@@ -93,7 +93,18 @@ export async function botTurn(input: BotInput): Promise<BotMessage[]> {
 
   if (["help", "menu"].includes(cmd)) return [HELP];
   if (["status", "track", "स्टेटस"].includes(cmd)) {
-    const o = latestOrder(input.chat, input.phone ?? (input.chat.channel === "whatsapp" ? input.chat.chatId : undefined));
+    const phone = input.phone ?? (input.chat.channel === "whatsapp" ? input.chat.chatId : undefined);
+    const named = raw.match(/ACC-[A-Z0-9]{6,}/i)?.[0].toUpperCase();
+    const o = (named && store.getOrder(named)) || latestOrder(input.chat, phone);
+    // An owner writing from the number on the order links it to this chat, so every update after this comes here.
+    // Anyone else only gets the generic reply: an order ID alone never reveals someone's order.
+    const own = !!o && ((o.botChat?.channel === input.chat.channel && o.botChat.chatId === input.chat.chatId) || (!!phone && o.phone === phone.replace(/\D/g, "").slice(-10)));
+    if (o && own && !o.botChat) {
+      o.botChat = input.chat;
+      store.saveOrder(o);
+      store.audit("owner", "order:link-chat", o.id, input.chat.channel);
+    }
+    if (o && !own) return [{ text: "📭 I couldn't find an order for this number. Send STATUS from the mobile number you ordered with." }];
     return [o ? statusMessage(o) : { text: "📭 No order yet. Tell me about your business and I'll find the right plan in a minute." }];
   }
   // Website sign-in: LOGIN on WhatsApp replies with a code for the number it came from.
