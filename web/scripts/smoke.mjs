@@ -30,7 +30,7 @@ let a = await advisor(undefined, "");
 ok(a.text.length > 10, `advisor greets (${a.events.find((e) => e.type === "session").mode} mode)`);
 const sid = a.sessionId;
 a = await advisor(sid, "I run a woodcraft furniture workshop in Nagpur with 12 people, we have GST. Need internet, CCTV and email for staff");
-for (let i = 0; i < 6 && !a.events.some((e) => e.type === "bundle"); i++) a = await advisor(sid, a.events.some((e) => e.type === "chips" && e.mode === "multi") ? "needs:cctv,email" : "yes");
+for (let i = 0; i < 6 && !a.events.some((e) => e.type === "bundle"); i++) a = await advisor(sid, a.events.some((e) => e.type === "chips" && e.mode === "multi") ? "needs:cctv,email" : a.events.find((e) => e.type === "session")?.mode === "ai" ? "Yes, one site. No internet there today, set it up fresh. Go ahead and price it." : "yes");
 const bundle = a.events.find((e) => e.type === "bundle");
 ok(bundle, `bundle recommended: ${bundle?.quote.lines.filter((l) => l.active).map((l) => l.productId).join(", ")} = ₹${bundle?.quote.monthly}/mo`);
 

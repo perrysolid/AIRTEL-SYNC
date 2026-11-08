@@ -3,6 +3,7 @@ import type { AdvisorEvent } from "../advisor-types";
 import { aiProviders } from "../ai";
 import { transcribeAudio as geminiTranscribe } from "../gemini";
 import { transcribeAudio as groqTranscribe } from "../groq";
+import { transcribeAudio as sarvamTranscribe } from "../sarvam";
 import { createOrder } from "../orders";
 import { store, type AdvisorSession, type BotChat, type Order } from "../store";
 import { liveDay, stepStatus } from "../tracker";
@@ -169,10 +170,12 @@ export async function botTurn(input: BotInput): Promise<BotMessage[]> {
   return out;
 }
 
-/** Voice notes: transcribe with Gemini (or Groq Whisper), then treat like typed text. */
+/** Voice notes: transcribe with Sarvam (or Gemini, Groq Whisper), then treat like typed text. */
 export async function transcribeVoice(data: Buffer, mimeType: string): Promise<string | undefined> {
-  for (const p of aiProviders()) {
-    const transcribe = p === "groq" ? groqTranscribe : p === "gemini" ? geminiTranscribe : undefined;
+  // Sarvam is voice-only, so it sits outside the chat provider chain.
+  const engines = [...(process.env.SARVAM_API_KEY ? ["sarvam" as const] : []), ...aiProviders()];
+  for (const p of engines) {
+    const transcribe = p === "sarvam" ? sarvamTranscribe : p === "groq" ? groqTranscribe : p === "gemini" ? geminiTranscribe : undefined;
     if (!transcribe) continue;
     try {
       const text = await transcribe(data, mimeType);

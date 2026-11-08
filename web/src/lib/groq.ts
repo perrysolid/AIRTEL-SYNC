@@ -1,13 +1,21 @@
 /**
  * Minimal Groq client (OpenAI-compatible REST, no SDK): streaming chat with
  * tool calls for the advisor, vision for KYC documents, Whisper for voice notes.
+ * DeepSeek speaks the same chat format, so it reuses this client with its own endpoint.
  */
 
 export const GROQ_MODEL = process.env.GROQ_MODEL ?? "openai/gpt-oss-120b";
 export const GROQ_VISION_MODEL = process.env.GROQ_VISION_MODEL ?? "qwen/qwen3.8-27b";
 export const GROQ_STT_MODEL = process.env.GROQ_STT_MODEL ?? "whisper-large-v3";
 
-const BASE = "https://api.groq.com/openai/v1";
+/** An OpenAI-compatible chat API: where to send requests and which key to use. */
+export interface ChatEndpoint {
+  name: string;
+  base: string;
+  keyVar: string;
+}
+
+export const GROQ: ChatEndpoint = { name: "Groq", base: "https://api.groq.com/openai/v1", keyVar: "GROQ_API_KEY" };
 
 export interface GroqToolCall {
   id: string;
@@ -41,8 +49,9 @@ export class GroqError extends Error {
   constructor(
     public status: number,
     message: string,
+    provider = "Groq",
   ) {
-    super(`Groq ${status}: ${message}`);
+    super(`${provider} ${status}: ${message}`);
   }
   /** Auth, billing or rate-limit problems: retrying soon won't help. */
   get persistent() {
@@ -50,10 +59,10 @@ export class GroqError extends Error {
   }
 }
 
-async function call(path: string, init: { json?: unknown; form?: FormData }) {
-  const key = process.env.GROQ_API_KEY;
-  if (!key) throw new GroqError(401, "GROQ_API_KEY not set");
-  const r = await fetch(`${BASE}${path}`, {
+async function call(path: string, init: { json?: unknown; form?: FormData }, ep = GROQ) {
+  const key = process.env[ep.keyVar];
+  if (!key) throw new GroqError(401, `${ep.keyVar} not set`, ep.name);
+  const r = await fetch(`${ep.base}${path}`, {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, ...(init.json ? { "Content-Type": "application/json" } : {}) },
     body: init.form ?? JSON.stringify(init.json),
@@ -64,13 +73,13 @@ async function call(path: string, init: { json?: unknown; form?: FormData }) {
     try {
       message = (await r.json()).error?.message ?? message;
     } catch {}
-    throw new GroqError(r.status, message);
+    throw new GroqError(r.status, message, ep.name);
   }
   return r;
 }
 
-export async function chat(req: GroqChatRequest): Promise<{ content: string | null; tool_calls?: GroqToolCall[] }> {
-  const j = await (await call("/chat/completions", { json: req })).json();
+export async function chat(req: GroqChatRequest, ep = GROQ): Promise<{ content: string | null; tool_calls?: GroqToolCall[] }> {
+  const j = await (await call("/chat/completions", { json: req }, ep)).json();
   return j.choices?.[0]?.message ?? { content: null };
 }
 
@@ -81,8 +90,8 @@ export interface GroqStreamResult {
 }
 
 /** Streams text deltas to onText and assembles tool calls from their fragments. */
-export async function streamChat(req: GroqChatRequest, onText: (delta: string) => void): Promise<GroqStreamResult> {
-  const r = await call("/chat/completions", { json: { ...req, stream: true } });
+export async function streamChat(req: GroqChatRequest, onText: (delta: string) => void, ep = GROQ): Promise<GroqStreamResult> {
+  const r = await call("/chat/completions", { json: { ...req, stream: true } }, ep);
   const reader = r.body!.getReader();
   const decoder = new TextDecoder();
   const out: GroqStreamResult = { content: "", toolCalls: [] };
@@ -97,7 +106,7 @@ export async function streamChat(req: GroqChatRequest, onText: (delta: string) =
       const data = event.split("\n").filter((l) => l.startsWith("data:")).map((l) => l.slice(5).trim()).join("");
       if (!data || data === "[DONE]") continue;
       const chunk = JSON.parse(data);
-      if (chunk.error) throw new GroqError(500, chunk.error.message ?? "stream error");
+      if (chunk.error) throw new GroqError(500, chunk.error.message ?? "stream error", ep.name);
       const c = chunk.choices?.[0];
       if (!c) continue;
       if (c.delta?.content) {

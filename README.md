@@ -78,13 +78,14 @@ All keys are optional and live in `web/.env.local` (git-ignored; the template is
 
 | Variable | Used for |
 |---|---|
-| `GEMINI_API_KEY` | Main AI: advisor, document reading, voice notes |
+| `DEEPSEEK_API_KEY`, `DEEPSEEK_BASE_URL`, `DEEPSEEK_MODEL`, `DEEPSEEK_VISION_MODEL` | Main AI: advisor chat and KYC document reading (`deepseek-flash`; or Token Harbor's free `deepseek-v4.1-flash:free` at `https://tokenharbor.ai/v1`) |
+| `SARVAM_API_KEY` | Voice only: natural Indian-language voice (`bulbul:v3`) and voice-note transcription (`saaras:v4`) |
+| `GEMINI_API_KEY` | Backup AI: chat, documents, voice notes |
 | `GROQ_API_KEY` | Backup AI (`gpt-oss-120b`, `qwen3.8-27b` vision, `whisper-large-v3`) |
 | `ANTHROPIC_API_KEY` | Last-resort AI |
-| `AI_PROVIDER` | Move one provider (`gemini`, `groq`, `anthropic`) to the front |
+| `AI_PROVIDER` | Move one provider (`deepseek`, `gemini`, `groq`, `anthropic`) to the front |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET` | Telegram bot |
 | `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_APP_SECRET` | WhatsApp Cloud API bot |
-| `SARVAM_API_KEY` | Natural Indian-language voice (falls back to the browser's voice) |
 | `PUBLIC_BASE_URL` | Public URL for links and status cards sent by the bots (defaults to Render's own URL) |
 | `BACKEND_URL` | Frontend only: proxy `/api/*` to a separate backend |
 | `DATABASE_URL` | Neon Postgres for orders, sessions, consents and audit (otherwise a JSON file in `STORE_DIR`) |
