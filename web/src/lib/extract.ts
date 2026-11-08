@@ -3,7 +3,8 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
 import { aiProviders, anthropic, EXTRACT_MODEL, pauseProvider } from "./ai";
 import { GEMINI_EXTRACT_MODEL, GeminiError, generate, thinking } from "./gemini";
-import { GROQ_VISION_MODEL, GroqError, chat } from "./groq";
+import { GROQ, GROQ_VISION_MODEL, GroqError, chat, type ChatEndpoint } from "./groq";
+import { DEEPSEEK, DEEPSEEK_VISION_MODEL } from "./deepseek";
 import { ExtractedDocSchema, type DocType, type ExtractedDoc } from "./kyc-types";
 
 /**
@@ -13,7 +14,7 @@ import { ExtractedDocSchema, type DocType, type ExtractedDoc } from "./kyc-types
  * Images are processed in memory and never written to disk.
  */
 
-export type ExtractEngine = "groq-vision" | "gemini-vision" | "claude-vision" | "tesseract";
+export type ExtractEngine = "deepseek-vision" | "groq-vision" | "gemini-vision" | "claude-vision" | "tesseract";
 
 export interface ExtractionResult {
   doc: ExtractedDoc;
@@ -68,9 +69,9 @@ async function extractWithGemini(image: Buffer, mediaType: string): Promise<Extr
 }
 
 /** Groq has JSON mode but no schema enforcement, so the schema goes in the prompt and zod checks the result. */
-async function extractWithGroq(image: Buffer, mediaType: string): Promise<ExtractedDoc | undefined> {
+async function extractWithGroq(image: Buffer, mediaType: string, ep: ChatEndpoint = GROQ): Promise<ExtractedDoc | undefined> {
   const res = await chat({
-    model: GROQ_VISION_MODEL,
+    model: ep === DEEPSEEK ? DEEPSEEK_VISION_MODEL : GROQ_VISION_MODEL,
     temperature: 0,
     response_format: { type: "json_object" },
     messages: [
@@ -82,13 +83,13 @@ async function extractWithGroq(image: Buffer, mediaType: string): Promise<Extrac
         ],
       },
     ],
-  });
+  }, ep);
   if (!res.content) return undefined;
   const parsed = ExtractedDocSchema.safeParse(JSON.parse(res.content));
   return parsed.success ? parsed.data : undefined;
 }
 
-const ENGINES = { groq: [extractWithGroq, "groq-vision"], gemini: [extractWithGemini, "gemini-vision"], anthropic: [extractWithClaude, "claude-vision"] } as const;
+const ENGINES = { deepseek: [(image: Buffer, mediaType: string) => extractWithGroq(image, mediaType, DEEPSEEK), "deepseek-vision"], groq: [extractWithGroq, "groq-vision"], gemini: [extractWithGemini, "gemini-vision"], anthropic: [extractWithClaude, "claude-vision"] } as const;
 
 // ---------------------------------------------------------------------------
 // Tesseract fallback

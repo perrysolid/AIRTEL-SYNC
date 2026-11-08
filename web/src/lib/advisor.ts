@@ -3,7 +3,8 @@ import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { ADVISOR_MODEL, aiProvider, anthropic, pauseProvider, type AiProvider } from "./ai";
 import { GEMINI_MODEL, GeminiError, streamGenerate, thinking, type GeminiPart } from "./gemini";
-import { GROQ_MODEL, GroqError, streamChat, type GroqTool } from "./groq";
+import { GROQ, GROQ_MODEL, GroqError, streamChat, type ChatEndpoint, type GroqTool } from "./groq";
+import { DEEPSEEK, DEEPSEEK_MODEL } from "./deepseek";
 import { catalogue, product } from "./catalogue";
 import { buildQuote, type Term } from "./pricing";
 import { inferSegment, NEEDS, ProfileSchema, tierForCity } from "./profile";
@@ -16,7 +17,7 @@ import { newId, now, store, type AdvisorSession, type Channel } from "./store";
 import { redactText } from "./privacy";
 
 /**
- * GenAI advisor. Gemini (or Groq, or Claude) runs the conversation (any Indian language, voice or
+ * GenAI advisor. DeepSeek (or Gemini, Groq, Claude) runs the conversation (any Indian language, voice or
  * text) and calls tools for every fact and number: registry lookups, the
  * deterministic eligibility engine and the pricing engine. It never invents
  * products or prices — the tools are the single source of truth.
@@ -344,7 +345,9 @@ async function runGeminiTurn(s: AdvisorSession, userText: string, emit: (e: Advi
 
 const GROQ_TOOLS: GroqTool[] = TOOLS.map((t) => ({ type: "function", function: { name: t.name, description: t.description ?? "", parameters: t.input_schema } }));
 
-async function runGroqTurn(s: AdvisorSession, userText: string, emit: (e: AdvisorEvent) => void) {
+/** Groq and DeepSeek share the OpenAI-style chat format, so one loop runs both. */
+async function runGroqTurn(s: AdvisorSession, userText: string, emit: (e: AdvisorEvent) => void, ep: ChatEndpoint = GROQ) {
+  const model = ep === DEEPSEEK ? DEEPSEEK_MODEL : GROQ_MODEL;
   s.profile = mergeParsed(s.profile, parseUtterance(userText));
   const history = (s.groqMessages ??= []);
   history.push({ role: "user", content: userText || OPENING });
@@ -353,11 +356,12 @@ async function runGroqTurn(s: AdvisorSession, userText: string, emit: (e: Adviso
 
   for (let step = 0; step < 8; step++) {
     const res = await streamChat(
-      { model: GROQ_MODEL, messages: [{ role: "system", content: system }, ...history], tools: GROQ_TOOLS, max_completion_tokens: 4000, ...(GROQ_MODEL.startsWith("openai/gpt-oss") ? { reasoning_effort: "low" as const } : {}) },
+      { model, messages: [{ role: "system", content: system }, ...history], tools: GROQ_TOOLS, max_completion_tokens: 4000, ...(model.startsWith("openai/gpt-oss") ? { reasoning_effort: "low" as const } : {}) },
       (delta) => {
         assistantText += delta;
         emit({ type: "text", delta });
       },
+      ep,
     );
     history.push({ role: "assistant", content: res.content || null, ...(res.toolCalls.length ? { tool_calls: res.toolCalls } : {}) });
     if (res.toolCalls.length === 0) break;
@@ -386,7 +390,8 @@ async function runGroqTurn(s: AdvisorSession, userText: string, emit: (e: Adviso
 /** Runs the turn on the preferred provider; a provider that fails for billing/auth/quota is paused. */
 async function runAiTurn(s: AdvisorSession, provider: AiProvider, userText: string, emit: (e: AdvisorEvent) => void) {
   try {
-    if (provider === "groq") await runGroqTurn(s, userText, emit);
+    if (provider === "deepseek") await runGroqTurn(s, userText, emit, DEEPSEEK);
+    else if (provider === "groq") await runGroqTurn(s, userText, emit);
     else if (provider === "gemini") await runGeminiTurn(s, userText, emit);
     else await runClaudeTurn(s, userText, emit);
   } catch (err) {
