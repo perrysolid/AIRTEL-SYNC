@@ -1,5 +1,9 @@
 # Architecture
 
+![Solution architecture](architecture.png)
+
+The same system as a diagram you can edit:
+
 ```mermaid
 flowchart LR
   subgraph Channels

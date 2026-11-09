@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FileSignature, IndianRupee } from "lucide-react";
+import { BadgeCheck, FileSignature, IndianRupee } from "lucide-react";
 import type { PublicOrder } from "@/lib/order-view";
 import { inr } from "@/lib/format";
 import { useCustomer } from "@/components/Account";
@@ -33,6 +33,16 @@ export function EsignStep({ order, onUpdate }: { order: PublicOrder; onUpdate: (
   };
   return (
     <section>
+      {/* KYC moves straight on to signing, so say once that it passed and what it was checked against. */}
+      {order.kyc?.verdict === "verified" && (
+        <div className="mb-5 flex items-start gap-3 rounded-xl border border-ok/30 bg-ok/10 p-3">
+          <BadgeCheck size={22} className="mt-0.5 shrink-0 text-ok" />
+          <div>
+            <div className="font-bold text-ok">Business verified</div>
+            <div className="text-sm text-ink-soft">{order.kyc.checks.filter((c) => c.status === "pass").length} checks passed against the GST and Udyam registries. Document photos are not kept.</div>
+          </div>
+        </div>
+      )}
       <h2 className="text-2xl font-extrabold">Sign your agreement</h2>
       <p className="mt-1 text-ink-soft">One page, in plain words: {order.lines.length} services for {inr(order.quote.monthlyWithGst)}/month incl. GST, {order.term} months. Installation starts as soon as you sign, and you pay nothing until everything is live.</p>
       <div className="mt-4 rounded-xl border border-rule bg-sheet p-4">

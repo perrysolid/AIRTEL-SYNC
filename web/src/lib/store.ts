@@ -179,6 +179,8 @@ export interface Order {
   referredBy?: string;
   /** Reminder sent per waiting step (kyc / esign / pay), so each goes out once. */
   nudges?: Record<string, string>;
+  /** The owner's 1–5 answer to "How did the installation go?". */
+  rating?: { score: number; at: string };
 }
 
 export interface Ticket {

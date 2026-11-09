@@ -7,7 +7,7 @@ import { transcribeAudio as sarvamTranscribe } from "../sarvam";
 import { customerForChat, normalizePhone } from "../customers";
 import { issueWhatsAppCode } from "../otp";
 import { createOrder } from "../orders";
-import { store, type AdvisorSession, type BotChat, type Order } from "../store";
+import { now, store, type AdvisorSession, type BotChat, type Order } from "../store";
 import { liveDay, stepStatus } from "../tracker";
 import { inr } from "../format";
 import { featureTurn } from "./features";
@@ -29,6 +29,19 @@ function referMessage(chat: BotChat, order: Order | undefined): BotMessage {
     text: "🎁 **Know a business owner who'd love this?**\n\nShare your personal link. They get a plan in a minute, with no sales visit, and we'll know you sent them. 🙌",
     buttons: [{ label: "📤 Share my link", url: share }],
   };
+}
+
+/** Records the go-live rating; a happy owner is asked for a referral, an unhappy one gets a call. */
+function ratingTurn(input: BotInput, raw: string): BotMessage[] | undefined {
+  const score = /^[1-5]$/.test(raw) ? Number(raw) : /^⭐{1,5}$/u.test(raw) ? [...raw].length : 0;
+  if (!score) return;
+  const o = latestOrder(input.chat, input.phone ?? (input.chat.channel === "whatsapp" ? input.chat.chatId : undefined));
+  if (!o || o.rating || o.timeline.clockDay < 0 || o.timeline.clockDay < liveDay(o.timeline)) return;
+  o.rating = { score, at: now() };
+  store.saveOrder(o);
+  store.audit("owner", "order:rating", o.id, String(score));
+  if (score >= 4) return [{ text: `🙏 Thank you for the ${score}/5! We'll pass it on to the team that installed it.` }, referMessage(input.chat, o)];
+  return [{ text: `🙏 Thanks for telling us (${score}/5). Sorry it wasn't better. Someone from our team will call you today to put it right.` }];
 }
 
 /**
@@ -133,6 +146,9 @@ Enter it on the website. It works for 10 minutes. Never share it with anyone, no
   if (feature) return feature;
   if (cmd === "new" || cmd === "restart") s = undefined;
   if (raw === "a:refer" || cmd === "refer") return [referMessage(input.chat, latestOrder(input.chat, input.phone ?? (input.chat.channel === "whatsapp" ? input.chat.chatId : undefined)))];
+  // "How did the installation go? Reply 1 to 5": once everything is live, a bare 1–5 is that answer, not a team size.
+  const rated = ratingTurn(input, raw);
+  if (rated) return rated;
 
   // Personal links: a win-back lead code (L00042) or a referral (REF-ACC-…) starts a fresh, pre-filled chat.
   const code = startCode(raw);

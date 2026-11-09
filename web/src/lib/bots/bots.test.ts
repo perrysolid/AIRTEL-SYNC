@@ -4,6 +4,7 @@ import { keyboard, telegramHtml } from "./telegram";
 import { payloads } from "./whatsapp-cloud";
 import { store, type BotChat } from "../store";
 import { notifyOrder } from "../notify";
+import { liveDay } from "../tracker";
 
 beforeAll(() => {
   process.env.AI_DISABLED = "1";
@@ -74,6 +75,24 @@ describe("chat bot core", () => {
     const [invited] = await botTurn({ chat: r, text: "Hi Udyam, I was referred REF-ACC-0123456789" });
     expect(invited.text).toContain("invited you");
     expect(store.listSessions().find((x) => x.botChat?.chatId === id("ref"))?.referredBy).toBe("ACC-0123456789");
+  });
+
+  it("a 1–5 reply after go-live is the installation rating, not a team size", async () => {
+    const c: BotChat = { channel: "whatsapp", chatId: `9176543${String(Date.now()).slice(-5)}` };
+    await walk(c, ["I have a dental clinic in Pune with 8 staff, we have GST", "c:cur:Home broadband", "needs:email"]);
+    await botTurn({ chat: c, text: "a:order", phone: c.chatId, firstName: "Asha" });
+    const o = store.listOrders().find((x) => x.botChat?.chatId === c.chatId)!;
+    // Before everything is live, "4" is still an ordinary answer.
+    expect(o.rating).toBeUndefined();
+    o.timeline.clockDay = liveDay(o.timeline);
+    store.saveOrder(o);
+    const [thanks, refer] = await botTurn({ chat: c, text: "4" });
+    expect(thanks.text).toMatch(/4\/5/);
+    expect(refer.buttons?.[0].label).toMatch(/Share/);
+    expect(store.getOrder(o.id)?.rating?.score).toBe(4);
+    // Rated once: a later "2" goes to the advisor as usual.
+    const [next] = await botTurn({ chat: c, text: "2" });
+    expect(next.text).not.toMatch(/Thanks for telling us/);
   });
 
   it("accepts '1,3' for multi-select on text channels", async () => {

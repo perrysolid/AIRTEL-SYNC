@@ -16,7 +16,7 @@ export const WINBACK_REASONS = [
   "Quote too complex to understand",
 ] as const;
 
-export const WHATSAPP_NUMBER = () => (process.env.WHATSAPP_DISPLAY_NUMBER ?? "15551369092").replace(/\D/g, "");
+export const WHATSAPP_NUMBER = () => (process.env.WHATSAPP_DISPLAY_NUMBER ?? "918318401662").replace(/\D/g, "");
 export const TELEGRAM_BOT = () => process.env.TELEGRAM_BOT_USERNAME ?? process.env.NEXT_PUBLIC_TELEGRAM_BOT ?? "UdyamAdvisorBot";
 
 /** A lead code (L00042) or a referral code (REF-ACC-…) inside a chat message or /start payload. */

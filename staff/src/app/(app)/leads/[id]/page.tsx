@@ -47,15 +47,18 @@ export default function LeadPage({ params }: { params: Promise<{ id: string }> }
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
         <div className="grid content-start gap-5">
-          <section className="card p-5">
-            <div className="flex items-center justify-between">
-              <h2 className="font-extrabold">Chance to activate</h2>
-              <Score p={l.probability} band={l.band} />
-            </div>
-            <ul className="mt-3 grid gap-1.5 text-sm">
-              {l.reasons.map((r) => <li key={r.label} className="flex justify-between"><span>{r.label}</span><span className={r.effect > 0 ? "font-semibold text-ok" : "text-ink-soft"}>{r.effect > 0 ? "raises it" : "lowers it"}</span></li>)}
-            </ul>
-          </section>
+          {/* Already a customer: the score only predicts activation, so it has nothing left to say. */}
+          {l.status !== "customer" && (
+            <section className="card p-5">
+              <div className="flex items-center justify-between">
+                <h2 className="font-extrabold">Chance to activate</h2>
+                <Score p={l.probability} band={l.band} />
+              </div>
+              <ul className="mt-3 grid gap-1.5 text-sm">
+                {l.reasons.map((r) => <li key={r.label} className="flex justify-between"><span>{r.label}</span><span className={r.effect > 0 ? "font-semibold text-ok" : "text-ink-soft"}>{r.effect > 0 ? "raises it" : "lowers it"}</span></li>)}
+              </ul>
+            </section>
+          )}
 
           {l.chats.length > 0 && (
             <section className="card p-5">
@@ -162,7 +165,7 @@ function Outreach({ l, onSent }: { l: LeadDetail; onSent: () => void }) {
     <section className="card p-5">
       <h2 className="font-extrabold">Send their personal link</h2>
       <p className="mt-1 text-sm text-ink-soft">Opens a chat with the advisor that already knows their business, in their language. No visit needed.</p>
-      <p className="mt-3 rounded-xl bg-paper p-3 text-sm whitespace-pre-line">{l.outreach.message}</p>
+      <p className="mt-3 rounded-xl bg-paper p-3 text-sm whitespace-pre-line [overflow-wrap:anywhere]">{l.outreach.message}</p>
       <div className="mt-3 flex flex-wrap gap-2">
         <a href={wa} target="_blank" rel="noreferrer" onClick={logged} className="inline-flex items-center gap-2 rounded-full border border-rule bg-sheet px-4 py-2 font-bold hover:border-ink/25"><WhatsAppLogo className="h-5 w-5" /> WhatsApp</a>
         <a href={`https://t.me/share/url?url=${encodeURIComponent(l.outreach.telegram)}&text=${encodeURIComponent(l.outreach.message)}`} target="_blank" rel="noreferrer" onClick={logged} className="inline-flex items-center gap-2 rounded-full border border-rule bg-sheet px-4 py-2 font-bold hover:border-ink/25"><TelegramLogo className="h-5 w-5" /> Telegram</a>
