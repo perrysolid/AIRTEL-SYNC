@@ -9,7 +9,16 @@ Airtel SYNC hackathon, Track A ("Project Udyam Digital"). A small-business owner
 | ₹15,053 acquisition cost per activation | advisor + Smart KYC replace 2–3 field visits |
 | 3.0 status-chasing calls per customer (each one raises churn) | an update in the customer's own chat at every step |
 
-**Try it:** web [airtel-sync.vercel.app](https://airtel-sync.vercel.app) · staff [airtel-sync-staff.vercel.app](https://airtel-sync-staff.vercel.app) · Telegram [@UdyamAdvisorBot](https://t.me/UdyamAdvisorBot) · WhatsApp: message the number shown on the site; anyone can chat with it.
+**Team BitStormer.** Try it live:
+
+| | Link |
+|---|---|
+| ▶ 3-minute demo video | [youtu.be/JYg1lNfZmpg](https://youtu.be/JYg1lNfZmpg) |
+| Owner app (website) | [airtel-sync.vercel.app](https://airtel-sync.vercel.app) |
+| Staff portal (one-click demo sign-in) | [airtel-sync-staff.vercel.app](https://airtel-sync-staff.vercel.app) |
+| WhatsApp bot (send *Hi* or a voice note) | [+91 83184 01662](https://wa.me/918318401662?text=Hi) |
+| Telegram bot | [@UdyamAdvisorBot](https://t.me/UdyamAdvisorBot) |
+| Business case deck | [PowerPoint](docs/Udyam_Digital_Business_Case.pptx) · [PDF](docs/Udyam_Digital_Business_Case.pdf) |
 
 ## What's in it
 
